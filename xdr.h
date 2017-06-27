@@ -272,6 +272,15 @@ typedef struct {
 xdr_proto_t;
 
 typedef struct {
+    uint32 total;   // xdr_proto_t
+    
+} xdr_file_header_t;
+
+typedef struct {
+    
+} xdr_file_t;
+
+typedef struct {
     xdr_proto_t *proto;
 
     xdr_session_time_t  *session_time;
