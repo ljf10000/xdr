@@ -71,8 +71,11 @@ int main(int argc, char *argv[])
     xtlv_dprint("parse block ok.");
 
     xblock_release(&block);
+
+    xtlv_dprint("release buffer ...");
     os_free(buffer);
-    
+    xtlv_dprint("release buffer ok.");
+
     xtlv_dprint("parse %s ok.", filename_tlv);
     
     return 0;

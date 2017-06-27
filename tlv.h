@@ -968,15 +968,19 @@ xblock_init(xblock_t *block, void *buffer, uint32 len)
 static inline void
 xblock_release(xblock_t *block)
 {
+    xtlv_dprint("release block ...");
     if (block->records) {
         int i;
 
         for (i=0; i<block->count; i++) {
+            xtlv_dprint("release record:%d ...", i);
             xrecord_release(&block->records[i]);
+            xtlv_dprint("release record:%d ok.", i);
         }
         
         os_free(block->records);
     }
+    xtlv_dprint("release block ok.");
 }
 
 static inline int
