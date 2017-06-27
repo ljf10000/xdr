@@ -834,13 +834,13 @@ typedef struct {
 } xrecord_t;
 
 static inline int
-xrecord_release(xrecord_t *x)
+xrecord_release(xrecord_t *record)
 {
     xcache_t *cache;
     uint32 i;
     
     xtlv_foreach(i) {
-        cache = &x->cache[i];
+        cache = &record->cache[i];
         
         if (cache->multi) {
             xtlv_dprint("release record cache:%d multi ...", i);
@@ -853,9 +853,9 @@ xrecord_release(xrecord_t *x)
 }
 
 static inline int
-xrecord_save(xrecord_t *x, xtlv_t *tlv)
+xrecord_save(xrecord_t *record, xtlv_t *tlv)
 {
-    xcache_t *cache = &x->cache[tlv->id];
+    xcache_t *cache = &record->cache[tlv->id];
     if (NULL==cache->tlv) {
         cache->tlv = tlv;
 
@@ -876,7 +876,7 @@ xrecord_save(xrecord_t *x, xtlv_t *tlv)
 }
 
 static inline int
-__xrecord_parse(xrecord_t *x, xtlv_t *tlv, uint32 left)
+__xrecord_parse(xrecord_t *record, xtlv_t *tlv, uint32 left)
 {
     int err = 0;
 
@@ -889,7 +889,7 @@ __xrecord_parse(xrecord_t *x, xtlv_t *tlv, uint32 left)
         return err;
     }
 
-    err = xrecord_save(x, tlv);
+    err = xrecord_save(record, tlv);
     if (err<0) {
         return err;
     }
@@ -898,16 +898,16 @@ __xrecord_parse(xrecord_t *x, xtlv_t *tlv, uint32 left)
         xtlv_dump(tlv);
     }
     
-    return __xrecord_parse(x, xtlv_next(tlv), left - xtlv_len(tlv));
+    return __xrecord_parse(record, xtlv_next(tlv), left - xtlv_len(tlv));
 }
 
 static inline int
-xrecord_parse(xrecord_t *x)
+xrecord_parse(xrecord_t *record)
 {
-    xtlv_t *h = x->header;
+    xtlv_t *h = record->header;
     
     if (XTLV_ID_HEADER == h->id) {
-        return __xrecord_parse(x, xtlv_first(h), xtlv_datalen(h));
+        return __xrecord_parse(record, xtlv_first(h), xtlv_datalen(h));
     } else {
         return -e_xtlv_header_must_first;
     }
@@ -975,7 +975,7 @@ xblock_init(xblock_t *block, void *buffer, uint32 len)
     }
     xtlv_dprint("xblock pre ok.");
 
-    block->records = (xrecord_t *)os_malloc(count * sizeof(xrecord_t));
+    block->records = (xrecord_t *)os_calloc(count, sizeof(xrecord_t));
     if (NULL==block->records) {
         return -ENOMEM;
     }
