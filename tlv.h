@@ -324,18 +324,16 @@ xtlv_check(xtlv_t *tlv)
 
     uint32 dlen = xtlv_datalen(tlv);
     if (XTLV_F_FIXED==(XTLV_F_FIXED & ops->flag)) {
-        switch (ops->maxsize) {
-            case 0:
-                os_do_nothing();
-                
-                break;
-            case sizeof(uint8):
+        switch (ops->type) {
+            case XTLV_T_u8:
+            case XTLV_T_i8:
                 if (0 != dlen) {
                     return xtlv_error(tlv, -e_xtlv_invalid_short_size);
                 }
                 
                 break;
-            case sizeof(uint16):
+            case XTLV_T_u16:
+            case XTLV_T_i16:
                 if (sizeof(uint32) != dlen) {
                     return xtlv_error(tlv, -e_xtlv_invalid_short_size);
                 }
@@ -987,14 +985,14 @@ xblock_parse(xblock_t *block)
     int i, err;
 
     for (i=0; i<block->count; i++) {
-        xtlv_dprint("xrecord parse:%d ...", i);
+        // xtlv_dprint("xrecord parse:%d ...", i);
         err = xrecord_parse(&block->records[i]);
         if (err<0) {
             xtlv_dprint("xrecord parse:%d error:%d", i, err);
             
             return err;
         }
-        xtlv_dprint("xrecord parse:%d ok.", i);
+        // xtlv_dprint("xrecord parse:%d ok.", i);
     }
 
     return 0;
