@@ -3,6 +3,10 @@
 /******************************************************************************/
 #include "os.h"
 /******************************************************************************/
+#if 1
+#define xtlv_dprint(_fmt, _args...)     os_println(_fmt, ##_args)
+#endif
+
 enum {
     e_xtlv_header_must_first        = 1000,
     e_xtlv_header_length_not_match  = 1001,
@@ -844,7 +848,7 @@ xblock_pre(void *buffer, uint32 left)
     uint32 count = 0;
 
     while(left > 0) {
-        os_println("tlv len:%d left:%d", xtlv_len(h), left);
+        xtlv_dprint("tlv len:%d left:%d", xtlv_len(h), left);
         count++;
         
         if (left < xtlv_hdrlen(h)) {
@@ -856,7 +860,8 @@ xblock_pre(void *buffer, uint32 left)
         else if (left == xtlv_len(h)) {
             break;
         }
-        
+
+        left -= xtlv_len(h);
         h = xtlv_next(h);
     }
 
@@ -872,12 +877,12 @@ xblock_init(xblock_t *block, void *buffer, uint32 len)
     block->buffer   = buffer;
     block->len      = len;
 
-    os_println("xblock pre ...");
+    xtlv_dprint("xblock pre ...");
     count = xblock_pre(buffer, len);
     if (count<0) {
         return count;
     }
-    os_println("xblock pre ok.");
+    xtlv_dprint("xblock pre ok.");
 
     block->records = (xrecord_t **)os_malloc(count * sizeof(xrecord_t *));
     if (NULL==block->records) {
