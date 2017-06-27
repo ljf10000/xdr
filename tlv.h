@@ -86,7 +86,7 @@ enum { XTLV_ID_HEADER = 0 };
     _(appid,                2,  XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL)  \
     _(session,              3,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_session_t), xtlv_dump_session, NULL, NULL) \
     _(session_st,           4,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_session_st_t), xtlv_dump_session_st, NULL, NULL) \
-    _(session_time,         5,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_session_time_t, xtlv_dump_session_time, NULL, NULL) \
+    _(session_time,         5,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_session_time_t), xtlv_dump_session_time, NULL, NULL) \
     _(service_st,           6,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_service_st_t), xtlv_dump_session_st, NULL, NULL) \
     _(tcp,                  7,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_tcp_t), xtlv_dump_tcp, NULL, NULL) \
     _(first_response_delay, 8,  XTLV_T_u32,     XTLV_F_FIXED, 0, sizeof(uint32), NULL, NULL, NULL) \
