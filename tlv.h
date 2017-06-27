@@ -843,6 +843,10 @@ __xrecord_parse(xrecord_t *x, xtlv_t *tlv, uint32 left)
 {
     int err = 0;
 
+    if (0==left) {
+        return 0;
+    }
+    
     err = xtlv_check(tlv);
     if (err<0) {
         return err;
