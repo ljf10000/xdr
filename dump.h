@@ -92,7 +92,7 @@ __os_dump_line(int line, byte *raw, int len, os_dump_line_f *dump_line)
     for (i=0; i<len; i++) {
         int c = (int)raw[i];
         
-        offset += os_soprintf(buf, offset, "%c", os_isprint(c)?c:'.');
+        offset += os_soprintf(buf, offset, "%c", isprint(c)?c:'.');
     }
     offset += os_soprintf(buf, offset, __crlf);
 
@@ -113,7 +113,7 @@ __os_dump_buffer(void *buffer, int len, os_dump_line_f *dump_line)
         return;
     }
     
-    line = __OS_ALIGN(len, __DUMP_LINE_BYTES)/__DUMP_LINE_BYTES;
+    line = OS_ALIGN(len, __DUMP_LINE_BYTES)/__DUMP_LINE_BYTES;
     tail = len%__DUMP_LINE_BYTES;
     tail = tail?tail:__DUMP_LINE_BYTES;
     

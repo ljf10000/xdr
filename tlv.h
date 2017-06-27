@@ -3,6 +3,17 @@
 /******************************************************************************/
 #include "os.h"
 /******************************************************************************/
+enum {
+    e_xtlv_header_must_first        = 1000,
+    e_xtlv_header_length_not_match  = 1001,
+    e_xtlv_header_no_body           = 1002,
+    e_xtlv_invalid_id               = 1003,
+    e_xtlv_invalid_object_size      = 1004,
+    e_xtlv_too_small                = 1005,
+    e_xtlv_too_big                  = 1006,
+    e_xtlv_not_support_multi        = 1007,
+};
+
 typedef uint64 xdr_time_t;
 #define xdr_time_second(_us_time)   ((time_t)((_us_time)/1000000))
 
@@ -918,16 +929,5 @@ xblock_parse(xblock_t *block)
 
     return 0;
 }
-
-enum {
-    e_xtlv_header_must_first        = 1000,
-    e_xtlv_header_length_not_match  = 1001,
-    e_xtlv_header_no_body           = 1002,
-    e_xtlv_invalid_id               = 1003,
-    e_xtlv_invalid_object_size      = 1004,
-    e_xtlv_too_small                = 1005,
-    e_xtlv_too_big                  = 1006,
-    e_xtlv_not_support_multi        = 1007,
-};
 /******************************************************************************/
 #endif /* __TLV_H_d203748a8a974e6282d89ddcde27123a__ */
