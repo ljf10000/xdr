@@ -848,7 +848,6 @@ xblock_pre(void *buffer, uint32 left)
     uint32 count = 0;
 
     while(left > 0) {
-        xtlv_dprint("tlv len:%d left:%d", xtlv_len(h), left);
         count++;
         
         if (left < xtlv_hdrlen(h)) {
@@ -889,7 +888,8 @@ xblock_init(xblock_t *block, void *buffer, uint32 len)
         return -ENOMEM;
     }
     block->count = count;
-
+    xtlv_dprint("xblock count:%d", count);
+    
     for (i=0, h=(xtlv_t *)buffer; 
          i < count;
          i++, h=xtlv_next(h)) {
@@ -919,10 +919,12 @@ xblock_parse(xblock_t *block)
     int i, err;
 
     for (i=0; i<block->count; i++) {
+        xtlv_dprint("xrecord parse:%d ...", i);
         err = xrecord_parse(block->records[i]);
         if (err<0) {
             return err;
         }
+        xtlv_dprint("xrecord parse:%d ok.", i);
     }
 
     return 0;
