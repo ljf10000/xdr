@@ -6,7 +6,7 @@ char *self;
 
 int usage(void)
 {
-    os_println("%s [OPTION] old-xdr-file new-xdr-file");
+    os_println("%s [OPTION] old-xdr-file new-xdr-file", self);
     os_println(__tab "OPTION:");
     os_println(__tab "--dump: dump all");
 
