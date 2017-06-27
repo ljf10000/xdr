@@ -453,11 +453,11 @@ xtlv_dump_session(xtlv_t *tlv)
         uint32 ip;
 
         ip = xdr_ip(&obj->sip);
-        ip = htonl(ip);
+        // ip = htonl(ip);
         XTLV_DUMP2("sip    : %s", os_ipstring(ip));
         
         ip = xdr_ip(&obj->dip);
-        ip = htonl(ip);
+        // ip = htonl(ip);
         XTLV_DUMP2("dip    : %s", os_ipstring(ip));
     } else {
         XTLV_DUMP2("sip    : ipv6 address");
