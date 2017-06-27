@@ -13,9 +13,10 @@ enum {
     e_xtlv_header_no_body           = 1002,
     e_xtlv_invalid_id               = 1003,
     e_xtlv_invalid_object_size      = 1004,
-    e_xtlv_too_small                = 1005,
-    e_xtlv_too_big                  = 1006,
-    e_xtlv_not_support_multi        = 1007,
+    e_xtlv_invalid_short_size       = 1005,
+    e_xtlv_too_small                = 1006,
+    e_xtlv_too_big                  = 1007,
+    e_xtlv_not_support_multi        = 1008,
 };
 
 typedef uint64 xdr_time_t;
@@ -306,8 +307,11 @@ xtlv_check(xtlv_t *tlv)
 
     uint32 dlen = xtlv_datalen(tlv);
     if (XTLV_F_FIXED==(XTLV_F_FIXED & ops->flag)) {
-        if (ops->maxsize && dlen != ops->maxsize) {
+        if (ops->maxsize > 4 && dlen != ops->maxsize) {
             return xtlv_error(tlv, -e_xtlv_invalid_object_size);
+        }
+        else if (ops->maxsize && ops->maxsize < 4 && dlen != 0) {
+            return xtlv_error(tlv, -e_xtlv_invalid_short_size);
         }
     } else {
         if (ops->minsize && dlen < ops->minsize) {
