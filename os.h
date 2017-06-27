@@ -74,6 +74,72 @@
 
 /* just for sourceinsight */
 #define size_t          size_t
+/******************************************************************************/
+#include <stdint.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <signal.h>
+#include <string.h>
+#include <malloc.h>
+#include <assert.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <ctype.h>
+#include <errno.h>
+#include <grp.h>
+#include <pwd.h>
+#include <time.h>
+#include <math.h>
+#include <utime.h>
+#include <dirent.h>
+#include <syslog.h>
+#include <ucontext.h>
+#include <byteswap.h>
+#include <libgen.h>
+#include <netdb.h>
+#include <termios.h>
+#include <ulimit.h>
+#include <utmp.h>
+#include <sched.h>
+#include <mntent.h>
+#include <limits.h>
+#include <dlfcn.h>
+#include <endian.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <sys/sem.h>
+#include <sys/shm.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/mman.h>
+#include <sys/time.h>
+#include <sys/times.h>
+#include <sys/timex.h>
+#include <sys/utsname.h>
+#include <sys/mount.h>
+#include <sys/epoll.h>
+#include <sys/timerfd.h>
+#include <sys/eventfd.h>
+#include <sys/signalfd.h>
+#include <sys/inotify.h>
+#include <sys/utsname.h>
+#include <netpacket/packet.h>
+#include <netinet/ether.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
+#include <arpa/inet.h>
+#include <net/if.h>
+#include <linux/netlink.h>
+/******************************************************************************/
+#include "dump.h"
 
 #define os_malloc(_size)            malloc(_size)
 #define os_calloc(_count, _size)    calloc(_count, _size)
@@ -234,71 +300,5 @@ os_time_string(time_t t)
     return current;
 }
 
-
-#include <stdint.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
-#include <string.h>
-#include <malloc.h>
-#include <assert.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <ctype.h>
-#include <errno.h>
-#include <grp.h>
-#include <pwd.h>
-#include <time.h>
-#include <math.h>
-#include <utime.h>
-#include <dirent.h>
-#include <syslog.h>
-#include <ucontext.h>
-#include <byteswap.h>
-#include <libgen.h>
-#include <netdb.h>
-#include <termios.h>
-#include <ulimit.h>
-#include <utmp.h>
-#include <sched.h>
-#include <mntent.h>
-#include <limits.h>
-#include <dlfcn.h>
-#include <endian.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/file.h>
-#include <sys/wait.h>
-#include <sys/ioctl.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
-#include <sys/sem.h>
-#include <sys/shm.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <sys/mman.h>
-#include <sys/time.h>
-#include <sys/times.h>
-#include <sys/timex.h>
-#include <sys/utsname.h>
-#include <sys/mount.h>
-#include <sys/epoll.h>
-#include <sys/timerfd.h>
-#include <sys/eventfd.h>
-#include <sys/signalfd.h>
-#include <sys/inotify.h>
-#include <sys/utsname.h>
-#include <netpacket/packet.h>
-#include <netinet/ether.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <netinet/tcp.h>
-#include <netinet/udp.h>
-#include <arpa/inet.h>
-#include <net/if.h>
-#include <linux/netlink.h>
-/******************************************************************************/
-#include "dump.h"
 /******************************************************************************/
 #endif
