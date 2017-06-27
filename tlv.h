@@ -880,7 +880,6 @@ xblock_post(xblock_t *block)
          i < block->count;
          i++, h=xtlv_next(h)) {
         block->records[i].header = h;
-        xtlv_dprint("record:%d cache, tlv len:%d", i, xtlv_len(h));
     }
     xtlv_dprint("xblock cache ok.");
 }
@@ -931,6 +930,8 @@ xblock_parse(xblock_t *block)
         xtlv_dprint("xrecord parse:%d ...", i);
         err = xrecord_parse(&block->records[i]);
         if (err<0) {
+            xtlv_dprint("xrecord parse:%d error:%d", i, err);
+            
             return err;
         }
         xtlv_dprint("xrecord parse:%d ok.", i);
