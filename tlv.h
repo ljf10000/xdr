@@ -78,8 +78,10 @@ typedef struct {
     xtlv_to_xdr_f *toxdr;
 } xtlv_ops_t;
 
+enum { XTLV_ID_HEADER = 0 };
+
 #define XTLV_MAPPER(_) \
-    _(header,               0,  XTLV_T_binary,  0, 0, 0, NULL, NULL, NULL) \
+    _(header,               XTLV_ID_HEADER,  XTLV_T_binary,  0, 0, 0, NULL, NULL, NULL) \
     _(session_state,        1,  XTLV_T_u32,     XTLV_F_FIXED, 0, sizeof(uint32), NULL, NULL, NULL) \
     _(appid,                2,  XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL)  \
     _(session,              3,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_session_t), xtlv_dump_session, NULL, NULL) \
@@ -142,7 +144,8 @@ typedef struct {
     _(ssl_client_cert,      205, XTLV_T_binary, XTLV_F_MULTI, 0, 0, NULL, NULL, NULL) \
     _(ssl_fail_reason,      206, XTLV_T_u8,     XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL) \
     /* end */
-#define XTLV_ID_END         207
+enum { XTLV_ID_END = 207 };
+
 #define xtlv_foreach(i)     for (i=0; i<XTLV_ID_END; i++)
 
 #define XTLV_OPS_STRUCT(_name, _id, _type, _flag, _dump, _check, _toxdr) [_id] = { \
@@ -558,8 +561,8 @@ xtlv_dump_http(xtlv_t *tlv)
     XTLV_DUMP2("version             : %u", obj->version);
 
     XTLV_DUMP2("first               : %s", bool_string(obj->u.st.first));
-    XTLV_DUMP2("flag                : %u", obj->flag);
-    XTLV_DUMP2("head                : %s", yes_string(obj->version));
+    XTLV_DUMP2("flag                : %u", obj->u.st.flag);
+    XTLV_DUMP2("head                : %s", yes_string(obj->u.st.head));
     XTLV_DUMP2("ie                  : %u", obj->ie);
     XTLV_DUMP2("portal              : %u", obj->portal);
 }
@@ -599,15 +602,15 @@ xtlv_dump_sip(xtlv_t *tlv)
     XTLV_DUMP2("signal_type     : %u", obj->signal_type);
     XTLV_DUMP2("dataflow_count  : %u", obj->dataflow_count);
     XTLV_DUMP2("invite          : %s", bool_string(XDR_SIP_INVITE==obj->u.st.invite));
-    XTLV_DUMP2("bye             : %s", bool_string(XDR_SIP_BYE==obj->bye));
-    XTLV_DUMP2("malloc          : %s", bool_string(obj->malloc));
+    XTLV_DUMP2("bye             : %s", bool_string(XDR_SIP_BYE==obj->u.st.bye));
+    XTLV_DUMP2("malloc          : %s", bool_string(obj->u.st.malloc));
 }
 
 typedef struct {
     uint16 port_client_start;
     uint16 port_client_end;
     uint16 port_server_start;
-    uint16 port_client_end;
+    uint16 port_server_end;
     uint16 count_video;
     uint16 count_audio;
     
@@ -624,7 +627,7 @@ xtlv_dump_rtsp(xtlv_t *tlv)
     XTLV_DUMP2("port_client_start   : %u", obj->port_client_start);
     XTLV_DUMP2("port_client_end     : %u", obj->port_client_end);
     XTLV_DUMP2("port_server_start   : %u", obj->port_server_start);
-    XTLV_DUMP2("port_client_end     : %u", obj->port_client_end);
+    XTLV_DUMP2("port_server_end     : %u", obj->port_server_end);
     XTLV_DUMP2("count_video         : %u", obj->count_video);
     XTLV_DUMP2("count_audio         : %u", obj->count_audio);
     XTLV_DUMP2("describe_delay      : %u", obj->describe_delay);
@@ -698,7 +701,7 @@ typedef struct {
 static inline bool
 is_xcache_multi(xcache_t *cache)
 {
-    return cache->multi;
+    return NULL!=cache->multi;
 }
 
 static inline int
@@ -714,7 +717,7 @@ xcache_expand(xcache_t *cache)
     }
 
     if (cache->current == cache->count) {
-        cache->multi = (xtlv_t **)os_realloc(cache->count + XCACHE_EXPAND, sizeof(xtlv_t *));
+        cache->multi = (xtlv_t **)os_realloc(cache->multi, (cache->count + XCACHE_EXPAND) * sizeof(xtlv_t *));
         if (NULL==cache->multi) {
             return -ENOMEM;
         }
@@ -741,7 +744,7 @@ xcache_save_multi(xcache_t *cache, xtlv_t *tlv)
         *   so, copy cache->tlv to cache->multi[0]
         */
         cache->multi[0] = cache->tlv;
-        cache->current++
+        cache->current++;
     }
 
     cache->multi[cache->current++] = tlv;
@@ -814,18 +817,13 @@ __xrecord_parse(xrecord_t *x, xtlv_t *tlv, uint32 left)
 static inline int
 xrecord_parse(xrecord_t *x)
 {
-    xtlv_t *tlv = (xtlv_t *)x->buffer;
-    if (0!=tlv->id) {
+    xtlv_t *tlv = x->header;
+    
+    if (XTLV_ID_HEADER == tlv->id) {
+        return __xrecord_parse(x, xtlv_first(tlv), x->len - xtlv_hdrlen(tlv));
+    } else {
         return -e_xtlv_header_must_first;
     }
-    else if (xtlv_len(tlv) != x->len) {
-        return e_xtlv_header_length_not_match;
-    }
-    else if (x->len <= xtlv_hdrlen(tlv)) {
-        return e_xtlv_header_no_body;
-    }
-
-    return __xrecord_parse(x, xtlv_first(tlv), x->len - xtlv_hdrlen(tlv));
 }
 
 typedef struct {
