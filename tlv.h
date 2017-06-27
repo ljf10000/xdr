@@ -324,13 +324,32 @@ xtlv_check(xtlv_t *tlv)
 
     uint32 dlen = xtlv_datalen(tlv);
     if (XTLV_F_FIXED==(XTLV_F_FIXED & ops->flag)) {
-        if (ops->maxsize > 4 && dlen != ops->maxsize) {
-            return xtlv_error(tlv, -e_xtlv_invalid_object_size);
+        switch (ops->maxsize) {
+            case 0:
+                os_do_nothing();
+                
+                break;
+            case sizeof(uint8):
+                if (0 != dlen) {
+                    return xtlv_error(tlv, -e_xtlv_invalid_short_size);
+                }
+                
+                break;
+            case sizeof(uint16):
+                if (sizeof(uint32) != dlen) {
+                    return xtlv_error(tlv, -e_xtlv_invalid_short_size);
+                }
+
+                break;
+            default:
+                if (dlen != ops->maxsize) {
+                    return xtlv_error(tlv, -e_xtlv_invalid_object_size);
+                }
+
+                break;
         }
-        else if (ops->maxsize && ops->maxsize < 4 && dlen != 0) {
-            return xtlv_error(tlv, -e_xtlv_invalid_short_size);
-        }
-    } else {
+    } 
+    else {
         if (ops->minsize && dlen < ops->minsize) {
             return xtlv_error(tlv, -e_xtlv_too_small);
         }
