@@ -10,10 +10,10 @@
 #define XDR_ALIGN(x)    OS_ALIGN(x, 4)
 
 static inline void *
-XDR_MEMCPY(void *dst, void *src, uint32 size)
+xdr_memcpy(void *dst, void *src, uint32 size)
 {
     uint32 i, align = XDR_ALIGN(size);
-    void *p = memcpy(dst, src, size);
+    byte *p = (byte *)memcpy(dst, src, size);
 
     for (i=size; i<align; i++) {
         p[i] = 0;
@@ -79,7 +79,7 @@ typedef xtlv_session_time_t xdr_session_time_t;
 static inline xdr_session_time_t *
 alloc_xdr_session_time(xdr_buffer_t *x)
 {
-
+    return NULL;
 }
 
 typedef xtlv_tcp_t   xdr_tcp_t;
@@ -155,7 +155,7 @@ typedef struct {
     uint16 port_client_start;
     uint16 port_client_end;
     uint16 port_server_start;
-    uint16 port_client_end;
+    uint16 port_server_end;
     uint16 count_video;
     uint16 count_audio;
     
@@ -346,7 +346,7 @@ xb_pre_string(xdr_buffer_t *x, xdr_string_t *s, void *buf, uint32 len)
         return NULL;
     }
 
-    XDR_MEMCPY(p, buf, len);
+    xdr_memcpy(p, buf, len);
     xb_put(x, len);
 
     s->len = len;
@@ -371,7 +371,7 @@ xb_pre_array(xdr_buffer_t *x, xdr_array_t *a, uint32 type, uint32 size, uint32 c
     a->count = count;
     a->offset = xb_offset(x, p);
 
-    return s;
+    return a;
 }
 
 static inline void *
@@ -619,7 +619,7 @@ xb_pre_dns_domain(xdr_buffer_t *x, xdr_dns_t *proto, void *buf, uint32 len)
 static inline xdr_array_t *
 xb_pre_dns_ip(xdr_buffer_t *x, xdr_dns_t *proto, uint32 count, uint32 ip[])
 {
-    return xb_pre_array(x, &proto->ip, XDR_OBJ_IP4);
+    return xb_pre_array(x, &proto->ip, XDR_OBJ_IP4, sizeof(uint32), count);
 }
 
 static inline xdr_ssl_t *

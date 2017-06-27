@@ -148,11 +148,13 @@ enum { XTLV_ID_END = 207 };
 
 #define xtlv_foreach(i)     for (i=0; i<XTLV_ID_END; i++)
 
-#define XTLV_OPS_STRUCT(_name, _id, _type, _flag, _dump, _check, _toxdr) [_id] = { \
+#define XTLV_OPS_STRUCT(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr) [_id] = { \
     .id     = _id,      \
     .type   = _type,    \
     .flag   = _flag,    \
     .name   = #_name,   \
+    .minsize= _minsize, \
+    .maxsize= _maxsize, \
     .dump   = _dump,    \
     .check  = _check,   \
     .toxdr  = _toxdr,   \
@@ -817,10 +819,10 @@ __xrecord_parse(xrecord_t *x, xtlv_t *tlv, uint32 left)
 static inline int
 xrecord_parse(xrecord_t *x)
 {
-    xtlv_t *tlv = x->header;
+    xtlv_t *h = x->header;
     
-    if (XTLV_ID_HEADER == tlv->id) {
-        return __xrecord_parse(x, xtlv_first(tlv), x->len - xtlv_hdrlen(tlv));
+    if (XTLV_ID_HEADER == h->id) {
+        return __xrecord_parse(x, xtlv_first(h), xtlv_datalen(h));
     } else {
         return -e_xtlv_header_must_first;
     }
@@ -888,7 +890,7 @@ xblock_init(xblock_t *block, void *buffer, uint32 len)
     return 0;
 }
 
-static inline int
+static inline void
 xblock_release(xblock_t *block)
 {
     if (block->records) {
