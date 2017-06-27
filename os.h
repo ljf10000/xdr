@@ -157,6 +157,10 @@
 #define os_do_nothing()                 do{}while(0)
 #endif
 
+#ifndef os_extern_unused_var
+#define os_extern_unused_var            extern int ____os_extern_unused_var____
+#endif
+
 #ifndef is_good_value
 #define is_good_value(_v, _begin, _end) ((_v) >= (_begin) && (_v) < (_end))
 #endif

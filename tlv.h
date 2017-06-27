@@ -165,8 +165,9 @@ extern uint32 __xtlv_debug;
 
 #define DECLARE_XTLV_VARS \
     uint32 __xtlv_debug; \
-    xtlv_ops_t __xtlv_ops[XTLV_ID_END] = { XTLV_MAPPER(XTLV_OPS_STRUCT) }
-
+    xtlv_ops_t __xtlv_ops[XTLV_ID_END] = { XTLV_MAPPER(XTLV_OPS_STRUCT) }; \
+    os_extern_unused_var /* end */
+    
 enum {
     XDEBUG_DUMP = 0x01,
 };
@@ -240,7 +241,7 @@ struct xtlv_st {
 #define xtlv_strlen(_tlv)       (xtlv_datalen(_tlv) - (_tlv)->pad)
 #define xtlv_binlen(_tlv)       (xtlv_datalen(_tlv) - (_tlv)->pad)
 
-#define xtlv_first(_tlv_header) (xtlv_t *)xtlv_data(_tlv)
+#define xtlv_first(_tlv_header) (xtlv_t *)xtlv_data(_tlv_header)
 #define xtlv_next(_tlv)         (xtlv_t *)((void *)(_tlv) + xtlv_len(_tlv))
 
 #define xtlv_u8(_tlv)       (_tlv)->pad
