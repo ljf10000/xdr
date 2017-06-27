@@ -769,20 +769,28 @@ static inline int
 xcache_expand(xcache_t *cache)
 {
     if (NULL==cache->multi) {
+        xtlv_dprint("init record multi ...");
+        
         cache->multi = (xtlv_t **)os_calloc(XCACHE_EXPAND, sizeof(xtlv_t *));
         if (NULL==cache->multi) {
             return -ENOMEM;
         }
         cache->current = 0;
         cache->count = XCACHE_EXPAND;
+        
+        xtlv_dprint("init record multi ok.");
     }
 
     if (cache->current == cache->count) {
+        xtlv_dprint("expand record multi ...");
+        
         cache->multi = (xtlv_t **)os_realloc(cache->multi, (cache->count + XCACHE_EXPAND) * sizeof(xtlv_t *));
         if (NULL==cache->multi) {
             return -ENOMEM;
         }
         cache->count += XCACHE_EXPAND;
+        
+        xtlv_dprint("expand record multi ok.");
     }
 
     return 0;
@@ -799,6 +807,8 @@ xcache_save_multi(xcache_t *cache, xtlv_t *tlv)
     }
 
     if (0==cache->current) {
+        xtlv_dprint("copy record multi ...");
+        
         /*
         * first, save at cache->tlv
         * second, save at cache->multi
@@ -806,9 +816,13 @@ xcache_save_multi(xcache_t *cache, xtlv_t *tlv)
         */
         cache->multi[0] = cache->tlv;
         cache->current++;
+        
+        xtlv_dprint("copy record multi ok.");
     }
-
+    
+    xtlv_dprint("save record multi ...");
     cache->multi[cache->current++] = tlv;
+    xtlv_dprint("save record multi ok.");
 
     return 0;
 }
@@ -833,7 +847,6 @@ xrecord_release(xrecord_t *x)
             os_free(cache->multi);
             xtlv_dprint("release record cache:%d multi ok.", i);
         }
-        
     }
     
     return 0;
