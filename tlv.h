@@ -829,8 +829,11 @@ xrecord_release(xrecord_t *x)
         cache = &x->cache[i];
         
         if (cache->multi) {
+            xtlv_dprint("release record cache:%d multi ...", i);
             os_free(cache->multi);
+            xtlv_dprint("release record cache:%d multi ok.", i);
         }
+        
     }
     
     return 0;
