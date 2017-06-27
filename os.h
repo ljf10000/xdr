@@ -302,6 +302,80 @@ os_time_string(time_t t)
     return current;
 }
 
+static inline bool
+is_option_args(char *args)
+{
+    return args && args[0] && args[1] && args[2] && '-'==args[0] && '-'==args[1];
+}
+
+
+static inline int
+os_fsize(const char *file)
+{
+    struct stat st;
+    int err;
+    
+    err = stat(file, &st);
+    if (err<0) {
+        return -errno;
+    } else {
+        return st.st_size;
+    }
+}
+
+static inline int
+os_readfile(const char *file, void *buf, int size)
+{
+    FILE *f = NULL;
+    int err = 0;
+
+    f = fopen(file, "r");
+    if (NULL==f) {
+        err = -errno; goto error;
+    }
+
+    int len = fread(f, buf, size);
+    if (size!=len) {
+        err = -errno; goto error;
+    }
+
+error:
+    fclose(f);
+
+    return err;
+}
+
+static inline int
+os_readfileall(const char *file, char **content, uint32 *filesize)
+{
+    char *buf = NULL;
+    int size, err = 0;
+    
+    size = os_fsize(file);
+    if (size<0) {
+        goto error;
+    }
+
+    buf = (char *)os_malloc(size);
+    if (NULL==buf) {
+        goto error;
+    }
+    
+    err = os_readfile(file, buf, size);
+    if (err<0) {
+        goto error;
+    }
+
+    *filesize   = size;
+    *content    = buf;
+    
+    return err;
+error:
+    os_free(buf);
+
+    return err;
+}
+
 #include "dump.h"
 /******************************************************************************/
 #endif
