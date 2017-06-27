@@ -277,32 +277,48 @@ struct xtlv_st {
 #define xtlv_rtsp(_tlv)         (xtlv_rtsp_t *)xtlv_data(_tlv)
 
 static inline int
+xtlv_error(xtlv_t *tlv, int err)
+{
+    if (err<0) {
+        xtlv_ops_t *ops = xtlv_ops(tlv->id);
+        
+        xtlv_dprint("tlv name:%s id:%d len:%d", ops->name, tlv->id, xtlv_len(tlv));
+    }
+
+    return err;
+}
+
+static inline int
 xtlv_check(xtlv_t *tlv)
 {
+    int err;
+    
     xtlv_ops_t *ops = xtlv_ops(tlv->id);
     if (NULL==ops) {
-        return -e_xtlv_invalid_id;
+        return xtlv_error(tlv, -e_xtlv_invalid_id);
     }
 
     if (xtlv_len(tlv) < xtlv_hdrlen(tlv)) {
-        return -e_xtlv_too_small;
+        return xtlv_error(tlv, -e_xtlv_too_small);
     }
 
     if (ops->check) {
-        return (*ops->check)(tlv);
+        err = (*ops->check)(tlv);
+        
+        return xtlv_error(tlv, err);
     }
 
     uint32 dlen = xtlv_datalen(tlv);
     if (XTLV_F_FIXED==(XTLV_F_FIXED & ops->flag)) {
         if (ops->maxsize && dlen != ops->maxsize) {
-            return -e_xtlv_invalid_object_size;
+            return xtlv_error(tlv, -e_xtlv_invalid_object_size);
         }
     } else {
         if (ops->minsize && dlen < ops->minsize) {
-            return -e_xtlv_too_small;
+            return xtlv_error(tlv, -e_xtlv_too_small);
         }
         else if (ops->maxsize && dlen > ops->maxsize) {
-            return -e_xtlv_too_big;
+            return xtlv_error(tlv, -e_xtlv_too_big);
         }
     }
 
@@ -794,10 +810,10 @@ xrecord_save(xrecord_t *x, xtlv_t *tlv)
 
     xtlv_ops_t *ops = xtlv_ops(tlv->id);
     if (XTLV_F_MULTI & ops->flag) {
-        return xcache_save_multi(cache, tlv);
+        return xtlv_error(tlv, xcache_save_multi(cache, tlv));
     } 
     else {
-        return -e_xtlv_not_support_multi;
+        return xtlv_error(tlv, -e_xtlv_not_support_multi);
     }
 }
 
