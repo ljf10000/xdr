@@ -246,7 +246,7 @@ struct xtlv_st {
 #define xtlv_binlen(_tlv)       (xtlv_datalen(_tlv) - (_tlv)->pad)
 
 #define xtlv_first(_tlv_header) (xtlv_t *)xtlv_data(_tlv_header)
-#define xtlv_next(_tlv)         (xtlv_t *)((void *)(_tlv) + xtlv_len(_tlv))
+#define xtlv_next(_tlv)         (xtlv_t *)((byte *)(_tlv) + xtlv_len(_tlv))
 
 #define xtlv_u8(_tlv)       (_tlv)->pad
 #define xtlv_u16(_tlv)      (*(uint16 *)xtlv_data(_tlv))
@@ -755,6 +755,8 @@ xcache_save_multi(xcache_t *cache, xtlv_t *tlv)
     }
 
     cache->multi[cache->current++] = tlv;
+
+    return 0;
 }
 
 typedef struct {
@@ -837,7 +839,7 @@ typedef struct {
     void *buffer;
     uint32 len;
     
-    xrecord_t **records;
+    xrecord_t *records;
     int count;
 } xblock_t;
 
@@ -868,38 +870,42 @@ xblock_pre(void *buffer, uint32 left)
 }
 
 static inline int
-xblock_init(xblock_t *block, void *buffer, uint32 len)
+xblock_post(xblock_t *block)
 {
     xtlv_t *h;
-    int i, count;
+    int i;
     
+    xtlv_dprint("xblock cache ...");
+    for (i=0, h=(xtlv_t *)block->buffer; 
+         i < block->count;
+         i++, h=xtlv_next(h)) {
+        block->records[i].header = h;
+        xtlv_dprint("record:%d cache, tlv len:%d", i, xtlv_len(h));
+    }
+    xtlv_dprint("xblock cache ok.");
+}
+
+static inline int
+xblock_init(xblock_t *block, void *buffer, uint32 len)
+{
     block->buffer   = buffer;
     block->len      = len;
 
     xtlv_dprint("xblock pre ...");
-    count = xblock_pre(buffer, len);
+    int count = xblock_pre(buffer, len);
     if (count<0) {
         return count;
     }
     xtlv_dprint("xblock pre ok.");
 
-    block->records = (xrecord_t **)os_malloc(count * sizeof(xrecord_t *));
+    block->records = (xrecord_t *)os_malloc(count * sizeof(xrecord_t));
     if (NULL==block->records) {
         return -ENOMEM;
     }
     block->count = count;
     xtlv_dprint("xblock count:%d", count);
     
-    xtlv_dprint("xblock cache ...");
-    for (i=0, h=(xtlv_t *)buffer; 
-         i < count;
-         i++, h=xtlv_next(h)) {
-        block->records[i]->header = h;
-        xtlv_dprint("record:%d cache, tlv len:%d", i, xtlv_len(h));
-    }
-    xtlv_dprint("xblock cache ok.");
-    
-    return 0;
+    return xblock_post(block);
 }
 
 static inline void
@@ -909,7 +915,7 @@ xblock_release(xblock_t *block)
         int i;
 
         for (i=0; i<block->count; i++) {
-            xrecord_release(block->records[i]);
+            xrecord_release(&block->records[i]);
         }
         
         os_free(block->records);
@@ -923,7 +929,7 @@ xblock_parse(xblock_t *block)
 
     for (i=0; i<block->count; i++) {
         xtlv_dprint("xrecord parse:%d ...", i);
-        err = xrecord_parse(block->records[i]);
+        err = xrecord_parse(&block->records[i]);
         if (err<0) {
             return err;
         }
