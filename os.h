@@ -139,8 +139,6 @@
 #include <net/if.h>
 #include <linux/netlink.h>
 /******************************************************************************/
-#include "dump.h"
-
 #define os_malloc(_size)            malloc(_size)
 #define os_calloc(_count, _size)    calloc(_count, _size)
 #define os_realloc(_ptr, _size)     realloc(_ptr, _size)
@@ -300,5 +298,6 @@ os_time_string(time_t t)
     return current;
 }
 
+#include "dump.h"
 /******************************************************************************/
 #endif
