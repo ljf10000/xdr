@@ -859,9 +859,13 @@ xrecord_save(xrecord_t *x, xtlv_t *tlv)
     if (NULL==cache->tlv) {
         cache->tlv = tlv;
 
+        xtlv_dprint("save record tlv id:%d", tlv->id);
+        
         return 0;
     }
 
+    xtlv_dprint("try save record multi tlv id:%d", tlv->id);
+    
     xtlv_ops_t *ops = xtlv_ops(tlv->id);
     if (XTLV_F_MULTI & ops->flag) {
         return xtlv_error(tlv, xcache_save_multi(cache, tlv));
