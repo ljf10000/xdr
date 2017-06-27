@@ -377,7 +377,6 @@ typedef struct {
 static inline void 
 xtlv_dump_session(xtlv_t *tlv)
 {
-    xtlv_ops_t *ops = xtlv_ops(tlv->id);
     xtlv_session_t *obj = xtlv_session(tlv);
     
     XTLV_DUMP("id: %d, session:", tlv->id);
@@ -393,11 +392,11 @@ xtlv_dump_session(xtlv_t *tlv)
 
         ip = xdr_ip(&obj->sip);
         ip = htonl(ip);
-        XTLV_DUMP2("sip    : %d", os_ipstring(ip));
+        XTLV_DUMP2("sip    : %s", os_ipstring(ip));
         
         ip = xdr_ip(&obj->dip);
         ip = htonl(ip);
-        XTLV_DUMP2("dip    : %d", os_ipstring(ip));
+        XTLV_DUMP2("dip    : %s", os_ipstring(ip));
     } else {
         XTLV_DUMP2("sip    : ipv6 address");
         XTLV_DUMP2("dip    : ipv6 addres");
@@ -416,11 +415,10 @@ typedef struct {
 static inline void 
 xtlv_dump_session_st(xtlv_t *tlv)
 {
-    xtlv_ops_t *ops = xtlv_ops(tlv->id);
     xtlv_session_st_t *obj = xtlv_session_st(tlv);
     int i;
     
-    XTLV_DUMP("id: %d, session_st:", tlv->id);
+    XTLV_DUMP("id: %d, %s:", tlv->id, xtlv_ops(tlv->id)->name);
 
     for (i=0; i<2; i++) {
         char c = (0==i)?'u':'d';
@@ -443,10 +441,9 @@ typedef struct {
 static inline void 
 xtlv_dump_session_time(xtlv_t *tlv)
 {
-    xtlv_ops_t *ops = xtlv_ops(tlv->id);
     xtlv_session_time_t *obj = xtlv_session_time(tlv);
     
-    XTLV_DUMP("id: %d, session:", tlv->id);
+    XTLV_DUMP("id: %d, session_time:", tlv->id);
     
     XTLV_DUMP2("create: %s", os_time_string(xdr_time_second(obj->create)));
     XTLV_DUMP2("start : %s", os_time_string(xdr_time_second(obj->start)));
@@ -481,10 +478,9 @@ enum { XDR_TCP_COMPLETE = 1 };
 static inline void 
 xtlv_dump_tcp(xtlv_t *tlv)
 {
-    xtlv_ops_t *ops = xtlv_ops(tlv->id);
     xtlv_tcp_t *obj = xtlv_tcp(tlv);
     
-    XTLV_DUMP("id: %d, session:", tlv->id);
+    XTLV_DUMP("id: %d, tcp:", tlv->id);
     
     XTLV_DUMP2("synack_to_syn_time  : %u us", obj->synack_to_syn_time);
     XTLV_DUMP2("ack_to_syn_time     : %u us", obj->ack_to_syn_time);
@@ -511,7 +507,6 @@ typedef struct {
 static inline void 
 xtlv_dump_L7(xtlv_t *tlv)
 {
-    xtlv_ops_t *ops = xtlv_ops(tlv->id);
     xtlv_L7_t *obj = xtlv_L7(tlv);
     
     XTLV_DUMP("id: %d, L7:", tlv->id);
@@ -550,7 +545,6 @@ xtlv_http_t;
 static inline void 
 xtlv_dump_http(xtlv_t *tlv)
 {
-    xtlv_ops_t *ops = xtlv_ops(tlv->id);
     xtlv_http_t *obj = xtlv_http(tlv);
     
     XTLV_DUMP("id: %d, http:", tlv->id);
@@ -595,7 +589,6 @@ typedef struct {
 static inline void 
 xtlv_dump_sip(xtlv_t *tlv)
 {
-    xtlv_ops_t *ops = xtlv_ops(tlv->id);
     xtlv_sip_t *obj = xtlv_sip(tlv);
     
     XTLV_DUMP("id: %d, http:", tlv->id);
@@ -624,7 +617,6 @@ typedef struct {
 static inline void 
 xtlv_dump_rtsp(xtlv_t *tlv)
 {
-    xtlv_ops_t *ops = xtlv_ops(tlv->id);
     xtlv_rtsp_t *obj = xtlv_rtsp(tlv);
     
     XTLV_DUMP("id: %d, http:", tlv->id);
