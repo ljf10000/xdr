@@ -3,8 +3,10 @@
 /******************************************************************************/
 #include "os.h"
 /******************************************************************************/
-#if 1
+#if 0
 #define xtlv_dprint(_fmt, _args...)     os_println(_fmt, ##_args)
+#else
+#define xtlv_dprint(_fmt, _args...)     os_do_nothing()
 #endif
 
 enum {
