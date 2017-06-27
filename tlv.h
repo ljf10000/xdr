@@ -890,11 +890,14 @@ xblock_init(xblock_t *block, void *buffer, uint32 len)
     block->count = count;
     xtlv_dprint("xblock count:%d", count);
     
+    xtlv_dprint("xblock cache ...");
     for (i=0, h=(xtlv_t *)buffer; 
          i < count;
          i++, h=xtlv_next(h)) {
         block->records[i]->header = h;
+        xtlv_dprint("record:%d cache, tlv len:%d", i, xtlv_len(h));
     }
+    xtlv_dprint("xblock cache ok.");
     
     return 0;
 }
