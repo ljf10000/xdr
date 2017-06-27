@@ -302,26 +302,23 @@ xtlv_check(xtlv_t *tlv)
 #define XTLV_DUMP(_fmt, _args...)       os_println(__tab _fmt, ##_args)
 #define XTLV_DUMP2(_fmt, _args...)      os_println(__tab2 _fmt, ##_args)
 
-#define __XTLV_DUMP_BY(_tlv, _format, _type)  do{ \
+#define XTLV_DUMP_BY(_tlv, _format, _type)  do{ \
     xtlv_ops_t *ops = xtlv_ops((_tlv)->id); \
                                             \
     XTLV_DUMP("id: %d, %s: " _format, (_tlv)->id, ops->name, xtlv_##_type(_tlv)); \
 }while(0)
 
-#define XTLV_DUMP_NUMBER(_tlv, _type)   __XTLV_DUMP_BY(_tlv, "%d", _type)
-#define XTLV_DUMP_STRING(_tlv)          __XTLV_DUMP_BY(_tlv, "%s", string)
+static inline void xtlv_dump_u8 (xtlv_t *tlv) { XTLV_DUMP_BY(tlv, "%u", u8);  }
+static inline void xtlv_dump_u16(xtlv_t *tlv) { XTLV_DUMP_BY(tlv, "%u", u16); }
+static inline void xtlv_dump_u32(xtlv_t *tlv) { XTLV_DUMP_BY(tlv, "%u", u32); }
+static inline void xtlv_dump_u64(xtlv_t *tlv) { XTLV_DUMP_BY(tlv, "%llu", u64); }
 
-static inline void xtlv_dump_u8 (xtlv_t *tlv) { XTLV_DUMP_NUMBER(tlv, u8);  }
-static inline void xtlv_dump_u16(xtlv_t *tlv) { XTLV_DUMP_NUMBER(tlv, u16); }
-static inline void xtlv_dump_u32(xtlv_t *tlv) { XTLV_DUMP_NUMBER(tlv, u32); }
-static inline void xtlv_dump_u64(xtlv_t *tlv) { XTLV_DUMP_NUMBER(tlv, u64); }
+static inline void xtlv_dump_i8 (xtlv_t *tlv) { XTLV_DUMP_BY(tlv, "%d", i8);  }
+static inline void xtlv_dump_i16(xtlv_t *tlv) { XTLV_DUMP_BY(tlv, "%d", i16); }
+static inline void xtlv_dump_i32(xtlv_t *tlv) { XTLV_DUMP_BY(tlv, "%d", i32); }
+static inline void xtlv_dump_i64(xtlv_t *tlv) { XTLV_DUMP_BY(tlv, "%lld", i64); }
 
-static inline void xtlv_dump_i8 (xtlv_t *tlv) { XTLV_DUMP_NUMBER(tlv, i8);  }
-static inline void xtlv_dump_i16(xtlv_t *tlv) { XTLV_DUMP_NUMBER(tlv, i16); }
-static inline void xtlv_dump_i32(xtlv_t *tlv) { XTLV_DUMP_NUMBER(tlv, i32); }
-static inline void xtlv_dump_i64(xtlv_t *tlv) { XTLV_DUMP_NUMBER(tlv, i64); }
-
-static inline void xtlv_dump_string(xtlv_t *tlv) { XTLV_DUMP_STRING(tlv); }
+static inline void xtlv_dump_string(xtlv_t *tlv) { XTLV_DUMP_BY(tlv, "%s", string); }
 
 static inline void 
 xtlv_dump_time(xtlv_t *tlv)
