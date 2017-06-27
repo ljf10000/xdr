@@ -45,28 +45,28 @@ int main(int argc, char *argv[])
     uint32 len = 0;
     int err;
 
-    os_println("read %s ...", filename_tlv);
+    //xtlv_dprint("read %s ...", filename_tlv);
     err = os_readfileall(filename_tlv, &buffer, &len);
     if (err<0) {
         return err;
     }
-    os_println("read %s size:%d", filename_tlv, len);
+    //xtlv_dprint("read %s size:%d", filename_tlv, len);
 
     xblock_t block;
 
-    os_println("init block ...");
+    //xtlv_dprint("init block ...");
     err = xblock_init(&block, buffer, len);
     if (err<0) {
         return err;
     }
-    os_println("init block ok.");
+    //xtlv_dprint("init block ok.");
 
-    os_println("parse block ...");
+    //xtlv_dprint("parse block ...");
     err = xblock_parse(&block);
     if (err<0) {
         return err;
     }
-    os_println("parse block ok.");
+    //xtlv_dprint("parse block ok.");
 
     xblock_release(&block);
     os_free(buffer);
