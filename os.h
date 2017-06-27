@@ -246,7 +246,7 @@
 #endif
 
 #ifndef os_println
-#define os_println(_fmt, _args...)                  os_printf(_fmt __crlf, ##_args)
+#define os_println(_fmt, _args...)                  printf(_fmt __crlf, ##_args)
 #endif
 
 #ifndef os_snprintf

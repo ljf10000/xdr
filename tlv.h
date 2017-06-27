@@ -283,7 +283,7 @@ xtlv_check(xtlv_t *tlv)
     }
 
     uint32 dlen = xtlv_datalen(tlv);
-    if (XTLV_F_FIXED==(XTLV_F_FIXED & tlv->flag)) {
+    if (XTLV_F_FIXED==(XTLV_F_FIXED & ops->flag)) {
         if (ops->maxsize && dlen != ops->maxsize) {
             return -e_xtlv_invalid_object_size;
         }
