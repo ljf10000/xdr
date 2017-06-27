@@ -87,7 +87,7 @@ enum { XTLV_ID_HEADER = 0 };
 
 #define XTLV_MAPPER(_) \
     _(header,               XTLV_ID_HEADER,  XTLV_T_binary,  0, 0, 0, NULL, NULL, NULL) \
-    _(session_state,        1,  XTLV_T_u32,     XTLV_F_FIXED, 0, sizeof(uint32), NULL, NULL, NULL) \
+    _(session_state,        1,  XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL) \
     _(appid,                2,  XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL)  \
     _(session,              3,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_session_t), xtlv_dump_session, NULL, NULL) \
     _(session_st,           4,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_session_st_t), xtlv_dump_session_st, NULL, NULL) \

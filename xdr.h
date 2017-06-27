@@ -248,7 +248,7 @@ typedef struct {
     byte version;   // xdr version
     byte appid;
     byte ip_proto;
-    byte _0;
+    byte session_state;
     
     uint32 total;
     uint32 flag;
