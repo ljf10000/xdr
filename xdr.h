@@ -71,7 +71,9 @@ typedef struct {
     uint32 ip_frag;
     uint32 tcp_disorder;
     uint32 tcp_retransmit;
-    uint32 duration;
+    
+    uint16 duration;
+    uint16 _;
 } xdr_session_st_t, xdr_service_st_t;
 
 typedef xtlv_session_time_t xdr_session_time_t;

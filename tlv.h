@@ -282,8 +282,23 @@ xtlv_error(xtlv_t *tlv, int err)
 {
     if (err<0) {
         xtlv_ops_t *ops = xtlv_ops(tlv->id);
-        
-        xtlv_dprint("tlv name:%s id:%d pad:%d len:%d", ops->name, tlv->id, tlv->pad, xtlv_len(tlv));
+
+        if (XTLV_F_FIXED & ops->flag) {
+            xtlv_dprint("tlv name:%s fixed:%d id:%d pad:%d hlen:%d dlen:%d", 
+                ops->name, 
+                ops->minsize,
+                tlv->id, 
+                tlv->pad, 
+                xtlv_hdrlen(tlv),
+                xtlv_datalen(tlv));
+        } else {
+            xtlv_dprint("tlv name:%s id:%d pad:%d hlen:%d dlen:%d", 
+                ops->name, 
+                tlv->id, 
+                tlv->pad, 
+                xtlv_hdrlen(tlv),
+                xtlv_datalen(tlv));
+        }
     }
 
     return err;
@@ -435,7 +450,8 @@ typedef struct {
     uint32 tcp_disorder[2];
     uint32 tcp_retransmit[2];
     uint32 ip_frag[2];
-    uint32 duration[2];
+    
+    uint16 duration[2];
 } xtlv_session_st_t, xtlv_service_st_t;
 
 static inline void 
