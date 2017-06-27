@@ -933,13 +933,13 @@ xblock_post(xblock_t *block)
     xtlv_t *h;
     int i;
     
-    // xtlv_dprint("xblock post ...");
+    xtlv_dprint("xblock post ...");
     for (i=0, h=(xtlv_t *)block->buffer; 
          i < block->count;
          i++, h=xtlv_next(h)) {
         block->records[i].header = h;
     }
-    // xtlv_dprint("xblock post ok.");
+    xtlv_dprint("xblock post ok.");
 }
 
 static inline int
@@ -948,12 +948,12 @@ xblock_init(xblock_t *block, void *buffer, uint32 len)
     block->buffer   = buffer;
     block->len      = len;
 
-    //xtlv_dprint("xblock pre ...");
+    xtlv_dprint("xblock pre ...");
     int count = xblock_pre(buffer, len);
     if (count<0) {
         return count;
     }
-    //xtlv_dprint("xblock pre ok.");
+    xtlv_dprint("xblock pre ok.");
 
     block->records = (xrecord_t *)os_malloc(count * sizeof(xrecord_t));
     if (NULL==block->records) {
@@ -985,12 +985,12 @@ xblock_parse(xblock_t *block)
     int i, err;
 
     for (i=0; i<block->count; i++) {
-        // xtlv_dprint("xrecord parse:%d ...", i);
+        xtlv_dprint("xrecord parse:%d ...", i);
         err = xrecord_parse(&block->records[i]);
         if (err<0) {
             return err;
         }
-        // xtlv_dprint("xrecord parse:%d ok.", i);
+        xtlv_dprint("xrecord parse:%d ok.", i);
     }
 
     return 0;
