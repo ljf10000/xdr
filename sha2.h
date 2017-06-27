@@ -7,7 +7,7 @@
 typedef struct {
     unsigned int tot_len;
     unsigned int len;
-    unsigned char block[2 * SHA256_BLOCK_SIZE];
+    byte block[2 * SHA256_BLOCK_SIZE];
     uint32 h[8];
 } sha256_ctx;
 
@@ -74,7 +74,7 @@ typedef struct {
 }while(0)
 
 static inline void 
-sha256_transf(sha256_ctx *ctx, const unsigned char *message, unsigned int block_nb)
+sha256_transf(sha256_ctx *ctx, const byte *message, unsigned int block_nb)
 {
     static uint32 sha256_k[64] =
             {0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
@@ -97,7 +97,7 @@ sha256_transf(sha256_ctx *ctx, const unsigned char *message, unsigned int block_
     uint32 w[64];
     uint32 wv[8];
     uint32 t1, t2;
-    const unsigned char *sub_block;
+    const byte *sub_block;
     int i;
 
     for (i = 0; i < (int) block_nb; i++) {
@@ -187,11 +187,11 @@ sha256_init(sha256_ctx *ctx)
 }
 
 static inline void
-sha256_update(sha256_ctx *ctx, const unsigned char *message, unsigned int len)
+sha256_update(sha256_ctx *ctx, const byte *message, unsigned int len)
 {
     unsigned int block_nb;
     unsigned int new_len, rem_len, tmp_len;
-    const unsigned char *shifted_message;
+    const byte *shifted_message;
 
     tmp_len = SHA256_BLOCK_SIZE - ctx->len;
     rem_len = len < tmp_len ? len : tmp_len;
@@ -221,7 +221,7 @@ sha256_update(sha256_ctx *ctx, const unsigned char *message, unsigned int len)
 }
 
 static inline void
-sha256_final(sha256_ctx *ctx, unsigned char digest[SHA256_DIGEST_SIZE])
+sha256_final(sha256_ctx *ctx, byte digest[SHA256_DIGEST_SIZE])
 {
     unsigned int block_nb;
     unsigned int pm_len;
@@ -250,7 +250,7 @@ sha256_final(sha256_ctx *ctx, unsigned char digest[SHA256_DIGEST_SIZE])
 }
 
 static inline void 
-sha256(const unsigned char *message, unsigned int len, unsigned char digest[SHA256_DIGEST_SIZE])
+sha256(const byte *message, unsigned int len, byte digest[SHA256_DIGEST_SIZE])
 {
     sha256_ctx ctx;
 

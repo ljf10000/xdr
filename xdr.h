@@ -271,14 +271,36 @@ typedef struct {
 } 
 xdr_proto_t;
 
+enum { XDR_COOKIE_SIZE = 60 };
+
+enum {
+    XFILE_FILE              = 0x01,
+    XFILE_HTTP_REQUEST      = 0x02,
+    XFILE_HTTP_RESPONSE     = 0x04,
+};
+
 typedef struct {
-    uint32 total;   // xdr_proto_t
+    uint32 total;   // cookie size, cookie is the small file
+    uint32 flag;
+    byte digest[SHA256_DIGEST_SIZE];
+    byte _[XDR_COOKIE_SIZE - 2*sizeof(uint32) - SHA256_DIGEST_SIZE];
     
-} xdr_file_header_t;
+    byte body[0];
+} xdr_cookie_t;
 
 typedef struct {
     
-} xdr_file_t;
+} xdr_frag_t;
+
+/*
+* file      := count + proto + cookies
+* cookies   := cookie ...
+*/
+typedef struct {
+    uint32 count;   // cookie count
+    
+    xdr_proto_t proto[0];
+} xfile_t;
 
 typedef struct {
     xdr_proto_t *proto;
