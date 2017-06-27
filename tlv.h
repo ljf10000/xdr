@@ -214,39 +214,6 @@ struct xtlv_st {
     } d;
 };
 
-static inline int
-xtlv_ops_check(xtlv_t *tlv)
-{
-    xtlv_ops_t *ops = xtlv_ops(tlv->id);
-    if (NULL==ops) {
-        return -e_xtlv_invalid_id;
-    }
-
-    if (xtlv_len(tlv) < xtlv_hdrlen(tlv)) {
-        return -e_xtlv_too_small;
-    }
-
-    if (ops->check) {
-        return (*ops->check)(tlv);
-    }
-
-    uint32 dlen = xtlv_datalen(tlv);
-    if (XTLV_F_FIXED==(XTLV_F_FIXED & tlv->flag)) {
-        if (ops->maxsize && dlen != ops->maxsize) {
-            return -e_xtlv_invalid_object_size;
-        }
-    } else {
-        if (ops->minsize && dlen < ops->minsize) {
-            return -e_xtlv_too_small;
-        }
-        else if (ops->maxsize && dlen > ops->maxsize) {
-            return -e_xtlv_too_big;
-        }
-    }
-
-    return 0;
-}
-
 #define xtlv_extend(_tlv)       (_tlv)->h.e.e
 
 #define xtlv_data_n(_tlv)       (_tlv)->d.data
@@ -298,6 +265,39 @@ xtlv_ops_check(xtlv_t *tlv)
 #define xtlv_http(_tlv)         (xtlv_http_t *)xtlv_data(_tlv)
 #define xtlv_sip(_tlv)          (xtlv_sip_t *)xtlv_data(_tlv)
 #define xtlv_rtsp(_tlv)         (xtlv_rtsp_t *)xtlv_data(_tlv)
+
+static inline int
+xtlv_check(xtlv_t *tlv)
+{
+    xtlv_ops_t *ops = xtlv_ops(tlv->id);
+    if (NULL==ops) {
+        return -e_xtlv_invalid_id;
+    }
+
+    if (xtlv_len(tlv) < xtlv_hdrlen(tlv)) {
+        return -e_xtlv_too_small;
+    }
+
+    if (ops->check) {
+        return (*ops->check)(tlv);
+    }
+
+    uint32 dlen = xtlv_datalen(tlv);
+    if (XTLV_F_FIXED==(XTLV_F_FIXED & tlv->flag)) {
+        if (ops->maxsize && dlen != ops->maxsize) {
+            return -e_xtlv_invalid_object_size;
+        }
+    } else {
+        if (ops->minsize && dlen < ops->minsize) {
+            return -e_xtlv_too_small;
+        }
+        else if (ops->maxsize && dlen > ops->maxsize) {
+            return -e_xtlv_too_big;
+        }
+    }
+
+    return 0;
+}
 
 #define XTLV_DUMP(_fmt, _args...)       os_println(__tab _fmt, ##_args)
 #define XTLV_DUMP2(_fmt, _args...)      os_println(__tab2 _fmt, ##_args)
@@ -805,7 +805,7 @@ __xrecord_parse(xrecord_t *x, xtlv_t *tlv, uint32 left)
 {
     int err = 0;
 
-    err = xtlv_ops_check(tlv);
+    err = xtlv_check(tlv);
     if (err<0) {
         return err;
     }

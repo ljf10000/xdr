@@ -62,7 +62,7 @@ enum {
 
 typedef void os_dump_line_f(char *line);
 
-#define os_dump_printf(_fmt, _args...)  os_printf(_fmt, ##_args)
+#define os_dump_printf(_fmt, _args...)      printf(_fmt, ##_args)
 
 static inline void
 __os_dump_line(int line, byte *raw, int len, os_dump_line_f *dump_line)
