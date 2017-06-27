@@ -284,18 +284,20 @@ xtlv_error(xtlv_t *tlv, int err)
         xtlv_ops_t *ops = xtlv_ops(tlv->id);
 
         if (XTLV_F_FIXED & ops->flag) {
-            xtlv_dprint("tlv name:%s fixed:%d id:%d pad:%d hlen:%d dlen:%d", 
+            xtlv_dprint("tlv name:%s fixed:%d id:%d pad:%d alen:%d hlen:%d dlen:%d", 
                 ops->name, 
                 ops->maxsize,
                 tlv->id, 
                 tlv->pad, 
+                xtlv_len(tlv),
                 xtlv_hdrlen(tlv),
                 xtlv_datalen(tlv));
         } else {
-            xtlv_dprint("tlv name:%s id:%d pad:%d hlen:%d dlen:%d", 
+            xtlv_dprint("tlv name:%s id:%d pad:%d alen:%d hlen:%d dlen:%d", 
                 ops->name, 
                 tlv->id, 
                 tlv->pad, 
+                xtlv_len(tlv),
                 xtlv_hdrlen(tlv),
                 xtlv_datalen(tlv));
         }
@@ -564,6 +566,8 @@ typedef struct {
     xdr_time_t time_last_content;
     uint64 service_delay;
     
+    uint32 content_length;
+    
     uint16 status_code;
     byte method;
     byte version;
@@ -595,6 +599,7 @@ xtlv_dump_http(xtlv_t *tlv)
     XTLV_DUMP2("time_first_response : %s", os_time_string(xdr_time_second(obj->time_first_response)));
     XTLV_DUMP2("time_last_content   : %s", os_time_string(xdr_time_second(obj->time_last_content)));
     XTLV_DUMP2("service_delay       : %llu us", obj->service_delay);
+    XTLV_DUMP2("content_length      : %u", obj->content_length);
     XTLV_DUMP2("status_code         : %u", obj->status_code);
     XTLV_DUMP2("method              : %u", obj->method);
     XTLV_DUMP2("version             : %u", obj->version);

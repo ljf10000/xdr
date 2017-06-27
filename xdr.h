@@ -94,6 +94,8 @@ typedef struct {
     uint64 time_last_content;
     uint64 service_delay;
     
+    uint32 content_length;
+    
     uint16 status_code;
     byte method;
     byte version;
