@@ -291,8 +291,6 @@ xtlv_error(xtlv_t *tlv, int err)
 static inline int
 xtlv_check(xtlv_t *tlv)
 {
-    int err;
-    
     xtlv_ops_t *ops = xtlv_ops(tlv->id);
     if (NULL==ops) {
         return xtlv_error(tlv, -e_xtlv_invalid_id);
@@ -303,9 +301,7 @@ xtlv_check(xtlv_t *tlv)
     }
 
     if (ops->check) {
-        err = (*ops->check)(tlv);
-        
-        return xtlv_error(tlv, err);
+        return xtlv_error(tlv, (*ops->check)(tlv));
     }
 
     uint32 dlen = xtlv_datalen(tlv);
