@@ -45,6 +45,8 @@ int main(int argc, char *argv[])
     uint32 len = 0;
     int err;
 
+    xtlv_dprint("parse %s ...", filename_tlv);
+
     //xtlv_dprint("read %s ...", filename_tlv);
     err = os_readfileall(filename_tlv, &buffer, &len);
     if (err<0) {
@@ -70,6 +72,8 @@ int main(int argc, char *argv[])
 
     xblock_release(&block);
     os_free(buffer);
+    
+    xtlv_dprint("parse %s ok.", filename_tlv);
     
     return 0;
 }
