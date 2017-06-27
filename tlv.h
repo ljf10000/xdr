@@ -286,7 +286,7 @@ xtlv_error(xtlv_t *tlv, int err)
         if (XTLV_F_FIXED & ops->flag) {
             xtlv_dprint("tlv name:%s fixed:%d id:%d pad:%d hlen:%d dlen:%d", 
                 ops->name, 
-                ops->minsize,
+                ops->maxsize,
                 tlv->id, 
                 tlv->pad, 
                 xtlv_hdrlen(tlv),
