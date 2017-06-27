@@ -282,7 +282,7 @@ xtlv_error(xtlv_t *tlv, int err)
     if (err<0) {
         xtlv_ops_t *ops = xtlv_ops(tlv->id);
         
-        xtlv_dprint("tlv name:%s id:%d len:%d", ops->name, tlv->id, xtlv_len(tlv));
+        xtlv_dprint("tlv name:%s id:%d pad:%d len:%d", ops->name, tlv->id, tlv->pad, xtlv_len(tlv));
     }
 
     return err;
