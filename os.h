@@ -285,7 +285,7 @@ os_time_string(time_t t)
 {
     static char current[1+sizeof("1900-01-01#00:00:00")];
 
-    struct tm *tm = gmtime(&t)
+    struct tm *tm = gmtime(&t);
 
     os_saprintf(current, "%04d-%02d-%02d#%02d:%02d:%02d",
                 1900 + tm->tm_year,
