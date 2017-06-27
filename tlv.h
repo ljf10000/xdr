@@ -844,6 +844,7 @@ xblock_pre(void *buffer, uint32 left)
     uint32 count = 0;
 
     while(left > 0) {
+        os_println("tlv len:%d left:%d", xtlv_len(h), left);
         count++;
         
         if (left < xtlv_hdrlen(h)) {
@@ -871,10 +872,12 @@ xblock_init(xblock_t *block, void *buffer, uint32 len)
     block->buffer   = buffer;
     block->len      = len;
 
+    os_println("xblock pre ...");
     count = xblock_pre(buffer, len);
     if (count<0) {
         return count;
     }
+    os_println("xblock pre ok.");
 
     block->records = (xrecord_t **)os_malloc(count * sizeof(xrecord_t *));
     if (NULL==block->records) {

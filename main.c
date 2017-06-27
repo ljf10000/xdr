@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
     if (err<0) {
         return err;
     }
-    os_println("read %s ok.", filename_tlv);
+    os_println("read %s size:%d", filename_tlv, len);
 
     xblock_t block;
 
