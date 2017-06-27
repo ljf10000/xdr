@@ -396,7 +396,7 @@ xtlv_dump_ip4(xtlv_t *tlv)
     xtlv_ops_t *ops = xtlv_ops(tlv->id);
 
     uint32 ip = xtlv_ip4(tlv);
-    ip = htonl(ip);
+    // ip = htonl(ip);
     
     XTLV_DUMP("id:%d, %s: %s", tlv->id, ops->name, os_ipstring(ip));
 }
