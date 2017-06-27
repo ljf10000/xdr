@@ -284,7 +284,7 @@ xtlv_error(xtlv_t *tlv, int err)
         xtlv_ops_t *ops = xtlv_ops(tlv->id);
 
         if (XTLV_F_FIXED & ops->flag) {
-            xtlv_dprint("tlv name:%s fixed:%d id:%d pad:%d alen:%d hlen:%d dlen:%d", 
+            os_println("tlv name:%s fixed:%d id:%d pad:%d alen:%d hlen:%d dlen:%d", 
                 ops->name, 
                 ops->maxsize,
                 tlv->id, 
@@ -293,7 +293,7 @@ xtlv_error(xtlv_t *tlv, int err)
                 xtlv_hdrlen(tlv),
                 xtlv_datalen(tlv));
         } else {
-            xtlv_dprint("tlv name:%s id:%d pad:%d alen:%d hlen:%d dlen:%d", 
+            os_println("tlv name:%s id:%d pad:%d alen:%d hlen:%d dlen:%d", 
                 ops->name, 
                 tlv->id, 
                 tlv->pad, 
@@ -933,13 +933,13 @@ xblock_post(xblock_t *block)
     xtlv_t *h;
     int i;
     
-    xtlv_dprint("xblock cache ...");
+    // xtlv_dprint("xblock post ...");
     for (i=0, h=(xtlv_t *)block->buffer; 
          i < block->count;
          i++, h=xtlv_next(h)) {
         block->records[i].header = h;
     }
-    xtlv_dprint("xblock cache ok.");
+    // xtlv_dprint("xblock post ok.");
 }
 
 static inline int
@@ -948,12 +948,12 @@ xblock_init(xblock_t *block, void *buffer, uint32 len)
     block->buffer   = buffer;
     block->len      = len;
 
-    xtlv_dprint("xblock pre ...");
+    //xtlv_dprint("xblock pre ...");
     int count = xblock_pre(buffer, len);
     if (count<0) {
         return count;
     }
-    xtlv_dprint("xblock pre ok.");
+    //xtlv_dprint("xblock pre ok.");
 
     block->records = (xrecord_t *)os_malloc(count * sizeof(xrecord_t));
     if (NULL==block->records) {
@@ -988,8 +988,6 @@ xblock_parse(xblock_t *block)
         // xtlv_dprint("xrecord parse:%d ...", i);
         err = xrecord_parse(&block->records[i]);
         if (err<0) {
-            xtlv_dprint("xrecord parse:%d error:%d", i, err);
-            
             return err;
         }
         // xtlv_dprint("xrecord parse:%d ok.", i);
