@@ -308,6 +308,13 @@ is_option_args(char *args)
     return args && args[0] && args[1] && args[2] && '-'==args[0] && '-'==args[1];
 }
 
+typedef FILE* STREAM;
+
+#define os_fopen(_file, _mode)      fopen(_file, _mode)
+#define os_feof(_stream)            (_stream?!!feof(_stream):true)
+#define os_fflush(_stream)          fflush(_stream)
+#define os_ferror(_stream)          ferror(_stream)
+#define os_fdopen(_fd, _flag)       fdopen(_fd, _flag)
 
 static inline int
 os_fsize(const char *file)
@@ -324,17 +331,35 @@ os_fsize(const char *file)
 }
 
 static inline int
+os_fread(STREAM stream, void *buf, int size)
+{
+    int err = fread(buf, 1, size, stream);
+
+    return (err<0)?-errno:err;
+}
+
+static inline int
+os_fwrite(STREAM stream, const void *buf, int size)
+{
+    int err = fwrite(buf, 1, size, stream);
+    
+    os_fflush(stream);
+    
+    return (err<0)?-errno:err;
+}
+
+static inline int
 os_readfile(const char *file, void *buf, int size)
 {
-    FILE *f = NULL;
+    STREAM f = NULL;
     int err = 0;
 
-    f = fopen(file, "r");
+    f = os_fopen(file, "r");
     if (NULL==f) {
         err = -errno; goto error;
     }
 
-    int len = fread(f, buf, size);
+    int len = os_fread(f, buf, size);
     if (size!=len) {
         err = -errno; goto error;
     }
