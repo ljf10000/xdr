@@ -315,10 +315,10 @@ typedef struct {
     uint32 hash;
     uint32 flag;
     byte digest[XDR_DIGEST_SIZE];
-    byte _[8];      // keep sizeof(xdr_file_header_t) == 60
+    byte _[8];      // keep sizeof(xdr_cookie_t) == 60
     
     byte body[0];
-} xdr_file_header_t;
+} xdr_cookie_t;
 
 /*
 * file      := count + proto + cookies
@@ -328,7 +328,7 @@ typedef struct {
     uint32 count;   // cookie count
     
     xdr_proto_t proto[0];
-} xfile_t;
+} xdr_local_file_t;
 
 typedef struct {
     xdr_proto_t *proto;
@@ -395,7 +395,7 @@ xb_expand(xdr_buffer_t *x, uint32 size)
     if (false==xb_enought(x, size)) {
         uint32 expand = os_max(XDR_EXPAND, size);
         
-        x->u.buffer = os_realloc(x->size + expand);
+        x->u.buffer = os_realloc(x->u.buffer, x->size + expand);
         if (NULL==x->u.buffer) {
             return -ENOMEM;
         }

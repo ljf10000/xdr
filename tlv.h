@@ -280,7 +280,10 @@ typedef struct {
 
 #define XTLV_OPS_ENUM(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr)  xtlv_id_##_name = _id,
 enum { XTLV_MAPPER(XTLV_OPS_ENUM) xtlv_id_end };
+
+// just for source insight
 #define xtlv_id_header  xtlv_id_header
+#define xtlv_id_end     xtlv_id_end
 
 #define XTLV_OPS_STRUCT(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr) [_id] = { \
     .id     = _id,      \
@@ -295,12 +298,13 @@ enum { XTLV_MAPPER(XTLV_OPS_ENUM) xtlv_id_end };
 },  /* end */
 #define DECLARE_XTLV_VARS \
     uint32 __xtlv_opt; \
+    uint32 xdr_seq; \
     xtlv_ops_t __xtlv_ops[xtlv_id_end] = { XTLV_MAPPER(XTLV_OPS_STRUCT) }; \
     os_extern_unused_var /* end */
 
 extern xtlv_ops_t __xtlv_ops[];
 extern uint32 __xtlv_opt;
-
+extern uint32 xdr_seq;
 
 enum {
     XTLV_OPT_DUMP = 0x01,
