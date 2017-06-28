@@ -269,12 +269,11 @@ typedef struct {
     xtlv_mapper_binary(_,   204, ssl_server_cert) \
     xtlv_mapper_binary(_,   205, ssl_client_cert) \
     xtlv_mapper_u8(_,       206, ssl_fail_reason) \
-    \
-    xtlv_mapper_nothing(_,  207, end) \
     /* end */
 
 #define XTLV_OPS_ENUM(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr)  xtlv_id_##_name = _id,
-enum { XTLV_MAPPER(XTLV_OPS_ENUM) };
+enum { XTLV_MAPPER(XTLV_OPS_ENUM) xtlv_id_end };
+#define xtlv_id_header  xtlv_id_header
 
 #define XTLV_OPS_STRUCT(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr) [_id] = { \
     .id     = _id,      \
@@ -289,14 +288,12 @@ enum { XTLV_MAPPER(XTLV_OPS_ENUM) };
 },  /* end */
 #define DECLARE_XTLV_VARS \
     uint32 __xtlv_opt; \
-    xtlv_ops_t __xtlv_ops[207] = { XTLV_MAPPER(XTLV_OPS_STRUCT) }; \
+    xtlv_ops_t __xtlv_ops[xtlv_id_end] = { XTLV_MAPPER(XTLV_OPS_STRUCT) }; \
     os_extern_unused_var /* end */
 
 extern xtlv_ops_t __xtlv_ops[];
 extern uint32 __xtlv_opt;
 
-#define xtlv_id_header      xtlv_id_header
-#define xtlv_id_end         xtlv_id_end
 
 enum {
     XTLV_OPT_DUMP = 0x01,
