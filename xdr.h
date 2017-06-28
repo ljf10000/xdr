@@ -669,5 +669,365 @@ xdr_parse(XDR_OUT xdr_msg_t *msg, XDR_IN xdr_buffer_t *x)
     return 0;
 }
 
+static inline int
+xtlv_to_xdr_session_state(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_appid(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_session(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_session_st(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_session_time(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_service_st(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_tcp(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_first_response_delay(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_L7(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_http(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_http_host(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_http_url(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_http_host_xonline(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_http_user_agent(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_http_content(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_http_refer(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_http_cookie(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_http_location(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_sip(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_sip_calling_number(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_sip_called_number(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_sip_session_id(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_rtsp(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_rtsp_url(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_rtsp_user_agent(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_rtsp_server_ip(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_ftp_status(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_ftp_user(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_ftp_pwd(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_ftp_trans_mode(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_ftp_trans_type(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_ftp_filename(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_ftp_filesize(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_ftp_response_delay(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_ftp_trans_time(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_mail_msg_type(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_mail_status_code(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_mail_user(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_mail_sender(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_mail_length(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_mail_domain(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_mail_recver(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_mail_hdr(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_mail_acs_type(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_dns_domain(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_dns_ip_count(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_dns_ip4(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_dns_ip6(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_dns_response_code(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_dns_count_request(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_dns_count_response_record(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_dns_count_response_auth(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_dns_count_response_extra(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_dns_delay(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_http_request(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_http_response(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_file_content(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_ssl_server_cert(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_ssl_client_cert(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
+static inline int
+xtlv_to_xdr_ssl_fail_reason(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return 0;
+}
+
 /******************************************************************************/
 #endif /* __XDR_H_049defbc41a4441e855ee0479dad96eb__ */

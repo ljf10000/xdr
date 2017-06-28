@@ -6,7 +6,7 @@ char *self;
 
 int usage(void)
 {
-    os_println("%s [OPTION] old-xdr-file new-xdr-file", self);
+    os_println("%s [OPTION] input-file prefix", self);
     os_println(__tab "OPTION:");
     os_println(__tab "--dump: dump all");
 
@@ -38,21 +38,21 @@ int main(int argc, char *argv[])
         return usage();
     }
 
-    char *filename_tlv = argv[0];
-    char *filename_xdr = argv[1];
+    char *input     = argv[0];
+    char *prefix    = argv[1];
 
     char *buffer = NULL;
     uint32 len = 0;
     int err;
 
-    xtlv_dprint("parse %s ...", filename_tlv);
+    xtlv_dprint("parse %s ...", input);
 
-    xtlv_dprint("read %s ...", filename_tlv);
-    err = os_readfileall(filename_tlv, &buffer, &len);
+    xtlv_dprint("read %s ...", input);
+    err = os_readfileall(input, &buffer, &len);
     if (err<0) {
         return err;
     }
-    xtlv_dprint("read %s size:%d", filename_tlv, len);
+    xtlv_dprint("read %s size:%d", input, len);
 
     xblock_t block;
 
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     os_free(buffer);
     xtlv_dprint("release buffer ok.");
 
-    xtlv_dprint("parse %s ok.", filename_tlv);
+    xtlv_dprint("parse %s ok.", input);
     
     return 0;
 }
