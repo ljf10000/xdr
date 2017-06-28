@@ -457,6 +457,54 @@ xtlv_error(xtlv_t *tlv, int err)
 }
 
 static inline int
+xtlv_check_fixed(xtlv_t *tlv)
+{
+    xtlv_ops_t *ops = xtlv_ops(tlv->id);
+    uint32 dlen = xtlv_datalen(tlv);
+    
+    switch (ops->type) {
+        case XTLV_T_u8:
+        case XTLV_T_i8:
+            if (0 != dlen) {
+                return xtlv_error(tlv, -e_xtlv_invalid_short_size);
+            }
+            
+            break;
+        case XTLV_T_u16:
+        case XTLV_T_i16:
+            if (sizeof(uint32) != dlen) {
+                return xtlv_error(tlv, -e_xtlv_invalid_short_size);
+            }
+
+            break;
+        default:
+            if (dlen != ops->maxsize) {
+                return xtlv_error(tlv, -e_xtlv_invalid_object_size);
+            }
+
+            break;
+    }
+
+    return 0;
+}
+
+static inline int
+xtlv_check_dynamic(xtlv_t *tlv)
+{
+    xtlv_ops_t *ops = xtlv_ops(tlv->id);
+    uint32 dlen = xtlv_datalen(tlv);
+    
+    if (ops->minsize && dlen < ops->minsize) {
+        return xtlv_error(tlv, -e_xtlv_too_small);
+    }
+    else if (ops->maxsize && dlen > ops->maxsize) {
+        return xtlv_error(tlv, -e_xtlv_too_big);
+    }
+
+    return 0;
+}
+
+static inline int
 xtlv_check(xtlv_t *tlv)
 {
     xtlv_ops_t *ops = xtlv_ops(tlv->id);
@@ -472,41 +520,12 @@ xtlv_check(xtlv_t *tlv)
         return xtlv_error(tlv, (*ops->check)(tlv));
     }
 
-    uint32 dlen = xtlv_datalen(tlv);
-    if (XTLV_F_FIXED==(XTLV_F_FIXED & ops->flag)) {
-        switch (ops->type) {
-            case XTLV_T_u8:
-            case XTLV_T_i8:
-                if (0 != dlen) {
-                    return xtlv_error(tlv, -e_xtlv_invalid_short_size);
-                }
-                
-                break;
-            case XTLV_T_u16:
-            case XTLV_T_i16:
-                if (sizeof(uint32) != dlen) {
-                    return xtlv_error(tlv, -e_xtlv_invalid_short_size);
-                }
-
-                break;
-            default:
-                if (dlen != ops->maxsize) {
-                    return xtlv_error(tlv, -e_xtlv_invalid_object_size);
-                }
-
-                break;
-        }
-    } 
-    else {
-        if (ops->minsize && dlen < ops->minsize) {
-            return xtlv_error(tlv, -e_xtlv_too_small);
-        }
-        else if (ops->maxsize && dlen > ops->maxsize) {
-            return xtlv_error(tlv, -e_xtlv_too_big);
-        }
+    // use default checker
+    if (XTLV_F_FIXED & ops->flag) {
+        return xtlv_check_fixed(tlv);
+    } else {
+        return xtlv_check_dynamic(tlv);
     }
-
-    return 0;
 }
 
 #define XTLV_DUMP(_fmt, _args...)       os_println(__tab _fmt, ##_args)
