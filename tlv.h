@@ -111,7 +111,7 @@ static inline int xtlv_to_xdr_session_state(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_appid(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_session(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_session_st(xdr_buffer_t *x, xtlv_t *tlv);
-#define xtlv_to_xdr_service_st xtlv_to_xdr_session_st
+static inline int xtlv_to_xdr_service_st(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_session_time(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_tcp(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_first_response_delay(xdr_buffer_t *x, xtlv_t *tlv);
@@ -190,7 +190,7 @@ typedef struct {
 #define xtlv_mapper_object(_mapper, _id, _name) \
     _mapper(_name, _id, XTLV_T_object, XTLV_F_FIXED, 0, sizeof(xtlv_##_name##_t), xtlv_dump_##_name, NULL, xtlv_to_xdr_##_name)
 #define xtlv_mapper_nothing(_mapper, _id, _name) \
-    _mapper(_name, _id, XTLV_T_binary, 0, 0, 0, NULL, NULL, NULL)
+    _mapper(_name, _id, XTLV_T_string, 0, 0, 0, NULL, NULL, NULL)
 
 #define xtlv_mapper_u8( _mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, u8)
 #define xtlv_mapper_u16(_mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, u16)
@@ -277,8 +277,13 @@ typedef struct {
 enum { XTLV_MAPPER(XTLV_OPS_ENUM) xtlv_id_end };
 
 // just for source insight
-#define xtlv_id_header  xtlv_id_header
-#define xtlv_id_end     xtlv_id_end
+#define xtlv_id_header          xtlv_id_header
+#define xtlv_id_file_content    xtlv_id_file_content
+#define xtlv_id_http_request    xtlv_id_http_request
+#define xtlv_id_http_response   xtlv_id_http_response
+#define xtlv_id_ssl_server_cert xtlv_id_ssl_server_cert
+#define xtlv_id_ssl_client_cert xtlv_id_ssl_client_cert
+#define xtlv_id_end             xtlv_id_end
 
 #define XTLV_OPS_STRUCT(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr) [_id] = { \
     .id     = _id,      \
@@ -591,10 +596,14 @@ static inline void
 xtlv_dump_binary(xtlv_t *tlv)
 {
     xtlv_ops_t *ops = xtlv_ops(tlv->id);
-    
-    XTLV_DUMP("id: %d, %s:", tlv->id, ops->name);
 
-    os_dump_buffer(xtlv_binary(tlv), xtlv_datalen(tlv));
+    if (is_xtlv_opt_file_as_path()) {
+        XTLV_DUMP("id: %d, %s: %s", tlv->id, ops->name, xtlv_string(tlv));
+    } else {
+        XTLV_DUMP("id: %d, %s:", tlv->id, ops->name);
+
+        os_dump_buffer(xtlv_binary(tlv), xtlv_datalen(tlv));
+    }
 }
 
 enum { XDR_SESSION_IPV4 = 0 };
@@ -649,7 +658,7 @@ typedef struct {
     uint32 ip_frag[2];
     
     uint16 duration[2];
-} xtlv_session_st_t, xtlv_service_st_t;
+} xtlv_session_st_t, xtlv_service_st_t, xdr_session_st_t, xdr_service_st_t;
 
 static inline void 
 xtlv_dump_session_st(xtlv_t *tlv)
@@ -872,7 +881,9 @@ xtlv_dump_rtsp(xtlv_t *tlv)
     XTLV_DUMP2("describe_delay      : %u", obj->describe_delay);
 }
 
-enum { XCACHE_EXPAND = 32 };
+#ifndef XCACHE_EXPAND_COUNT
+#define XCACHE_EXPAND_COUNT     32
+#endif
 
 typedef struct {
     xtlv_t *tlv;
@@ -893,12 +904,12 @@ xcache_expand(xcache_t *cache)
     if (NULL==cache->multi) {
         xtlv_dprint("init record multi ...");
         
-        cache->multi = (xtlv_t **)os_calloc(XCACHE_EXPAND, sizeof(xtlv_t *));
+        cache->multi = (xtlv_t **)os_calloc(XCACHE_EXPAND_COUNT, sizeof(xtlv_t *));
         if (NULL==cache->multi) {
             return -ENOMEM;
         }
         cache->current = 0;
-        cache->count = XCACHE_EXPAND;
+        cache->count = XCACHE_EXPAND_COUNT;
         
         xtlv_dprint("init record multi ok.");
     }
@@ -906,11 +917,11 @@ xcache_expand(xcache_t *cache)
     if (cache->current == cache->count) {
         xtlv_dprint("expand record multi ...");
         
-        cache->multi = (xtlv_t **)os_realloc(cache->multi, (cache->count + XCACHE_EXPAND) * sizeof(xtlv_t *));
+        cache->multi = (xtlv_t **)os_realloc(cache->multi, (cache->count + XCACHE_EXPAND_COUNT) * sizeof(xtlv_t *));
         if (NULL==cache->multi) {
             return -ENOMEM;
         }
-        cache->count += XCACHE_EXPAND;
+        cache->count += XCACHE_EXPAND_COUNT;
         
         xtlv_dprint("expand record multi ok.");
     }
@@ -954,6 +965,16 @@ typedef struct {
     
     xcache_t cache[xtlv_id_end];
 } xrecord_t;
+
+static inline bool
+is_xrecord_normal(xrecord_t *record)
+{
+    return NULL==record->cache[xtlv_id_file_content].tlv
+        && NULL==record->cache[xtlv_id_http_request].tlv
+        && NULL==record->cache[xtlv_id_http_response].tlv
+        && NULL==record->cache[xtlv_id_ssl_server_cert].tlv
+        && NULL==record->cache[xtlv_id_ssl_client_cert].tlv
+}
 
 static inline int
 xrecord_release(xrecord_t *record)

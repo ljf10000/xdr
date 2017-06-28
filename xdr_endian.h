@@ -257,7 +257,7 @@ xdr_session_time_ntoh(xdr_session_time_t *p)
 static inline void
 xdr_proto_ntoh(xdr_proto_t *p) 
 {
-    XDR_NTOH32(p->offsetof_session_time);
+    XDR_NTOH32(p->offsetof_session);
     XDR_NTOH32(p->offsetof_session_st);
     XDR_NTOH32(p->offsetof_service_st);
     XDR_NTOH32(p->offsetof_alert);
@@ -269,15 +269,16 @@ xdr_proto_ntoh(xdr_proto_t *p)
 
     XDR_NTOH16(p->L7.protocol);
 
+    XDR_NTOH32(p->bkdr);
     XDR_NTOH32(p->total);
     XDR_NTOH32(p->flag);
+    XDR_NTOH32(p->first_response_delay);
 
     XDR_NTOH32(p->ip_src);
     XDR_NTOH32(p->ip_dst);
     XDR_NTOH16(p->port_src);
     XDR_NTOH16(p->port_dst);
 
-    XDR_NTOH32(p->first_response_delay);
 }
 #else
 #define xdr_proto_ntoh(_p) os_do_nothing()

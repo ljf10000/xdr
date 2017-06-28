@@ -3,13 +3,15 @@
 /******************************************************************************/
 #include "tlv.h"
 /******************************************************************************/
-#define XDR_IN
-#define XDR_OUT
-#define XDR_INOUT
+#ifndef XDR_VERSION
+#define XDR_VERSION     0
+#endif
+
+#ifndef XDR_EXPAND
+#define XDR_EXPAND      (32*1024)
+#endif
 
 #define XDR_ALIGN(x)    OS_ALIGN(x, 4)
-
-enum { XDR_EXPAND = 32*1024 };
 
 static inline void *
 xdr_strcpy(void *dst, void *src, uint32 size)
@@ -20,10 +22,6 @@ xdr_strcpy(void *dst, void *src, uint32 size)
     
     return p;
 }
-
-enum {
-    XDR_F_IPV6  = 0x0001,
-};
 
 typedef struct {
     /*
@@ -71,23 +69,6 @@ typedef union {
 
     void *session;
 } xdr_session_t;
-
-typedef struct {
-    uint32 flow;
-    uint32 ip_packet;
-    uint32 ip_frag;
-    uint32 tcp_disorder;
-    uint32 tcp_retransmit;
-    
-    uint16 duration;
-    uint16 _;
-} xdr_session_st_t, xdr_service_st_t;
-
-static inline xdr_session_time_t *
-alloc_xdr_session_time(xdr_buffer_t *x)
-{
-    return NULL;
-}
 
 enum { XDR_DIGEST_SIZE = SHA256_DIGEST_SIZE };
 
@@ -260,8 +241,16 @@ enum {
 typedef struct {
     byte type;  // XDR_ALERT_END
     byte _[3];
-    
 } xdr_alert_t;
+
+enum {
+    XDR_F_IPV6              = 0x0001,
+    XDR_F_FILE              = 0x0002,
+    XDR_F_HTTP_REQUEST      = 0x0004,
+    XDR_F_HTTP_RESPONSE     = 0x0008,
+    XDR_F_SSL_SERVER_CERT   = 0x0010,
+    XDR_F_SSL_CLIENT_CERT   = 0x0020,
+};
 
 typedef struct {
     byte version;   // xdr version
@@ -269,16 +258,19 @@ typedef struct {
     byte ip_proto;
     byte session_state;
 
+    xdr_time_t session_time_create;
+    xdr_time_t session_time_start;
+    xdr_time_t session_time_stop;
+    
     bkdr_t bkdr;
 
-    uint32 total;
-    uint32 flag;
+    uint32 total;   // total size
+    uint32 flag;    // XDR_F_XXX
     uint32 first_response_delay;
 
     uint32 offsetof_session;
-    uint32 offsetof_session_time;
-    uint32 offsetof_session_st; // up && down
-    uint32 offsetof_service_st; // up && down
+    uint32 offsetof_session_st;
+    uint32 offsetof_service_st;
     uint32 offsetof_alert;
     uint32 offsetof_file_content;
     // tcp
@@ -289,6 +281,8 @@ typedef struct {
     uint32 offsetof_L6;
 
     xdr_L7_t L7;
+
+    byte body[0];
 } 
 xdr_proto_t;
 
@@ -298,18 +292,11 @@ xdr_proto_obj(xdr_proto_t *proto, uint32 offset)
     return (byte *)proto + offset;
 }
 
-
-enum {
-    XFILE_FILE              = 0x01,
-    XFILE_HTTP_REQUEST      = 0x02,
-    XFILE_HTTP_RESPONSE     = 0x04,
-};
-
 typedef struct {
     uint64 offset;
     uint32 size;    // cookie size, cookie is the small file
     uint32 hash;
-    uint32 flag;
+    uint32 flag;    // XDR_F_XXX
     byte digest[XDR_DIGEST_SIZE];
     byte _[8];      // keep sizeof(xdr_cookie_t) == 60
     
@@ -451,20 +438,6 @@ xb_pre_array(xdr_buffer_t *x, xdr_array_t *a, uint32 type, uint32 size, uint32 c
     return a;
 }
 
-static inline xdr_file_t *
-xb_pre_file(xdr_buffer_t *x, uint32 *poffset, void *buf, uint32 len)
-{
-    xdr_file_t *p = xb_pre(x, sizeof(xdr_file_t));
-    if (NULL==p) {
-        return NULL;
-    }
-
-    p->offset   = 0;
-    p->size     = len;
-    sha256(buf, len, p->digest);
-    
-}
-
 static inline xdr_string_t *
 xb_pre_string(xdr_buffer_t *x, xdr_string_t *obj, void *buf, uint32 len)
 {
@@ -507,45 +480,49 @@ xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, xtlv_t *tlv)
     return xb_pre_binnary(x, obj, xtlv_data(tlv), xtlv_datalen(tlv))?0:-ENOMEM;
 }
 
-#define xb_pre_proto(_x, _type, _field_offsetof) \
+static inline xdr_file_t *
+xb_pre_file(xdr_buffer_t *x, uint32 *poffset, void *buf, uint32 len)
+{
+    xdr_file_t *p = xb_pre(x, sizeof(xdr_file_t));
+    if (NULL==p) {
+        return NULL;
+    }
+
+    p->offset   = 0;
+    p->size     = len;
+    sha256(buf, len, p->digest);
+    
+}
+
+#define xb_pre_by(_x, _type, _field_offsetof) \
     (_type *)xb_obj(_x, sizeof(_type), &(_x)->u.proto->_field_offsetof)
 
-#define xb_pre_L4(_x, _type)    xb_pre_proto(_x, _type, offsetof_L4)
-#define xb_pre_L5(_x, _type)    xb_pre_proto(_x, _type, offsetof_L5)
-#define xb_pre_L6(_x, _type)    xb_pre_proto(_x, _type, offsetof_L6)
+#define xb_pre_L4(_x, _type)    xb_pre_by(_x, _type, offsetof_L4)
+#define xb_pre_L5(_x, _type)    xb_pre_by(_x, _type, offsetof_L5)
+#define xb_pre_L6(_x, _type)    xb_pre_by(_x, _type, offsetof_L6)
 
 static inline xdr_session4_t *
 xb_pre_session4(xdr_buffer_t *x)
 {
-    return xb_pre_proto(x, xdr_session4_t, offsetof_session);
+    return xb_pre_by(x, xdr_session4_t, offsetof_session);
 }
 
 static inline xdr_session6_t *
 xb_pre_session6(xdr_buffer_t *x)
 {
-    return xb_pre_proto(x, xdr_session6_t, offsetof_session);
-}
-
-static inline xdr_session_time_t *
-xb_pre_session_time(xdr_buffer_t *x)
-{
-    return xb_pre_proto(x, xdr_session_time_t, offsetof_session_time);
+    return xb_pre_by(x, xdr_session6_t, offsetof_session);
 }
 
 static inline xdr_session_st_t *
 xb_pre_session_st(xdr_buffer_t *x)
 {
-    return (xdr_session_st_t *)xb_obj(x, 
-        2 * sizeof(xdr_session_st_t), // up && down
-        &x->u.proto->offsetof_session_st);
+    return xb_pre_by(x, xdr_session_st_t, offsetof_session_st);
 }
 
 static inline xdr_service_st_t *
 xb_pre_service_st(xdr_buffer_t *x)
 {
-    return (xdr_service_st_t *)xb_obj(x, 
-        2 * sizeof(xdr_service_st_t), // up && down
-        &x->u.proto->offsetof_service_st);
+    return xb_pre_by(x, xdr_service_st_t, offsetof_service_st);
 }
 
 static inline xdr_tcp_t *
@@ -597,7 +574,7 @@ xb_pre_ssl(xdr_buffer_t *x)
 }
 
 static inline int
-xdr_parse(XDR_OUT xdr_msg_t *msg, XDR_IN xdr_buffer_t *x)
+xdr_parse(xdr_msg_t *msg, xdr_buffer_t *x)
 {
     return 0;
 }
@@ -656,33 +633,28 @@ xtlv_to_xdr_session(xdr_buffer_t *x, xtlv_t *tlv)
     return 0;
 }
 
-static inline void
-xtlv_to_xdr_session_st_helper(xdr_session_st_t *dst, xtlv_session_st_t *src, int idx)
-{
-    dst->flow           = src->flow[idx];
-    dst->ip_packet      = src->ip_packet[idx];
-    dst->ip_frag        = src->ip_frag[idx];
-    dst->tcp_disorder   = src->tcp_disorder[idx];
-    dst->tcp_retransmit = src->tcp_retransmit[idx];
-    dst->duration       = src->duration[idx];
-}
-
 static inline int
 xtlv_to_xdr_session_st(xdr_buffer_t *x, xtlv_t *tlv)
 {
-    xtlv_session_st_t *src = xtlv_session_st(tlv);
-    xdr_session_st_t *dst = xb_pre_session_st(x);
+    return xtlv_to_xdr_obj(x, tlv, session_st);
+}
 
-    xtlv_to_xdr_session_st_helper(dst, src, 0);
-    xtlv_to_xdr_session_st_helper(dst+1, src, 1);
-    
-    return 0;
+static inline int
+xtlv_to_xdr_service_st(xdr_buffer_t *x, xtlv_t *tlv)
+{
+    return xtlv_to_xdr_obj(x, tlv, service_st);
 }
 
 static inline int
 xtlv_to_xdr_session_time(xdr_buffer_t *x, xtlv_t *tlv)
 {
-    return xtlv_to_xdr_obj(x, tlv, session_time);
+    xtlv_session_time_t *tm = xtlv_session_time(tlv);
+    
+    x->u.proto->session_time_create = tm->create;
+    x->u.proto->session_time_start  = tm->start;
+    x->u.proto->session_time_stop   = tm->stop;
+
+    return 0;
 }
 
 static inline int
