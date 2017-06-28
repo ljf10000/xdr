@@ -34,7 +34,7 @@ xxxxxxH : xxxxxxxx xxxxxxxx xxxxxx            ; ccccccccccc
 enum {
     __DUMP_LINE_BYTES   = __DUMP_LINE_BLOCK_BYTES * __DUMP_LINE_BLOCK,
     __DUMP_LINE_MAX     =  (0
-                            + 6 /* "xxxxxxH : " */
+                            + 10 /* "xxxxxxH : " */
                             + (2 * __DUMP_LINE_BLOCK_BYTES + 1) * __DUMP_LINE_BLOCK \
                             + 2 /* "; " */
                             + __DUMP_LINE_BYTES
