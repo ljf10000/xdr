@@ -289,7 +289,7 @@ enum { XTLV_MAPPER(XTLV_OPS_ENUM) };
 },  /* end */
 #define DECLARE_XTLV_VARS \
     uint32 __xtlv_opt; \
-    xtlv_ops_t __xtlv_ops[xtlv_id_end] = { XTLV_MAPPER(XTLV_OPS_STRUCT) }; \
+    xtlv_ops_t __xtlv_ops[207] = { XTLV_MAPPER(XTLV_OPS_STRUCT) }; \
     os_extern_unused_var /* end */
 
 extern xtlv_ops_t __xtlv_ops[];
