@@ -106,6 +106,8 @@ static inline void xtlv_dump_http(xtlv_t *tlv);
 static inline void xtlv_dump_sip(xtlv_t *tlv);
 static inline void xtlv_dump_rtsp(xtlv_t *tlv);
 
+#define xtlv_dump_service_st(_tlv)  xtlv_dump_session_st(_tlv)
+
 typedef struct {
     int     id;
     int     type;
