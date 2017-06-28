@@ -149,6 +149,10 @@
     } \
 }while(0)
 
+#ifndef os_count_of
+#define os_count_of(x)                  (sizeof(x)/sizeof((x)[0]))
+#endif
+
 #ifndef OS_ALIGN
 #define OS_ALIGN(_x, _align)            (((_x)+(_align)-1) & ~((_align)-1))
 #endif
@@ -419,6 +423,34 @@ error:
     os_free(buf);
 
     return err;
+}
+
+
+#ifndef OS_BKDR_NUMBER
+#define OS_BKDR_NUMBER      31
+#endif
+
+typedef uint32 bkdr_t;
+#define BKDR_PUSH(a, b)     ((a) * OS_BKDR_NUMBER + (b))
+
+static inline bkdr_t
+os_bkdr_push(bkdr_t bkdr, const void *binary, uint32 len)
+{
+    if (binary && len) {
+        int i;
+
+        for (i=0; i<len; i++) {
+            bkdr = BKDR_PUSH(bkdr, *((byte *)binary + i));
+        }
+    }
+
+    return bkdr;
+}
+
+static inline bkdr_t
+os_bkdr(const void *binary, uint32 len)
+{
+    return os_bkdr_push(0, binary, len);
 }
 
 #include "dump.h"

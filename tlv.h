@@ -21,19 +21,14 @@ enum {
     e_xtlv_not_support_multi        = 1008,
 };
 
-typedef uint64 xdr_time_t;
 typedef uint64 xdr_duration_t;
-
-static inline time_t
-xdr_time_second(xdr_time_t us)
-{
-    return (time_t)(us/1000000);
-}
+typedef uint64 xdr_time_t;
+#define XDR_SECOND(_us)     ((time_t)((_us)/1000000))
 
 typedef struct {
     uint32 ip[4];
 } xdr_ipaddr_t;
-#define xdr_ip(_addr)   (_addr)->ip[0]
+#define XDR_IP(_addr)   (_addr)->ip[0]
 
 #define xtlv_u8_t   uint8
 #define xtlv_u16_t  uint16
@@ -308,6 +303,7 @@ extern uint32 xdr_seq;
 
 enum {
     XTLV_OPT_DUMP = 0x01,
+    XTLV_OPT_FILE_AS_PATH = 0x02,
 };
 
 static inline void
@@ -320,6 +316,12 @@ static inline bool
 is_xtlv_opt_dump(void)
 {
     return XTLV_OPT_DUMP==(XTLV_OPT_DUMP & __xtlv_opt);
+}
+
+static inline bool
+is_xtlv_opt_file_as_path(void)
+{
+    return XTLV_OPT_FILE_AS_PATH==(XTLV_OPT_FILE_AS_PATH & __xtlv_opt);
 }
 
 static inline bool
@@ -554,7 +556,7 @@ xtlv_dump_time(xtlv_t *tlv)
 {
     xtlv_ops_t *ops = xtlv_ops(tlv->id);
 
-    XTLV_DUMP("id:%d, %s: %s", tlv->id, ops->name, os_time_string(xdr_time_second(xtlv_time(tlv))));
+    XTLV_DUMP("id:%d, %s: %s", tlv->id, ops->name, os_time_string(XDR_SECOND(xtlv_time(tlv))));
 }
 
 static inline void xtlv_dump_duration(xtlv_t *tlv) 
@@ -572,8 +574,7 @@ xtlv_dump_ip4(xtlv_t *tlv)
 {
     xtlv_ops_t *ops = xtlv_ops(tlv->id);
 
-    uint32 ip = xtlv_ip4(tlv);
-    // ip = htonl(ip);
+    uint32 ip = xtlv_ip4(tlv); // ip = htonl(ip);
     
     XTLV_DUMP("id:%d, %s: %s", tlv->id, ops->name, os_ipstring(ip));
 }
@@ -609,7 +610,7 @@ typedef struct {
     
     xdr_ipaddr_t sip;
     xdr_ipaddr_t dip;
-} xtlv_session_t;
+} xtlv_session_t, xdr_session6_t;
 
 enum { XDR_SESSION_HSIZE = sizeof(xtlv_session_t) - 2*sizeof(xdr_ipaddr_t) };
 
@@ -629,12 +630,10 @@ xtlv_dump_session(xtlv_t *tlv)
     if (XDR_SESSION_IPV4==obj->ver) {
         uint32 ip;
 
-        ip = xdr_ip(&obj->sip);
-        // ip = htonl(ip);
+        ip = XDR_IP(&obj->sip); // ip = htonl(ip);
         XTLV_DUMP2("sip    : %s", os_ipstring(ip));
         
-        ip = xdr_ip(&obj->dip);
-        // ip = htonl(ip);
+        ip = XDR_IP(&obj->dip); // ip = htonl(ip);
         XTLV_DUMP2("dip    : %s", os_ipstring(ip));
     } else {
         XTLV_DUMP2("sip    : ipv6 address");
@@ -676,7 +675,7 @@ typedef struct {
     xtlv_time_t create;
     xtlv_time_t start;
     xtlv_time_t stop;
-} xtlv_session_time_t;
+} xtlv_session_time_t, xdr_session_time_t;
 
 static inline void 
 xtlv_dump_session_time(xtlv_t *tlv)
@@ -685,9 +684,9 @@ xtlv_dump_session_time(xtlv_t *tlv)
     
     XTLV_DUMP("id: %d, session_time:", tlv->id);
     
-    XTLV_DUMP2("create: %s", os_time_string(xdr_time_second(obj->create)));
-    XTLV_DUMP2("start : %s", os_time_string(xdr_time_second(obj->start)));
-    XTLV_DUMP2("stop  : %s", os_time_string(xdr_time_second(obj->stop)));
+    XTLV_DUMP2("create: %s", os_time_string(XDR_SECOND(obj->create)));
+    XTLV_DUMP2("start : %s", os_time_string(XDR_SECOND(obj->start)));
+    XTLV_DUMP2("stop  : %s", os_time_string(XDR_SECOND(obj->stop)));
 }
 
 typedef struct {
@@ -711,7 +710,7 @@ typedef struct {
     byte handshake12;
     byte handshake23;
 } 
-xtlv_tcp_t;
+xtlv_tcp_t, xdr_tcp_t;
 
 enum { XDR_TCP_COMPLETE = 1 };
 
@@ -742,7 +741,7 @@ typedef struct {
     byte status;
     byte class;
     uint16 protocol;
-} xtlv_L7_t;
+} xtlv_L7_t, xdr_L7_t;
 
 static inline void 
 xtlv_dump_L7(xtlv_t *tlv)
@@ -791,9 +790,9 @@ xtlv_dump_http(xtlv_t *tlv)
     
     XTLV_DUMP("id: %d, http:", tlv->id);
     
-    XTLV_DUMP2("time_request        : %s", os_time_string(xdr_time_second(obj->time_request)));
-    XTLV_DUMP2("time_first_response : %s", os_time_string(xdr_time_second(obj->time_first_response)));
-    XTLV_DUMP2("time_last_content   : %s", os_time_string(xdr_time_second(obj->time_last_content)));
+    XTLV_DUMP2("time_request        : %s", os_time_string(XDR_SECOND(obj->time_request)));
+    XTLV_DUMP2("time_first_response : %s", os_time_string(XDR_SECOND(obj->time_first_response)));
+    XTLV_DUMP2("time_last_content   : %s", os_time_string(XDR_SECOND(obj->time_last_content)));
     XTLV_DUMP2("service_delay       : %llu us", obj->service_delay);
     XTLV_DUMP2("content_length      : %u", obj->content_length);
     XTLV_DUMP2("status_code         : %u", obj->status_code);

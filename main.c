@@ -2,9 +2,17 @@
 
 DECLARE_XTLV_VARS;
 /******************************************************************************/
-char *self;
+static char *self;
 
-int usage(void)
+static struct {
+    char *name;
+    uint32 flag;
+} opt[] = {
+    { .name = "--dump", .flag = XTLV_OPT_DUMP },
+    { .name = "--file-as-path", .flag = XTLV_OPT_FILE_AS_PATH },
+};
+
+static int usage(void)
 {
     os_println("%s [OPTION] input-file prefix", self);
     os_println(__tab "OPTION:");
@@ -27,10 +35,15 @@ int main(int argc, char *argv[])
         
         if (0==strcmp("--help", args)) {
             return usage();
-        } else if (0==strcmp("--dump", args)) {
-            xtlv_opt_set(XTLV_OPT_DUMP);
         }
-
+        
+        int i;
+        for (i=0; i<os_count_of(opt); i++) {
+            if (0==strcmp(opt[i].name, args)) {
+                xtlv_opt_set(opt[i].flag);
+            }
+        }
+        
         argc--; argv++;
     }
 
