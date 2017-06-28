@@ -182,11 +182,12 @@ typedef struct {
 } xtlv_ops_t;
 
 #define xtlv_mapper_fixed(_mapper, _id, _name, _obj) \
-    _mapper(_name, _id,  XTLV_T_##_obj, XTLV_F_FIXED, 0, sizeof(xtlv_##_obj##_t), xtlv_dump_##_obj, NULL, xtlv_to_xdr_##_name)
+    _mapper(_name, _id, XTLV_T_##_obj, XTLV_F_FIXED, 0, sizeof(xtlv_##_obj##_t), xtlv_dump_##_obj, NULL, xtlv_to_xdr_##_name)
 #define xtlv_mapper_dynamic(_mapper, _id, _name, _obj) \
-    _mapper(_name, _id,  XTLV_T_##_obj, 0, 0, 0, xtlv_dump_##_obj, NULL, xtlv_to_xdr_##_name)
+    _mapper(_name, _id, XTLV_T_##_obj, 0, 0, 0, xtlv_dump_##_obj, NULL, xtlv_to_xdr_##_name)
+
 #define xtlv_mapper_object(_mapper, _id, _name) \
-    _mapper(_name, _id,  XTLV_T_object, XTLV_F_FIXED, 0, sizeof(xtlv_##_name##_t), xtlv_dump_##_name, NULL, xtlv_to_xdr_##_name)
+    _mapper(_name, _id, XTLV_T_object, XTLV_F_FIXED, 0, sizeof(xtlv_##_name##_t), xtlv_dump_##_name, NULL, xtlv_to_xdr_##_name)
 #define xtlv_mapper_nothing(_mapper, _id, _name) \
     _mapper(_name, _id, XTLV_T_binary, 0, 0, 0, NULL, NULL, NULL)
 
