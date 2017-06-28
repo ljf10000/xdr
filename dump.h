@@ -4,16 +4,16 @@
 /*
 *   raw format(like UltraEdit)
 
-      :                                     ;
- Line :       Hexadecimal Content           ; Raw Content
-      : 0 1 2 3  4 5 6 7  8 9 A B  C D E F  ;
-      :                                     ;
-xxxxH : xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx ; cccccccccccccccc
-xxxxH : xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx ; cccccccccccccccc
-xxxxH : xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx ; cccccccccccccccc
-xxxxH : xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx ; cccccccccccccccc
-xxxxH : xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx ; cccccccccccccccc
-xxxxH : xxxxxxxx xxxxxxxx xxxxxx            ; ccccccccccc
+        :                                     ;
+  Line  :       Hexadecimal Content           ; Raw Content
+        : 0 1 2 3  4 5 6 7  8 9 A B  C D E F  ;
+        :                                     ;
+xxxxxxH : xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx ; cccccccccccccccc
+xxxxxxH : xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx ; cccccccccccccccc
+xxxxxxH : xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx ; cccccccccccccccc
+xxxxxxH : xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx ; cccccccccccccccc
+xxxxxxH : xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx ; cccccccccccccccc
+xxxxxxH : xxxxxxxx xxxxxxxx xxxxxx            ; ccccccccccc
 */
 #ifndef __DUMP_LINE_BLOCK
 #define __DUMP_LINE_BLOCK           4
@@ -27,10 +27,14 @@ xxxxH : xxxxxxxx xxxxxxxx xxxxxx            ; ccccccccccc
 #define __DUMP_LINE_LIMIT           80
 #endif
 
+#ifndef __DUMP_BUFFER_MAX
+#define __DUMP_BUFFER_MAX           0x10000
+#endif
+
 enum {
     __DUMP_LINE_BYTES   = __DUMP_LINE_BLOCK_BYTES * __DUMP_LINE_BLOCK,
     __DUMP_LINE_MAX     =  (0
-                            + 8 /* "xxxxH : " */
+                            + 6 /* "xxxxxxH : " */
                             + (2 * __DUMP_LINE_BLOCK_BYTES + 1) * __DUMP_LINE_BLOCK \
                             + 2 /* "; " */
                             + __DUMP_LINE_BYTES
@@ -54,10 +58,10 @@ enum {
 
 #ifndef __DUMP_LINE_HEADER
 #define __DUMP_LINE_HEADER \
-"      :                                     ;"                 __crlf \
-" Line :       Hexadecimal Content           ; Raw Content"     __crlf \
-"      : 0 1 2 3  4 5 6 7  8 9 A B  C D E F  ;"                 __crlf \
-"      :                                     ;"                 __crlf
+"        :                                     ;"                 __crlf \
+"  Line  :       Hexadecimal Content           ; Raw Content"     __crlf \
+"        : 0 1 2 3  4 5 6 7  8 9 A B  C D E F  ;"                 __crlf \
+"        :                                     ;"                 __crlf
 #endif
 
 typedef void os_dump_line_f(char *line);
@@ -70,7 +74,7 @@ __os_dump_line(int line, byte *raw, int len, os_dump_line_f *dump_line)
     int i, offset = 0;
     char buf[1 + __DUMP_LINE_MAX] = {0};
     
-    offset += os_soprintf(buf, offset, "%.4XH :", __DUMP_LINE_BYTES*line);
+    offset += os_soprintf(buf, offset, "%.6XH :", __DUMP_LINE_BYTES*line);
 
     for (i=0; i<len; i++) {
         if (0 == (i%__DUMP_LINE_BLOCK_BYTES)) {
@@ -111,8 +115,8 @@ __os_dump_buffer(void *buffer, int len, os_dump_line_f *dump_line)
 
     if (len<0) {
         return;
-    } else if (len > 0xffff) {
-        len = 0xffff;
+    } else if (len > __DUMP_BUFFER_MAX) {
+        len = __DUMP_BUFFER_MAX;
     }
     
     line = OS_ALIGN(len, __DUMP_LINE_BYTES)/__DUMP_LINE_BYTES;
