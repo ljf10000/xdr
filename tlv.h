@@ -361,7 +361,7 @@ xtlv_error(xtlv_t *tlv, int err)
         xtlv_ops_t *ops = xtlv_ops(tlv->id);
 
         if (XTLV_F_FIXED & ops->flag) {
-            os_println("tlv name:%s fixed:%d id:%d pad:%d alen:%u hlen:%d dlen:%u", 
+            os_println("tlv name:%s fixed:%d id:%d pad:%d alen:%u hlen:%u dlen:%u", 
                 ops->name, 
                 ops->maxsize,
                 tlv->id, 
@@ -370,7 +370,7 @@ xtlv_error(xtlv_t *tlv, int err)
                 xtlv_hdrlen(tlv),
                 xtlv_datalen(tlv));
         } else {
-            os_println("tlv name:%s id:%d pad:%d alen:%u hlen:%d dlen:%u", 
+            os_println("tlv name:%s id:%d pad:%d alen:%u hlen:%u dlen:%u", 
                 ops->name, 
                 tlv->id, 
                 tlv->pad, 
