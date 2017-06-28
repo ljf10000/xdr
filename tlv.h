@@ -597,7 +597,6 @@ xtlv_dump_binary(xtlv_t *tlv)
 }
 
 enum { XDR_SESSION_IPV4 = 0 };
-enum { XDR_SESSION_BASE = 8 };
 
 typedef struct {
     byte ver;
@@ -611,8 +610,8 @@ typedef struct {
     xdr_ipaddr_t sip;
     xdr_ipaddr_t dip;
 } xtlv_session_t;
-#define xtlv_session_sip(_session)   xdr_ip(&(_session)->sip)
-#define xtlv_session_dip(_session)   xdr_ip(&(_session)->dip)
+
+enum { XDR_SESSION_HSIZE = sizeof(xtlv_session_t) - 2*sizeof(xdr_ipaddr_t) };
 
 static inline void 
 xtlv_dump_session(xtlv_t *tlv)

@@ -626,7 +626,7 @@ xtlv_to_xdr_session(xdr_buffer_t *x, xtlv_t *tlv)
             return -ENOMEM;
         }
         
-        memcpy(dst, src, XDR_SESSION_BASE);
+        memcpy(dst, src, XDR_SESSION_HSIZE);
 
         dst->sip = xdr_ip(&src->sip);
         dst->dip = xdr_ip(&src->dip);
