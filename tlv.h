@@ -181,8 +181,6 @@ typedef struct {
     xtlv_to_xdr_f *toxdr;
 } xtlv_ops_t;
 
-enum { XTLV_ID_HEADER = 0 };
-
 #define xtlv_mapper_fixed(_mapper, _id, _name, _obj) \
     _mapper(_name, _id,  XTLV_T_##_obj, XTLV_F_FIXED, 0, sizeof(xtlv_##_obj##_t), xtlv_dump_##_obj, NULL, xtlv_to_xdr_##_name)
 #define xtlv_mapper_dynamic(_mapper, _id, _name, _obj) \
@@ -205,7 +203,7 @@ enum { XTLV_ID_HEADER = 0 };
 #define xtlv_mapper_binary(_mapper, _id, _name) xtlv_mapper_dynamic(_mapper, _id, _name, binary)
 
 #define XTLV_MAPPER(_) \
-    _(header, XTLV_ID_HEADER, XTLV_T_binary, 0, 0, 0, NULL, NULL, NULL) \
+    _(header, 0, XTLV_T_binary, 0, 0, 0, NULL, NULL, NULL) \
     \
     xtlv_mapper_u8(_,       1, session_state) \
     xtlv_mapper_u8(_,       2, appid) \
@@ -268,11 +266,16 @@ enum { XTLV_ID_HEADER = 0 };
     xtlv_mapper_binary(_,   204, ssl_server_cert) \
     xtlv_mapper_binary(_,   205, ssl_client_cert) \
     xtlv_mapper_u8(_,       206, ssl_fail_reason) \
+    \
+    _(end, 207, XTLV_T_binary, 0, 0, 0, NULL, NULL, NULL) \
     /* end */
 
-enum { XTLV_ID_END = 207 };
+#define xtlv_id_header      xtlv_id_header
+#define xtlv_id_end         xtlv_id_end
+#define xtlv_foreach(i)     for (i=0; i<xtlv_id_end; i++)
 
-#define xtlv_foreach(i)     for (i=0; i<XTLV_ID_END; i++)
+#define XTLV_OPS_ENUM(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr)  xtlv_id_##_name = _id,
+enum { XTLV_MAPPER(XTLV_OPS_ENUM) };
 
 #define XTLV_OPS_STRUCT(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr) [_id] = { \
     .id     = _id,      \
@@ -285,14 +288,13 @@ enum { XTLV_ID_END = 207 };
     .check  = _check,   \
     .toxdr  = _toxdr,   \
 },  /* end */
+#define DECLARE_XTLV_VARS \
+    uint32 __xtlv_opt; \
+    xtlv_ops_t __xtlv_ops[xtlv_id_end] = { XTLV_MAPPER(XTLV_OPS_STRUCT) }; \
+    os_extern_unused_var /* end */
 
 extern xtlv_ops_t __xtlv_ops[];
 extern uint32 __xtlv_opt;
-
-#define DECLARE_XTLV_VARS \
-    uint32 __xtlv_opt; \
-    xtlv_ops_t __xtlv_ops[XTLV_ID_END] = { XTLV_MAPPER(XTLV_OPS_STRUCT) }; \
-    os_extern_unused_var /* end */
 
 enum {
     XTLV_OPT_DUMP = 0x01,
@@ -313,7 +315,7 @@ is_xtlv_opt_dump(void)
 static inline bool
 is_good_xtlv_id(int id)
 {
-    return is_good_enum(id, XTLV_ID_END);
+    return is_good_enum(id, xtlv_id_end);
 }
 
 static inline xtlv_ops_t *
@@ -911,7 +913,7 @@ xcache_save_multi(xcache_t *cache, xtlv_t *tlv)
 typedef struct {
     xtlv_t *header;
     
-    xcache_t cache[XTLV_ID_END];
+    xcache_t cache[xtlv_id_end];
 } xrecord_t;
 
 static inline int
@@ -987,7 +989,7 @@ xrecord_parse(xrecord_t *record)
 {
     xtlv_t *h = record->header;
     
-    if (XTLV_ID_HEADER == h->id) {
+    if (xtlv_id_header == h->id) {
         return __xrecord_parse(record, xtlv_first(h), xtlv_datalen(h));
     } else {
         return -e_xtlv_header_must_first;
