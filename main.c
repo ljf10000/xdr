@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
         if (0==strcmp("--help", args)) {
             return usage();
         } else if (0==strcmp("--dump", args)) {
-            __xtlv_debug |= XDEBUG_DUMP;
+            xtlv_opt_set(XTLV_OPT_DUMP);
         }
 
         argc--; argv++;
