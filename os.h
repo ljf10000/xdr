@@ -153,6 +153,18 @@
 #define OS_ALIGN(_x, _align)            (((_x)+(_align)-1) & ~((_align)-1))
 #endif
 
+#ifndef os_objscpy
+#define os_objscpy(_dst, _src)          memcpy(_dst, _src, sizeof(*(_src)))
+#endif
+
+#ifndef os_objdcpy
+#define os_objdcpy(_dst, _src)          memcpy(_dst, _src, sizeof(*(_dst)))
+#endif
+
+#ifndef os_objcpy
+#define os_objcpy(_dst, _src)           os_objdcpy(_dst, _src)
+#endif
+
 #ifndef os_do_nothing
 #define os_do_nothing()                 do{}while(0)
 #endif
@@ -167,6 +179,14 @@
 
 #ifndef is_good_enum
 #define is_good_enum(_id, _end)         is_good_value(_id, 0, _end)
+#endif
+
+#ifndef os_min
+#define os_min(_x, _y)  ((_x)<(_y)?(_x):(_y))
+#endif
+
+#ifndef os_max
+#define os_max(_x, _y)  ((_x)>(_y)?(_x):(_y))
 #endif
 
 #ifndef __space

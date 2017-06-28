@@ -160,7 +160,7 @@ xdr_ftp_ntoh(xdr_ftp_t *p)
 {
     XDR_NTOH32(p->filesize);
     XDR_NTOH64(p->response_delay);
-    XDR_NTOH64(p->trans_time);
+    XDR_NTOH64(p->trans_duration);
     
     xdr_string_ntoh(&p->status);
     xdr_string_ntoh(&p->user);

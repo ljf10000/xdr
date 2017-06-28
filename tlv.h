@@ -22,6 +22,7 @@ enum {
 };
 
 typedef uint64 xdr_time_t;
+typedef uint64 xdr_duration_t;
 
 static inline time_t
 xdr_time_second(xdr_time_t us)
@@ -43,8 +44,10 @@ typedef struct {
 #define xtlv_i32_t  int32
 #define xtlv_i64_t  int64
 #define xtlv_ip4_t  uint32
-#define xtlv_ip6_t  xdr_ipaddr_t
-#define xtlv_time_t xdr_time_t
+
+#define xtlv_ip6_t      xdr_ipaddr_t
+#define xtlv_time_t     xdr_time_t
+#define xtlv_duration_t xdr_duration_t
 
 enum {
     XTLV_T_u8,
@@ -61,7 +64,9 @@ enum {
     XTLV_T_binary,
     XTLV_T_object,
     
-    XTLV_T_time,
+    XTLV_T_time,    // u64
+    XTLV_T_duration,// u64
+    
     XTLV_T_ip4,     // u32
     XTLV_T_ip6,     // 4 * u32
     
@@ -93,6 +98,7 @@ static inline void xtlv_dump_i64(xtlv_t *tlv);
 static inline void xtlv_dump_string(xtlv_t *tlv);
 static inline void xtlv_dump_binary(xtlv_t *tlv);
 static inline void xtlv_dump_time(xtlv_t *tlv);
+static inline void xtlv_dump_duration(xtlv_t *tlv);
 static inline void xtlv_dump_ip4(xtlv_t *tlv);
 static inline void xtlv_dump_ip6(xtlv_t *tlv);
 
@@ -110,8 +116,8 @@ static inline int xtlv_to_xdr_session_state(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_appid(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_session(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_session_st(xdr_buffer_t *x, xtlv_t *tlv);
+#define xtlv_to_xdr_service_st xtlv_to_xdr_session_st
 static inline int xtlv_to_xdr_session_time(xdr_buffer_t *x, xtlv_t *tlv);
-static inline int xtlv_to_xdr_service_st(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_tcp(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_first_response_delay(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_L7(xdr_buffer_t *x, xtlv_t *tlv);
@@ -140,7 +146,7 @@ static inline int xtlv_to_xdr_ftp_trans_type(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_ftp_filename(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_ftp_filesize(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_ftp_response_delay(xdr_buffer_t *x, xtlv_t *tlv);
-static inline int xtlv_to_xdr_ftp_trans_time(xdr_buffer_t *x, xtlv_t *tlv);
+static inline int xtlv_to_xdr_ftp_trans_duration(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_mail_msg_type(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_mail_status_code(xdr_buffer_t *x, xtlv_t *tlv);
 static inline int xtlv_to_xdr_mail_user(xdr_buffer_t *x, xtlv_t *tlv);
@@ -201,9 +207,10 @@ typedef struct {
 #define xtlv_mapper_i64(_mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, i64)
 #define xtlv_mapper_ip4(_mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, ip4)
 #define xtlv_mapper_ip6(_mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, ip6)
-#define xtlv_mapper_time(_mapper, _id, _name)   xtlv_mapper_fixed(_mapper, _id, _name, time)
-#define xtlv_mapper_string(_mapper, _id, _name) xtlv_mapper_dynamic(_mapper, _id, _name, string)
-#define xtlv_mapper_binary(_mapper, _id, _name) xtlv_mapper_dynamic(_mapper, _id, _name, binary)
+#define xtlv_mapper_time(_mapper, _id, _name)       xtlv_mapper_fixed(_mapper, _id, _name, time)
+#define xtlv_mapper_duration(_mapper, _id, _name)   xtlv_mapper_fixed(_mapper, _id, _name, duration)
+#define xtlv_mapper_string(_mapper, _id, _name)     xtlv_mapper_dynamic(_mapper, _id, _name, string)
+#define xtlv_mapper_binary(_mapper, _id, _name)     xtlv_mapper_dynamic(_mapper, _id, _name, binary)
 
 #define XTLV_MAPPER(_) \
     xtlv_mapper_nothing(_,  0, header) \
@@ -241,8 +248,8 @@ typedef struct {
     xtlv_mapper_u8(_,       31, ftp_trans_type) \
     xtlv_mapper_string(_,   32, ftp_filename) \
     xtlv_mapper_u32(_,      33, ftp_filesize) \
-    xtlv_mapper_time(_,     34, ftp_response_delay) \
-    xtlv_mapper_time(_,     35, ftp_trans_time) \
+    xtlv_mapper_duration(_, 34, ftp_response_delay) \
+    xtlv_mapper_duration(_, 35, ftp_trans_duration) \
     xtlv_mapper_u16(_,      36, mail_msg_type) \
     xtlv_mapper_i16(_,      37, mail_status_code) \
     xtlv_mapper_string(_,   38, mail_user) \
@@ -388,6 +395,7 @@ struct xtlv_st {
 #define xtlv_i64(_tlv)      (*(int64 *)xtlv_data(_tlv))
 
 #define xtlv_time(_tlv)     (*(xtlv_time_t *)xtlv_data(_tlv))
+#define xtlv_duration(_tlv) (*(xtlv_duration_t *)xtlv_data(_tlv))
 
 #define xtlv_ip4(_tlv)      (*(uint32 *)xtlv_data(_tlv))
 #define xtlv_ip6(_tlv)      ((xdr_ipaddr_t *)xtlv_data(_tlv))
@@ -526,6 +534,16 @@ xtlv_dump_time(xtlv_t *tlv)
     XTLV_DUMP("id:%d, %s: %s", tlv->id, ops->name, os_time_string(xdr_time_second(xtlv_time(tlv))));
 }
 
+static inline void xtlv_dump_duration(xtlv_t *tlv) 
+{
+    xtlv_ops_t *ops = xtlv_ops(tlv->id);
+    xtlv_duration_t d = xtlv_duration(tlv);
+    uint32 s = (uint32)(d>>32);
+    uint32 us= (uint32)(d & 0xffffffff);
+    
+    XTLV_DUMP("id:%d, %s %ds:%dus", tlv->id, ops->name, s, us); 
+}
+
 static inline void 
 xtlv_dump_ip4(xtlv_t *tlv)
 {
@@ -556,6 +574,7 @@ xtlv_dump_binary(xtlv_t *tlv)
 }
 
 enum { XDR_SESSION_IPV4 = 0 };
+enum { XDR_SESSION_BASE = 8 };
 
 typedef struct {
     byte ver;
