@@ -197,15 +197,15 @@ enum {
 };
 
 static inline bool
-is_xdebug_dump()
+is_xtlv_dump(void)
 {
     return XDEBUG_DUMP==(XDEBUG_DUMP & __xtlv_debug);
 }
 
 static inline bool
-is_good_xtlv_id(_id)
+is_good_xtlv_id(int id)
 {
-    return is_good_enum(_id, XTLV_ID_END);
+    return is_good_enum(id, XTLV_ID_END);
 }
 
 static inline xtlv_ops_t *
@@ -867,7 +867,7 @@ __xrecord_parse(xrecord_t *record, xtlv_t *tlv, uint32 left)
         return err;
     }
 
-    if (is_xdebug_dump()) {
+    if (is_xtlv_dump()) {
         xtlv_dump(tlv);
     }
     
