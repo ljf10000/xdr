@@ -183,26 +183,26 @@ typedef struct {
 
 enum { XTLV_ID_HEADER = 0 };
 
-#define xtlv_mapper_fixed(_mapper, _id, _name, _obj) \
+#define xtlv_mapper_fixed(_mapper, _id, _name, _obj, _to) \
     _mapper(_name, _id,  XTLV_T_##_obj, XTLV_F_FIXED, 0, sizeof(xtlv_##_obj##_t), xtlv_dump_##_obj, NULL, xtlv_to_xdr_##_name)
-#define xtlv_mapper_dynamic(_mapper, _id, _name, _obj) \
+#define xtlv_mapper_dynamic(_mapper, _id, _name, _obj, _to) \
     _mapper(_name, _id,  XTLV_T_##_obj, 0, 0, 0, xtlv_dump_##_obj, NULL, xtlv_to_xdr_##_name)
-#define xtlv_mapper_object(_mapper, _id, _name) \
+#define xtlv_mapper_object(_mapper, _id, _name, _to) \
     _mapper(_name, _id,  XTLV_T_object, XTLV_F_FIXED, 0, sizeof(xtlv_##_name##_t), xtlv_dump_##_name, NULL, xtlv_to_xdr_##_name)
 
-#define xtlv_mapper_u8( _mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, u8)
-#define xtlv_mapper_u16(_mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, u16)
-#define xtlv_mapper_u32(_mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, u32)
-#define xtlv_mapper_u64(_mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, u64)
-#define xtlv_mapper_i8( _mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, i8)
-#define xtlv_mapper_i16(_mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, i16)
-#define xtlv_mapper_i32(_mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, i32)
-#define xtlv_mapper_i64(_mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, i64)
-#define xtlv_mapper_ip4(_mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, ip4)
-#define xtlv_mapper_ip6(_mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, ip6)
-#define xtlv_mapper_time(_mapper, _id, _name)   xtlv_mapper_fixed(_mapper, _id, _name, time)
-#define xtlv_mapper_string(_mapper, _id, _name) xtlv_mapper_dynamic(_mapper, _id, _name, string)
-#define xtlv_mapper_binary(_mapper, _id, _name) xtlv_mapper_dynamic(_mapper, _id, _name, binary)
+#define xtlv_mapper_u8( _mapper, _id, _name)       xtlv_mapper_fixed(_mapper, _id, _name, u8, NULL)
+#define xtlv_mapper_u16(_mapper, _id, _name)       xtlv_mapper_fixed(_mapper, _id, _name, u16, NULL)
+#define xtlv_mapper_u32(_mapper, _id, _name)       xtlv_mapper_fixed(_mapper, _id, _name, u32, NULL)
+#define xtlv_mapper_u64(_mapper, _id, _name)       xtlv_mapper_fixed(_mapper, _id, _name, u64, NULL)
+#define xtlv_mapper_i8( _mapper, _id, _name)       xtlv_mapper_fixed(_mapper, _id, _name, i8, NULL)
+#define xtlv_mapper_i16(_mapper, _id, _name)       xtlv_mapper_fixed(_mapper, _id, _name, i16, NULL)
+#define xtlv_mapper_i32(_mapper, _id, _name)       xtlv_mapper_fixed(_mapper, _id, _name, i32, NULL)
+#define xtlv_mapper_i64(_mapper, _id, _name)       xtlv_mapper_fixed(_mapper, _id, _name, i64, NULL)
+#define xtlv_mapper_ip4(_mapper, _id, _name)       xtlv_mapper_fixed(_mapper, _id, _name, ip4, NULL)
+#define xtlv_mapper_ip6(_mapper, _id, _name)       xtlv_mapper_fixed(_mapper, _id, _name, ip6, NULL)
+#define xtlv_mapper_time(_mapper, _id, _name)      xtlv_mapper_fixed(_mapper, _id, _name, time, NULL)
+#define xtlv_mapper_string(_mapper, _id, _name)    xtlv_mapper_dynamic(_mapper, _id, _name, string, NULL)
+#define xtlv_mapper_binary(_mapper, _id, _name)    xtlv_mapper_dynamic(_mapper, _id, _name, binary, NULL)
 
 #define XTLV_MAPPER(_) \
     _(header, XTLV_ID_HEADER, XTLV_T_binary, 0, 0, 0, NULL, NULL, NULL) \
