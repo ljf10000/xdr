@@ -99,6 +99,7 @@ static inline void xtlv_dump_ip6(xtlv_t *tlv);
 
 static inline void xtlv_dump_session(xtlv_t *tlv);
 static inline void xtlv_dump_session_st(xtlv_t *tlv);
+#define xtlv_dump_service_st    xtlv_dump_session_st
 static inline void xtlv_dump_session_time(xtlv_t *tlv);
 static inline void xtlv_dump_tcp(xtlv_t *tlv);
 static inline void xtlv_dump_L7(xtlv_t *tlv);
@@ -106,7 +107,6 @@ static inline void xtlv_dump_http(xtlv_t *tlv);
 static inline void xtlv_dump_sip(xtlv_t *tlv);
 static inline void xtlv_dump_rtsp(xtlv_t *tlv);
 
-#define xtlv_dump_service_st(_tlv)  xtlv_dump_session_st(_tlv)
 
 typedef struct {
     int     id;
