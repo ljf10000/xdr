@@ -188,7 +188,7 @@ typedef struct {
 #define xtlv_mapper_object(_mapper, _id, _name) \
     _mapper(_name, _id,  XTLV_T_object, XTLV_F_FIXED, 0, sizeof(xtlv_##_name##_t), xtlv_dump_##_name, NULL, xtlv_to_xdr_##_name)
 #define xtlv_mapper_nothing(_mapper, _id, _name) \
-    _mapper(_name, 0, XTLV_T_binary, 0, 0, 0, NULL, NULL, NULL)
+    _mapper(_name, _id, XTLV_T_binary, 0, 0, 0, NULL, NULL, NULL)
 
 #define xtlv_mapper_u8( _mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, u8)
 #define xtlv_mapper_u16(_mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, u16)
@@ -274,7 +274,6 @@ typedef struct {
 
 #define xtlv_id_header      xtlv_id_header
 #define xtlv_id_end         xtlv_id_end
-#define xtlv_foreach(i)     for (i=0; i<xtlv_id_end; i++)
 
 #define XTLV_OPS_ENUM(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr)  xtlv_id_##_name = _id,
 enum { XTLV_MAPPER(XTLV_OPS_ENUM) };
@@ -924,7 +923,7 @@ xrecord_release(xrecord_t *record)
     xcache_t *cache;
     uint32 i;
     
-    xtlv_foreach(i) {
+    for (i=0; i<xtlv_id_end; i++) {
         cache = &record->cache[i];
         
         if (cache->multi) {
