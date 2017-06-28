@@ -187,6 +187,8 @@ typedef struct {
     _mapper(_name, _id,  XTLV_T_##_obj, 0, 0, 0, xtlv_dump_##_obj, NULL, xtlv_to_xdr_##_name)
 #define xtlv_mapper_object(_mapper, _id, _name) \
     _mapper(_name, _id,  XTLV_T_object, XTLV_F_FIXED, 0, sizeof(xtlv_##_name##_t), xtlv_dump_##_name, NULL, xtlv_to_xdr_##_name)
+#define xtlv_mapper_nothing(_mapper, _id, _name) \
+    _mapper(_name, 0, XTLV_T_binary, 0, 0, 0, NULL, NULL, NULL)
 
 #define xtlv_mapper_u8( _mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, u8)
 #define xtlv_mapper_u16(_mapper, _id, _name)    xtlv_mapper_fixed(_mapper, _id, _name, u16)
@@ -203,7 +205,7 @@ typedef struct {
 #define xtlv_mapper_binary(_mapper, _id, _name) xtlv_mapper_dynamic(_mapper, _id, _name, binary)
 
 #define XTLV_MAPPER(_) \
-    _(header, 0, XTLV_T_binary, 0, 0, 0, NULL, NULL, NULL) \
+    xtlv_mapper_nothing(_,  0, header) \
     \
     xtlv_mapper_u8(_,       1, session_state) \
     xtlv_mapper_u8(_,       2, appid) \
@@ -267,7 +269,7 @@ typedef struct {
     xtlv_mapper_binary(_,   205, ssl_client_cert) \
     xtlv_mapper_u8(_,       206, ssl_fail_reason) \
     \
-    _(end, 207, XTLV_T_binary, 0, 0, 0, NULL, NULL, NULL) \
+    xtlv_mapper_nothing(_,  207, end) \
     /* end */
 
 #define xtlv_id_header      xtlv_id_header
