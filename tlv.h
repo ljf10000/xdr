@@ -63,6 +63,23 @@ typedef void xtlv_dump_f(xtlv_t *tlv);
 typedef int xtlv_check_f(xtlv_t *tlv);
 typedef int xtlv_to_xdr_f(xdr_buffer_t *x, xtlv_t *tlv);
 
+
+static inline void xtlv_dump_u8 (xtlv_t *tlv);
+static inline void xtlv_dump_u16(xtlv_t *tlv);
+static inline void xtlv_dump_u32(xtlv_t *tlv);
+static inline void xtlv_dump_u64(xtlv_t *tlv);
+
+static inline void xtlv_dump_i8 (xtlv_t *tlv);
+static inline void xtlv_dump_i16(xtlv_t *tlv);
+static inline void xtlv_dump_i32(xtlv_t *tlv);
+static inline void xtlv_dump_i64(xtlv_t *tlv);
+
+static inline void xtlv_dump_string(xtlv_t *tlv);
+static inline void xtlv_dump_binary(xtlv_t *tlv);
+static inline void xtlv_dump_time(xtlv_t *tlv);
+static inline void xtlv_dump_ip4(xtlv_t *tlv);
+static inline void xtlv_dump_ip6(xtlv_t *tlv);
+
 static inline void xtlv_dump_session(xtlv_t *tlv);
 static inline void xtlv_dump_session_st(xtlv_t *tlv);
 static inline void xtlv_dump_session_time(xtlv_t *tlv);
@@ -89,67 +106,67 @@ enum { XTLV_ID_HEADER = 0 };
 
 #define XTLV_MAPPER(_) \
     _(header,               XTLV_ID_HEADER,  XTLV_T_binary,  0, 0, 0, NULL, NULL, NULL) \
-    _(session_state,        1,  XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL) \
-    _(appid,                2,  XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL)  \
+    _(session_state,        1,  XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), xtlv_dump_u8, NULL, NULL) \
+    _(appid,                2,  XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), xtlv_dump_u8, NULL, NULL)  \
     _(session,              3,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_session_t), xtlv_dump_session, NULL, NULL) \
     _(session_st,           4,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_session_st_t), xtlv_dump_session_st, NULL, NULL) \
     _(session_time,         5,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_session_time_t), xtlv_dump_session_time, NULL, NULL) \
     _(service_st,           6,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_service_st_t), xtlv_dump_session_st, NULL, NULL) \
     _(tcp,                  7,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_tcp_t), xtlv_dump_tcp, NULL, NULL) \
-    _(first_response_delay, 8,  XTLV_T_u32,     XTLV_F_FIXED, 0, sizeof(uint32), NULL, NULL, NULL) \
+    _(first_response_delay, 8,  XTLV_T_u32,     XTLV_F_FIXED, 0, sizeof(uint32), xtlv_dump_u32, NULL, NULL) \
     _(L7,                   9,  XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_L7_t), xtlv_dump_L7, NULL, NULL) \
     _(http,                 10, XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_http_t), xtlv_dump_http, NULL, NULL) \
-    _(http_host,            11, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(http_url,             12, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(http_host_xonline,    13, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(http_user_agent,      14, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(http_content,         15, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(http_refer,           16, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(http_cookie,          17, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(http_location,        18, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
+    _(http_host,            11, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(http_url,             12, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(http_host_xonline,    13, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(http_user_agent,      14, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(http_content,         15, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(http_refer,           16, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(http_cookie,          17, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(http_location,        18, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
     _(sip,                  19, XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_sip_t), xtlv_dump_sip, NULL, NULL) \
-    _(sip_calling_number,   20, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(sip_called_number,    21, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(sip_session_id,       22, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
+    _(sip_calling_number,   20, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(sip_called_number,    21, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(sip_session_id,       22, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
     _(rtsp,                 23, XTLV_T_object,  XTLV_F_FIXED, 0, sizeof(xtlv_rtsp_t), xtlv_dump_rtsp, NULL, NULL) \
-    _(rtsp_url,             24, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(rtsp_user_agent,      25, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(rtsp_server_ip,       26, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(ftp_status,           27, XTLV_T_u16,     XTLV_F_FIXED, 0, sizeof(uint16), NULL, NULL, NULL) \
-    _(ftp_user,             28, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(ftp_pwd,              29, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(ftp_trans_mode,       30, XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL)  \
-    _(ftp_trans_type,       31, XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL)  \
-    _(ftp_filename,         32, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(ftp_filesize,         33, XTLV_T_u32,     XTLV_F_FIXED, 0, sizeof(uint32), NULL, NULL, NULL) \
-    _(ftp_response_delay,   34, XTLV_T_time,    XTLV_F_FIXED, 0, sizeof(xdr_time_t), NULL, NULL, NULL) \
-    _(ftp_trans_time,       35, XTLV_T_time,    XTLV_F_FIXED, 0, sizeof(xdr_time_t), NULL, NULL, NULL) \
-    _(mail_msg_type,        36, XTLV_T_u16,     XTLV_F_FIXED, 0, sizeof(uint16), NULL, NULL, NULL) \
-    _(mail_status_code,     37, XTLV_T_i16,     XTLV_F_FIXED, 0, sizeof( int16), NULL, NULL, NULL) \
-    _(mail_user,            38, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(mail_sender,          39, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(mail_length,          40, XTLV_T_u32,     XTLV_F_FIXED, 0, sizeof(uint32), NULL, NULL, NULL) \
-    _(mail_domain,          41, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(mail_recver,          42, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(mail_hdr,             43, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(mail_acs_type,        44, XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL)  \
-    _(dns_domain,           45, XTLV_T_string,  0, 0, 0, NULL, NULL, NULL) \
-    _(dns_ip_count,         46, XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL)  \
-    _(dns_ip4,              47, XTLV_T_ip4,     XTLV_F_FIXED, 0, sizeof(uint32), NULL, NULL, NULL) \
-    _(dns_ip6,              48, XTLV_T_ip6,     XTLV_F_FIXED, 0, sizeof(xdr_ipaddr_t), NULL, NULL, NULL) \
-    _(dns_response_code,    49, XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL)  \
-    _(dns_count_request,    50, XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL)  \
-    _(dns_count_response_record, 51, XTLV_T_u8, XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL) \
-    _(dns_count_response_auth,   52, XTLV_T_u8, XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL) \
-    _(dns_count_response_extra,  53, XTLV_T_u8, XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL) \
-    _(dns_delay,            54, XTLV_T_u32,     XTLV_F_FIXED, 0, sizeof(uint32), NULL, NULL, NULL) \
+    _(rtsp_url,             24, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(rtsp_user_agent,      25, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(rtsp_server_ip,       26, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(ftp_status,           27, XTLV_T_u16,     XTLV_F_FIXED, 0, sizeof(uint16), xtlv_dump_i16, NULL, NULL) \
+    _(ftp_user,             28, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(ftp_pwd,              29, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(ftp_trans_mode,       30, XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), xtlv_dump_u8, NULL, NULL)  \
+    _(ftp_trans_type,       31, XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), xtlv_dump_u8, NULL, NULL)  \
+    _(ftp_filename,         32, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(ftp_filesize,         33, XTLV_T_u32,     XTLV_F_FIXED, 0, sizeof(uint32), xtlv_dump_u32, NULL, NULL) \
+    _(ftp_response_delay,   34, XTLV_T_time,    XTLV_F_FIXED, 0, sizeof(xdr_time_t), xtlv_dump_time, NULL, NULL) \
+    _(ftp_trans_time,       35, XTLV_T_time,    XTLV_F_FIXED, 0, sizeof(xdr_time_t), xtlv_dump_time, NULL, NULL) \
+    _(mail_msg_type,        36, XTLV_T_u16,     XTLV_F_FIXED, 0, sizeof(uint16), xtlv_dump_u16, NULL, NULL) \
+    _(mail_status_code,     37, XTLV_T_i16,     XTLV_F_FIXED, 0, sizeof( int16), xtlv_dump_i16, NULL, NULL) \
+    _(mail_user,            38, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(mail_sender,          39, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(mail_length,          40, XTLV_T_u32,     XTLV_F_FIXED, 0, sizeof(uint32), xtlv_dump_u32, NULL, NULL) \
+    _(mail_domain,          41, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(mail_recver,          42, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(mail_hdr,             43, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(mail_acs_type,        44, XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), xtlv_dump_u8, NULL, NULL)  \
+    _(dns_domain,           45, XTLV_T_string,  0, 0, 0, xtlv_dump_string, NULL, NULL) \
+    _(dns_ip_count,         46, XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), xtlv_dump_u8, NULL, NULL)  \
+    _(dns_ip4,              47, XTLV_T_ip4,     XTLV_F_FIXED, 0, sizeof(uint32), xtlv_dump_ip4, NULL, NULL) \
+    _(dns_ip6,              48, XTLV_T_ip6,     XTLV_F_FIXED, 0, sizeof(xdr_ipaddr_t), xtlv_dump_ip6, NULL, NULL) \
+    _(dns_response_code,    49, XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), xtlv_dump_u8, NULL, NULL)  \
+    _(dns_count_request,    50, XTLV_T_u8,      XTLV_F_FIXED, 0, sizeof(uint8), xtlv_dump_u8, NULL, NULL)  \
+    _(dns_count_response_record, 51, XTLV_T_u8, XTLV_F_FIXED, 0, sizeof(uint8), xtlv_dump_u8, NULL, NULL) \
+    _(dns_count_response_auth,   52, XTLV_T_u8, XTLV_F_FIXED, 0, sizeof(uint8), xtlv_dump_u8, NULL, NULL) \
+    _(dns_count_response_extra,  53, XTLV_T_u8, XTLV_F_FIXED, 0, sizeof(uint8), xtlv_dump_u8, NULL, NULL) \
+    _(dns_delay,            54, XTLV_T_u32,     XTLV_F_FIXED, 0, sizeof(uint32), xtlv_dump_u32, NULL, NULL) \
     \
-    _(http_request,         201, XTLV_T_binary, 0, 0, 0, NULL, NULL, NULL) \
-    _(http_response,        202, XTLV_T_binary, 0, 0, 0, NULL, NULL, NULL) \
-    _(file_content,         203, XTLV_T_binary, 0, 0, 0, NULL, NULL, NULL) \
-    _(ssl_server_cert,      204, XTLV_T_binary, XTLV_F_MULTI, 0, 0, NULL, NULL, NULL) \
-    _(ssl_client_cert,      205, XTLV_T_binary, XTLV_F_MULTI, 0, 0, NULL, NULL, NULL) \
-    _(ssl_fail_reason,      206, XTLV_T_u8,     XTLV_F_FIXED, 0, sizeof(uint8), NULL, NULL, NULL) \
+    _(http_request,         201, XTLV_T_binary, 0, 0, 0, xtlv_dump_binary, NULL, NULL) \
+    _(http_response,        202, XTLV_T_binary, 0, 0, 0, xtlv_dump_binary, NULL, NULL) \
+    _(file_content,         203, XTLV_T_binary, 0, 0, 0, xtlv_dump_binary, NULL, NULL) \
+    _(ssl_server_cert,      204, XTLV_T_binary, XTLV_F_MULTI, 0, 0, xtlv_dump_binary, NULL, NULL) \
+    _(ssl_client_cert,      205, XTLV_T_binary, XTLV_F_MULTI, 0, 0, xtlv_dump_binary, NULL, NULL) \
+    _(ssl_fail_reason,      206, XTLV_T_u8,     XTLV_F_FIXED, 0, sizeof(uint8), xtlv_dump_u8, NULL, NULL) \
     /* end */
 enum { XTLV_ID_END = 207 };
 
@@ -278,6 +295,16 @@ struct xtlv_st {
 #define xtlv_http(_tlv)         (xtlv_http_t *)xtlv_data(_tlv)
 #define xtlv_sip(_tlv)          (xtlv_sip_t *)xtlv_data(_tlv)
 #define xtlv_rtsp(_tlv)         (xtlv_rtsp_t *)xtlv_data(_tlv)
+
+static inline void
+xtlv_dump(xtlv_t *tlv)
+{
+    xtlv_ops_t *ops = xtlv_ops(tlv->id);
+
+    if (ops->dump) {
+        (*ops->dump)(tlv);
+    }
+}
 
 static inline int
 xtlv_error(xtlv_t *tlv, int err)
@@ -694,62 +721,6 @@ xtlv_dump_rtsp(xtlv_t *tlv)
     XTLV_DUMP2("count_video         : %u", obj->count_video);
     XTLV_DUMP2("count_audio         : %u", obj->count_audio);
     XTLV_DUMP2("describe_delay      : %u", obj->describe_delay);
-}
-
-static inline void
-xtlv_dump(xtlv_t *tlv)
-{
-    xtlv_ops_t *ops = xtlv_ops(tlv->id);
-
-    if (ops->dump) {
-        (*ops->dump)(tlv);
-
-        return;
-    }
-
-    switch(ops->type) {
-        case XTLV_T_u8: 
-            xtlv_dump_u8(tlv);
-            break;
-        case XTLV_T_u16: 
-            xtlv_dump_u16(tlv);
-            break;
-        case XTLV_T_u32: 
-            xtlv_dump_u32(tlv);
-            break;
-        case XTLV_T_u64: 
-            xtlv_dump_u64(tlv);
-            break;
-            
-        case XTLV_T_i8: 
-            xtlv_dump_i8(tlv);
-            break;
-        case XTLV_T_i16: 
-            xtlv_dump_i16(tlv);
-            break;
-        case XTLV_T_i32: 
-            xtlv_dump_i32(tlv);
-            break;
-        case XTLV_T_i64: 
-            xtlv_dump_i64(tlv);
-            break;
-        
-        case XTLV_T_string: 
-            xtlv_dump_string(tlv);
-            break;
-        case XTLV_T_binary: 
-            xtlv_dump_binary(tlv);
-            break;       
-        case XTLV_T_time: 
-            xtlv_dump_time(tlv);
-            break;
-        case XTLV_T_ip4: 
-            xtlv_dump_ip4(tlv);
-            break;
-        case XTLV_T_ip6: 
-            xtlv_dump_ip6(tlv);
-            break;
-    }
 }
 
 enum { XCACHE_EXPAND = 32 };

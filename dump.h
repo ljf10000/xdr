@@ -28,7 +28,7 @@ xxxxxxH : xxxxxxxx xxxxxxxx xxxxxx            ; ccccccccccc
 #endif
 
 #ifndef __DUMP_BUFFER_MAX
-#define __DUMP_BUFFER_MAX           0x10000
+#define __DUMP_BUFFER_MAX           0x1000000
 #endif
 
 enum {
