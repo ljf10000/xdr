@@ -452,8 +452,43 @@ os_bkdr(const void *binary, uint32 len)
 {
     return os_bkdr_push(0, binary, len);
 }
-
+/******************************************************************************/
 #include "dump.h"
 #include "sha2.h"
+/******************************************************************************/
+/*
+* return:
+*   <= 0: error
+*     >0: success, file size
+*/
+static inline int
+os_fdigest(const char *file, byte digest[])
+{
+    char *buf = NULL;
+    int size, err = 0;
+    
+    size = os_fsize(file);
+    if (size<0) {
+        goto error;
+    }
+
+    buf = (char *)os_malloc(size);
+    if (NULL==buf) {
+        goto error;
+    }
+    
+    err = os_readfile(file, buf, size);
+    if (err<0) {
+        goto error;
+    }
+
+    sha256(buf, size, digest);
+    
+    return size;
+error:
+    os_free(buf);
+
+    return err;
+}
 /******************************************************************************/
 #endif

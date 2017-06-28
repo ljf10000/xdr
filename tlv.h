@@ -765,10 +765,10 @@ xtlv_dump_L7(xtlv_t *tlv)
 }
 
 typedef struct {
-    xtlv_time_t time_request;
-    xtlv_time_t time_first_response;
-    xtlv_time_t time_last_content;
-    uint64 service_delay;
+    xdr_time_t time_request;
+    xdr_time_t time_first_response;
+    xdr_time_t time_last_content;
+    xdr_duration_t service_delay;
     
     uint32 content_length;
     

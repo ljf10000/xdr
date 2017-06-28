@@ -13,6 +13,9 @@
 
 #define XDR_ALIGN(x)    OS_ALIGN(x, 4)
 
+typedef uint32 xdr_offset_t;
+typedef uint64 file_offset_t;
+
 static inline void *
 xdr_strcpy(void *dst, void *src, uint32 size)
 {
@@ -29,7 +32,7 @@ typedef struct {
     *   real len must align 4
     */
     uint32 len;
-    uint32 offset;
+    xdr_offset_t offset;
 } xdr_string_t, xdr_binary_t;
 
 enum {
@@ -42,7 +45,7 @@ enum {
 };
 
 typedef struct {
-    uint32 offset;
+    xdr_offset_t offset;
     uint32 size;
     
     byte count;
@@ -73,7 +76,7 @@ typedef union {
 enum { XDR_DIGEST_SIZE = SHA256_DIGEST_SIZE };
 
 typedef struct {
-    uint64 offset;
+    file_offset_t offset;
     uint32 size;
     byte digest[XDR_DIGEST_SIZE];
     xdr_string_t path;
@@ -81,10 +84,10 @@ typedef struct {
 
 typedef struct {
     // begin, same as xtlv_http_t
-    uint64 time_request;
-    uint64 time_first_response;
-    uint64 time_last_content;
-    uint64 service_delay;
+    xdr_time_t time_request;
+    xdr_time_t time_first_response;
+    xdr_time_t time_last_content;
+    xdr_duration_t service_delay;
     
     uint32 content_length;
     
@@ -116,8 +119,8 @@ typedef struct {
     xdr_string_t cookie;
     xdr_string_t location;
 
-    uint32 offsetof_request;    // xdr_file_t
-    uint32 offsetof_response;   // xdr_file_t
+    xdr_offset_t offsetof_request;    // xdr_file_t
+    xdr_offset_t offsetof_response;   // xdr_file_t
 } 
 xdr_http_t;
 
@@ -212,7 +215,7 @@ typedef struct {
 
 typedef struct {
     // begin same as xdr_file_t
-    uint64 offset;
+    file_offset_t offset;
     uint32 size;
     uint32 hash;
     byte digest[XDR_DIGEST_SIZE];
@@ -268,17 +271,17 @@ typedef struct {
     uint32 flag;    // XDR_F_XXX
     uint32 first_response_delay;
 
-    uint32 offsetof_session;
-    uint32 offsetof_session_st;
-    uint32 offsetof_service_st;
-    uint32 offsetof_alert;
-    uint32 offsetof_file_content;
+    xdr_offset_t offsetof_session;
+    xdr_offset_t offsetof_session_st;
+    xdr_offset_t offsetof_service_st;
+    xdr_offset_t offsetof_alert;
+    xdr_offset_t offsetof_file_content;
     // tcp
-    uint32 offsetof_L4;
+    xdr_offset_t offsetof_L4;
     // http/sip/rtsp/ftp/mail/dns
-    uint32 offsetof_L5;
+    xdr_offset_t offsetof_L5;
     // ssl
-    uint32 offsetof_L6;
+    xdr_offset_t offsetof_L6;
 
     xdr_L7_t L7;
 
@@ -293,7 +296,7 @@ xdr_proto_obj(xdr_proto_t *proto, uint32 offset)
 }
 
 typedef struct {
-    uint64 offset;
+    file_offset_t offset;
     uint32 size;    // cookie size, cookie is the small file
     uint32 hash;
     uint32 flag;    // XDR_F_XXX
@@ -338,7 +341,7 @@ struct xdr_buffer_st {
         xdr_proto_t *proto;
     } u;
     
-    uint32 offset;
+    xdr_offset_t offset;
     uint32 size;
 };
 
@@ -348,7 +351,7 @@ xb_current(xdr_buffer_t *x)
     return x->u.buffer + x->offset;
 }
 
-static inline uint32
+static inline xdr_offset_t
 xb_offset(xdr_buffer_t *x, void *pointer)
 {
     return pointer - (void *)x;
@@ -390,6 +393,12 @@ xb_expand(xdr_buffer_t *x, uint32 size)
 }
 
 static inline byte *
+xb_obj(xdr_buffer_t *x, xdr_offset_t offset)
+{
+    return xdr_proto_obj(x->u.proto, offset);
+}
+
+static inline byte *
 xb_pre(xdr_buffer_t *x, uint32 size)
 {
     if (xb_expand(x, size) < 0) {
@@ -404,11 +413,11 @@ xb_pre(xdr_buffer_t *x, uint32 size)
 }
 
 static inline void *
-xb_obj(xdr_buffer_t *x, uint32 size, uint32 *poffset)
+xb_pre_obj(xdr_buffer_t *x, uint32 size, xdr_offset_t *poffset)
 {
-    uint32 offset = *poffset;
+    xdr_offset_t offset = *poffset;
     if (offset) {
-        return xdr_proto_obj(x->u.proto, offset);
+        return xb_obj(x, offset);
     }
     
     byte *p = xb_pre(x, size);
@@ -450,7 +459,7 @@ xb_pre_string(xdr_buffer_t *x, xdr_string_t *obj, void *buf, uint32 len)
     obj->len = len;
     obj->offset = xb_offset(x, p);
 
-    return s;
+    return p;
 }
 
 static inline int
@@ -471,7 +480,7 @@ xb_pre_binnary(xdr_buffer_t *x, xdr_binary_t *obj, void *buf, uint32 len)
     obj->len = len;
     obj->offset = xb_offset(x, p);
 
-    return s;
+    return p;
 }
 
 static inline int
@@ -481,7 +490,7 @@ xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, xtlv_t *tlv)
 }
 
 static inline xdr_file_t *
-xb_pre_file(xdr_buffer_t *x, uint32 *poffset, void *buf, uint32 len)
+xb_pre_file(xdr_buffer_t *x, xdr_offset_t *poffset, void *buf, uint32 len)
 {
     xdr_file_t *p = xb_pre(x, sizeof(xdr_file_t));
     if (NULL==p) {
@@ -491,11 +500,31 @@ xb_pre_file(xdr_buffer_t *x, uint32 *poffset, void *buf, uint32 len)
     p->offset   = 0;
     p->size     = len;
     sha256(buf, len, p->digest);
+
+    // todo: save file
+    char *path = NULL;
     
+    return xb_pre_string(x, &p->path, path, strlen(path))?p:NULL;
+}
+
+static inline xdr_file_t *
+xb_pre_path(xdr_buffer_t *x, xdr_offset_t *poffset, char *filename)
+{
+    xdr_file_t *p = xb_pre(x, sizeof(xdr_file_t));
+    if (NULL==p) {
+        return NULL;
+    }
+
+    p->offset   = 0;
+    p->size     = os_fdigest(filename, p->digest);
+
+    //
+    
+    return p;
 }
 
 #define xb_pre_by(_x, _type, _field_offsetof) \
-    (_type *)xb_obj(_x, sizeof(_type), &(_x)->u.proto->_field_offsetof)
+    (_type *)xb_pre_obj(_x, sizeof(_type), &(_x)->u.proto->_field_offsetof)
 
 #define xb_pre_L4(_x, _type)    xb_pre_by(_x, _type, offsetof_L4)
 #define xb_pre_L5(_x, _type)    xb_pre_by(_x, _type, offsetof_L5)
@@ -982,7 +1011,16 @@ xtlv_to_xdr_dns_delay(xdr_buffer_t *x, xtlv_t *tlv)
 static inline int
 xtlv_to_xdr_http_request(xdr_buffer_t *x, xtlv_t *tlv)
 {
-    return xb_pre_binary_ex(x, &xb_pre_http(x)->request, tlv);
+    xdr_http_t *http = xb_pre_http(x);
+    xdr_file_t *file;
+    
+    if (is_xtlv_opt_file_as_path()) {
+        file = xb_pre_path(x, &http->offsetof_request, xtlv_data(tlv));
+    } else {
+        file = xb_pre_file(x, &http->offsetof_request, xtlv_data(tlv), xtlv_datalen(tlv));
+    }
+
+    return file?0:-ENOMEM;
 }
 
 static inline int
