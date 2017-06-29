@@ -57,7 +57,7 @@ typedef struct {
 static inline byte *
 xdr_array_entry(xdr_array_t *array, int idx)
 {
-    return array->entry[array->size * idx];
+    return array->entry + (array->size * idx);
 }
 
 typedef struct {
@@ -563,7 +563,7 @@ xb_pre_array(xdr_buffer_t *x, xdr_array_t *a, uint32 type, uint32 size, uint32 c
 static inline xdr_string_t *
 xb_pre_string(xdr_buffer_t *x, xdr_string_t *obj, void *buf, uint32 len)
 {
-    byte *p = xb_pre(x, XDR_ALIGN(1+len));
+    xdr_string_t *p = (xdr_string_t *)xb_pre(x, XDR_ALIGN(1+len));
     if (NULL==p) {
         return NULL;
     }
@@ -581,10 +581,10 @@ xb_pre_string_ex(xdr_buffer_t *x, xdr_string_t *obj, xtlv_t *tlv)
     return xb_pre_string(x, obj, xtlv_data(tlv), xtlv_datalen(tlv))?0:-ENOMEM;
 }
 
-static inline xdr_string_t *
+static inline xdr_binary_t *
 xb_pre_binnary(xdr_buffer_t *x, xdr_binary_t *obj, void *buf, uint32 len)
 {
-    byte *p = xb_pre(x, XDR_ALIGN(len));
+    xdr_binary_t *p = (xdr_binary_t *)xb_pre(x, XDR_ALIGN(len));
     if (NULL==p) {
         return NULL;
     }
@@ -654,7 +654,7 @@ xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv, uint32 flag)
 static inline int
 xb_pre_file_ex(xdr_buffer_t *x, xdr_offset_t *poffset, xtlv_t *tlv, uint32 flag)
 {
-    xdr_file_t *file = xb_pre(x, sizeof(xdr_file_t));
+    xdr_file_t *file = (xdr_file_t *)xb_pre(x, sizeof(xdr_file_t));
     if (NULL==file) {
         return -ENOMEM;
     }
