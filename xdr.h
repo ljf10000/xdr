@@ -1181,13 +1181,13 @@ xtlv_to_xdr_file_content(xdr_buffer_t *x, xtlv_t *tlv)
 static inline int
 xtlv_to_xdr_ssl_server_cert(xdr_buffer_t *x, xtlv_t *tlv)
 {
-    return os_do_nothing(), 0;
+    return 0; // do nothing
 }
 
 static inline int
 xtlv_to_xdr_ssl_client_cert(xdr_buffer_t *x, xtlv_t *tlv)
 {
-    return os_do_nothing(), 0;
+    return 0; // do nothing
 }
 
 static inline int
