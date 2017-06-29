@@ -45,13 +45,20 @@ enum {
 };
 
 typedef struct {
-    xdr_offset_t offset;
     uint32 size;
-    
+
     byte count;
     byte type;    // XDR_ARRAY_END
     byte _[2];
+
+    byte entry[0];
 } xdr_array_t;
+
+static inline byte *
+xdr_array_entry(xdr_array_t *array, int idx)
+{
+    return array->entry[array->size * idx];
+}
 
 typedef struct {
     byte ver;
@@ -75,13 +82,25 @@ typedef union {
 
 enum { XDR_DIGEST_SIZE = SHA256_DIGEST_SIZE };
 
+#define XDR_HDFS_FILENAME   "2017-01-01/0000"           // 15
+
 typedef struct {
-    big_offset_t offset;
-    uint32 size;
+    uint32 size;    // real file size
     byte digest[XDR_DIGEST_SIZE];
-    
+
+    /*
+    * file as buffer:
+    *   file.len is file size
+    *   file.offset store file content
+    *
+    * file as path:
+    *   file.len is strlen(path)
+    *   file.offset store path
+    */
     xdr_string_t file;  // local file
-    xdr_string_t hdfs;  // hdfs  file
+
+    big_offset_t offset;// for hdfs
+    char hdfs[1+sizeof(XDR_HDFS_FILENAME)];
 } xdr_file_t;
 
 typedef struct {
@@ -199,6 +218,8 @@ typedef struct {
     xdr_string_t hdr;
 } xdr_mail_t;
 
+enum { XDR_DNS_DOMAIN_SIZE = 63 };
+
 typedef struct {
     byte response_code;
     byte count_request;
@@ -206,33 +227,36 @@ typedef struct {
     byte count_response_auth;
     
     byte count_response_extra;
-    byte ip_version;
-    byte _[2];
+    byte ip_version;    // 0: ipv4
+    byte ip_count;
+    byte _;
 
     uint32 delay;
+    /*
+    * if 1==ip_count, 0==ip_version
+    *   then 
+    *       ip4 is the ip address
+    *       the ip array is not used
+    */
+    uint32 ip4;
     
-    xdr_array_t ip; // entry is uint32
+    xdr_array_t ip; // uint32
     xdr_string_t domain;
-} xdr_dns_t;
+} 
+xdr_dns_t;
 
 typedef struct {
-    // begin same as xdr_file_t
-    big_offset_t offset;
-    uint32 size;
-    uint32 hash;
-    byte digest[XDR_DIGEST_SIZE];
-    xdr_string_t path;
-    // end same as xdr_file_t
+    xdr_file_t file;
     
-    xdr_string_t domain;
+    char domain[1+XDR_DNS_DOMAIN_SIZE];
 } xdr_cert_t;
 
 typedef struct {
     byte reason;
     byte _[3];
 
-    xdr_array_t cert_server; // array of xdr_cert_t
-    xdr_array_t cert_client; // array of xdr_cert_t
+    xdr_array_t cert_server; // xdr_cert_t
+    xdr_array_t cert_client; // xdr_cert_t
 } xdr_ssl_t;
 
 enum {
@@ -257,12 +281,29 @@ enum {
     XDR_F_SSL_CLIENT_CERT   = 0x0020,
 };
 
+enum {
+    XDR_CLASS_COMMON    = 100,
+    XDR_CLASS_NDS       = 101,
+    XDR_CLASS_MMS       = 102,
+    XDR_CLASS_HTTP      = 103,
+    XDR_CLASS_FTP       = 104,
+    XDR_CLASS_MAIL      = 105,
+    XDR_CLASS_VOIP      = 106,
+    XDR_CLASS_RTSP      = 107,
+    XDR_CLASS_P2P       = 108,
+    XDR_CLASS_VIDEO     = 109,
+    XDR_CLASS_IM        = 110,
+};
+
 typedef struct {
     byte version;   // xdr version
     byte appid;
     byte ip_proto;
     byte session_state;
 
+    byte ip_version;
+    byte _[3];
+    
     xdr_time_t session_time_create;
     xdr_time_t session_time_start;
     xdr_time_t session_time_stop;
@@ -291,19 +332,90 @@ typedef struct {
 } 
 xdr_proto_t;
 
-static inline void *
-xdr_proto_obj(xdr_proto_t *proto, uint32 offset)
+#define XDR_OBJ(_proto, _offset)    ((_offset)?((byte *)(_proto) + (_offset)):NULL)
+
+static inline xdr_session_t
+xdr_session(xdr_proto_t *proto)
 {
-    return (byte *)proto + offset;
+    xdr_session_t session = {
+        .session = XDR_OBJ(proto, proto->offsetof_session),
+    };
+
+    return session;
+}
+
+static inline xdr_session_st_t *
+xdr_session_st(xdr_proto_t *proto)
+{
+    return (xdr_session_st_t *)XDR_OBJ(proto, proto->offsetof_session_st);
+}
+
+static inline xdr_service_st_t *
+xdr_service_st(xdr_proto_t *proto)
+{
+    return (xdr_service_st_t *)XDR_OBJ(proto, proto->offsetof_service_st);
+}
+
+static inline xdr_tcp_t *
+xdr_tcp(xdr_proto_t *proto)
+{
+    return (xdr_tcp_t *)XDR_OBJ(proto, proto->offsetof_L4);
+}
+
+static inline xdr_http_t *
+xdr_http(xdr_proto_t *proto)
+{
+    return (xdr_http_t *)XDR_OBJ(proto, proto->offsetof_L5);
+}
+
+static inline xdr_sip_t *
+xdr_sip(xdr_proto_t *proto)
+{
+    return (xdr_sip_t *)XDR_OBJ(proto, proto->offsetof_L5);
+}
+
+static inline xdr_rtsp_t *
+xdr_rtsp(xdr_proto_t *proto)
+{
+    return (xdr_rtsp_t *)XDR_OBJ(proto, proto->offsetof_L5);
+}
+
+static inline xdr_ftp_t *
+xdr_ftp(xdr_proto_t *proto)
+{
+    return (xdr_ftp_t *)XDR_OBJ(proto, proto->offsetof_L5);
+}
+
+static inline xdr_mail_t *
+xdr_mail(xdr_proto_t *proto)
+{
+    return (xdr_mail_t *)XDR_OBJ(proto, proto->offsetof_L5);
+}
+
+static inline xdr_dns_t *
+xdr_dns(xdr_proto_t *proto)
+{
+    return (xdr_dns_t *)XDR_OBJ(proto, proto->offsetof_L5);
+}
+
+static inline xdr_ssl_t *
+xdr_ssl(xdr_proto_t *proto)
+{
+    return (xdr_ssl_t *)XDR_OBJ(proto, proto->offsetof_L6);
+}
+
+static inline xdr_L7_t *
+xdr_L7(xdr_proto_t *proto)
+{
+    return &proto->L7;
 }
 
 typedef struct {
-    big_offset_t offset;
     uint32 size;    // cookie size, cookie is the small file
     uint32 hash;
     uint32 flag;    // XDR_F_XXX
     byte digest[XDR_DIGEST_SIZE];
-    byte _[8];      // keep sizeof(xdr_cookie_t) == 60
+    byte _[16];      // keep sizeof(xdr_cookie_t) == 60
     
     byte body[0];
 } xdr_cookie_t;
@@ -397,7 +509,7 @@ xb_expand(xdr_buffer_t *x, uint32 size)
 static inline byte *
 xb_obj(xdr_buffer_t *x, xdr_offset_t offset)
 {
-    return xdr_proto_obj(x->u.proto, offset);
+    return XDR_OBJ(x->u.proto, offset);
 }
 
 static inline byte *
@@ -435,8 +547,8 @@ xb_pre_obj(xdr_buffer_t *x, uint32 size, xdr_offset_t *poffset)
 static inline xdr_array_t *
 xb_pre_array(xdr_buffer_t *x, xdr_array_t *a, uint32 type, uint32 size, uint32 count)
 {
-    uint32 len = count * XDR_ALIGN(size);
-    byte *p = xb_pre(x, len);
+    uint32 allsize = count * XDR_ALIGN(size);
+    byte *p = xb_pre(x, allsize);
     if (NULL==p) {
         return NULL;
     }
@@ -444,7 +556,6 @@ xb_pre_array(xdr_buffer_t *x, xdr_array_t *a, uint32 type, uint32 size, uint32 c
     a->type = type;
     a->size = size;
     a->count = count;
-    a->offset = xb_offset(x, p);
 
     return a;
 }
@@ -491,54 +602,71 @@ xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, xtlv_t *tlv)
     return xb_pre_binnary(x, obj, xtlv_data(tlv), xtlv_datalen(tlv))?0:-ENOMEM;
 }
 
-static inline xdr_file_t *
-xb_pre_file(xdr_buffer_t *x, xdr_offset_t *poffset, void *buf, uint32 len, uint32 flag)
+static inline int
+xb_pre_file_as_file(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv, uint32 flag)
 {
-    xdr_file_t *p = xb_pre(x, sizeof(xdr_file_t));
-    if (NULL==p) {
-        return NULL;
+    uint32 size = xtlv_datalen(tlv);
+    byte *buf = xtlv_data(tlv);
+    
+    // todo: save file
+    char path[1+OS_FILENAME_LEN];
+    
+    if (NULL==xb_pre_string(x, &file->file, path, strlen(path))) {
+        return -ENOMEM;
     }
 
-    p->offset   = 0;
-    p->size     = len;
-    sha256(buf, len, p->digest);
-
-    // todo: save file
-    char *path = NULL;
-
-    x->u.proto->flag |= flag;
+    file->size     = size;
+    sha256(buf, size, file->digest);
     
-    return xb_pre_string(x, &p->file, path, strlen(path))?p:NULL;
+    x->u.proto->flag |= flag;
+
+    return 0;
 }
 
-static inline xdr_file_t *
-xb_pre_path(xdr_buffer_t *x, xdr_offset_t *poffset, char *filename, uint32 flag)
+static inline int
+xb_pre_file_as_path(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv, uint32 flag)
 {
-    xdr_file_t *p = xb_pre(x, sizeof(xdr_file_t));
-    if (NULL==p) {
-        return NULL;
+    char *filename = xtlv_data(tlv);
+    if (NULL==xb_pre_string(x, &file->file, filename, strlen(filename))) {
+        return -ENOMEM;
     }
 
-    p->offset   = 0;
-    p->size     = os_fdigest(filename, p->digest);
-
+    int size = os_fdigest(filename, file->digest);
+    if (size < 0) {
+        return size;
+    }
+    file->size     = size;
     x->u.proto->flag |= flag;
     
-    return p;
+    return 0;
+}
+
+static inline int
+xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv, uint32 flag)
+{
+    if (is_xtlv_opt_file_as_path()) {
+        return xb_pre_file_as_path(x, file, tlv, flag);
+    } else {
+        return xb_pre_file_as_file(x, file, tlv, flag);
+    }
 }
 
 static inline int
 xb_pre_file_ex(xdr_buffer_t *x, xdr_offset_t *poffset, xtlv_t *tlv, uint32 flag)
 {
-    xdr_file_t *file;
-    
-    if (is_xtlv_opt_file_as_path()) {
-        file = xb_pre_path(x, poffset, xtlv_data(tlv), flag);
-    } else {
-        file = xb_pre_file(x, poffset, xtlv_data(tlv), xtlv_datalen(tlv), flag);
+    xdr_file_t *file = xb_pre(x, sizeof(xdr_file_t));
+    if (NULL==file) {
+        return -ENOMEM;
     }
 
-    return file?0:-ENOMEM;
+    int err = xb_pre_file(x, file, tlv, flag);
+    if (err<0) {
+        return err;
+    }
+
+    *poffset = xb_offset(x, file);
+
+    return 0;
 }
 
 #define xb_pre_by(_x, _type, _field_offsetof) \
@@ -654,7 +782,7 @@ xtlv_to_xdr_session(xdr_buffer_t *x, xtlv_t *tlv)
 {
     xtlv_session_t *src = xtlv_session(tlv);
     
-    if (XDR_SESSION_IPV4==src->ver) {
+    if (XDR_IPV4==src->ver) {
         xdr_session4_t *dst = xb_pre_session4(x);
         if (NULL==dst) {
             return -ENOMEM;
@@ -676,6 +804,8 @@ xtlv_to_xdr_session(xdr_buffer_t *x, xtlv_t *tlv)
         
         x->u.proto->bkdr = os_bkdr(dst, sizeof(*dst));
     }
+    
+    x->u.proto->ip_version = src->ver;
     
     return 0;
 }
@@ -961,7 +1091,7 @@ xtlv_to_xdr_dns_domain(xdr_buffer_t *x, xtlv_t *tlv)
 static inline int
 xtlv_to_xdr_dns_ip_count(xdr_buffer_t *x, xtlv_t *tlv)
 {
-    xb_pre_dns(x)->ip.count = xtlv_u8(tlv);
+    xb_pre_dns(x)->ip_count = xtlv_u8(tlv);
     
     return 0;
 }
@@ -969,13 +1099,17 @@ xtlv_to_xdr_dns_ip_count(xdr_buffer_t *x, xtlv_t *tlv)
 static inline int
 xtlv_to_xdr_dns_ip4(xdr_buffer_t *x, xtlv_t *tlv)
 {
-    return os_do_nothing(), 0;
+    xb_pre_dns(x)->ip_version = XDR_IPV4;
+    
+    return 0;
 }
 
 static inline int
 xtlv_to_xdr_dns_ip6(xdr_buffer_t *x, xtlv_t *tlv)
 {
-    return os_do_nothing(), 0;
+    xb_pre_dns(x)->ip_version = XDR_IPV6;
+    
+    return 0;
 }
 
 static inline int
@@ -1060,6 +1194,119 @@ static inline int
 xtlv_to_xdr_ssl_fail_reason(xdr_buffer_t *x, xtlv_t *tlv)
 {
     xb_pre_ssl(x)->reason = xtlv_u8(tlv);
+    
+    return 0;
+}
+
+static inline int
+xrecord_to_xdr_dns(xdr_buffer_t *x, xrecord_t *r)
+{
+    xdr_dns_t *dns = xdr_dns(x->u.proto);
+    if (NULL==dns) {
+        return 0;
+    }
+
+    uint32 size, type;
+    int id;
+    
+    if (XDR_IPV4 == dns->ip_version) {
+        id = xtlv_id_dns_ip4;
+        type = XDR_ARRAY_IP4;
+        size = sizeof(uint32);
+    } else {
+        id = xtlv_id_dns_ip6;
+        type = XDR_ARRAY_IP6;
+        size = sizeof(xdr_ipaddr_t);
+    }
+    
+    xcache_t *cache = &r->cache[id];
+    if (is_xcache_empty(cache)) {
+        return 0;
+    }
+    
+    int i, count = xcache_multi_count(cache);
+
+    if (1==count && XDR_IPV4==dns->ip_version) {
+        dns->ip4 = xtlv_u32(cache->tlv);
+
+        return 0;
+    }
+    
+    xdr_array_t *array = xb_pre_array(x, &dns->ip, type, size, count);
+    if (NULL==array) {
+        return -ENOMEM;
+    }
+    
+    for (i=0; i<count; i++) {
+        xtlv_t *tlv = cache->multi[i];
+
+        memcpy(xdr_array_entry(array, i), xtlv_data(tlv), size);
+    }
+
+    return 0;
+}
+
+static inline int
+xrecord_to_xdr_ssl_cert(xdr_buffer_t *x, xdr_array_t *certs, xrecord_t *r, int id)
+{
+    uint32 flag = 0;
+    
+    switch (id) {
+        case xtlv_id_ssl_server_cert:
+            flag = XDR_F_SSL_SERVER_CERT;
+            break;
+        case xtlv_id_ssl_client_cert:
+            flag = XDR_F_SSL_CLIENT_CERT;
+            break;
+        default:
+            return -1;
+    }
+    
+    xcache_t *cache = &r->cache[id];
+    if (is_xcache_empty(cache)) {
+        return 0;
+    }
+    
+    int i, err, count = xcache_multi_count(cache);
+    xdr_cert_t *cert;
+    
+    xdr_array_t *array = xb_pre_array(x, certs, XDR_ARRAY_CERT, sizeof(xdr_cert_t), count);
+    if (NULL==array) {
+        return -ENOMEM;
+    }
+    
+    for (i=0; i<count; i++) {
+        cert = (xdr_cert_t *)xdr_array_entry(array, i);
+
+        err = xb_pre_file(x, &cert->file, xcache_multi_tlv(cache, i), flag);
+        if (err<0) {
+            return err;
+        }
+    }
+
+    return 0;
+}
+
+
+static inline int
+xrecord_to_xdr_ssl(xdr_buffer_t *x, xrecord_t *r)
+{
+    xdr_ssl_t *ssl = xdr_ssl(x->u.proto);
+    if (NULL==ssl) {
+        return 0;
+    }
+    
+    int err;
+
+    err = xrecord_to_xdr_ssl_cert(x, &ssl->cert_server, r, xtlv_id_ssl_server_cert);
+    if (err<0) {
+        return err;
+    }
+
+    err = xrecord_to_xdr_ssl_cert(x, &ssl->cert_client, r, xtlv_id_ssl_client_cert);
+    if (err<0) {
+        return err;
+    }
     
     return 0;
 }

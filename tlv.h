@@ -278,12 +278,16 @@ enum { XTLV_MAPPER(XTLV_OPS_ENUM) xtlv_id_end };
 
 // just for source insight
 #define xtlv_id_header          xtlv_id_header
+#define xtlv_id_appid           xtlv_id_appid
 #define xtlv_id_file_content    xtlv_id_file_content
 #define xtlv_id_http_request    xtlv_id_http_request
 #define xtlv_id_http_response   xtlv_id_http_response
 #define xtlv_id_ssl_server_cert xtlv_id_ssl_server_cert
 #define xtlv_id_ssl_client_cert xtlv_id_ssl_client_cert
+#define xtlv_id_dns_ip4         xtlv_id_dns_ip4
+#define xtlv_id_dns_ip6         xtlv_id_dns_ip6
 #define xtlv_id_end             xtlv_id_end
+
 
 #define XTLV_OPS_STRUCT(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr) [_id] = { \
     .id     = _id,      \
@@ -606,7 +610,7 @@ xtlv_dump_binary(xtlv_t *tlv)
     }
 }
 
-enum { XDR_SESSION_IPV4 = 0 };
+enum { XDR_IPV4 = 0, XDR_IPV6 = 1 };
 
 typedef struct {
     byte ver;
@@ -636,7 +640,7 @@ xtlv_dump_session(xtlv_t *tlv)
     XTLV_DUMP2("sport  : %d", obj->sport);
     XTLV_DUMP2("dport  : %d", obj->dport);
 
-    if (XDR_SESSION_IPV4==obj->ver) {
+    if (XDR_IPV4==obj->ver) {
         uint32 ip;
 
         ip = XDR_IP(&obj->sip); // ip = htonl(ip);
@@ -893,9 +897,37 @@ typedef struct {
 } xcache_t;
 
 static inline bool
-is_xcache_multi(xcache_t *cache)
+is_xcache_empty(xcache_t *cache)
 {
-    return NULL!=cache->multi;
+    return NULL==cache->tlv;
+}
+
+static inline int
+xcache_multi_count(xcache_t *cache)
+{
+    if (cache->multi) {
+        return cache->current;
+    } else {
+        return cache->tlv?1:0
+    }
+}
+
+static inline xtlv_t *
+xcache_multi_tlv(xcache_t *cache, int idx)
+{
+    if (cache->multi) {
+        if (idx < cache->current) {
+            return cache->multi[idx];
+        } else {
+            return NULL;
+        }
+    } else {
+        if (0==idx) {
+            return cache->tlv;
+        } else {
+            return NULL;
+        }
+    }
 }
 
 static inline int

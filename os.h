@@ -139,6 +139,42 @@
 #include <net/if.h>
 #include <linux/netlink.h>
 /******************************************************************************/
+#ifndef OS_IFNAME_LEN
+#define OS_IFNAME_LEN           (16 - 1)
+#endif
+
+#ifndef OS_LINE_SHORT
+#define OS_LINE_SHORT           (128 - 1)
+#endif
+
+#ifndef OS_LINE_LEN
+#define OS_LINE_LEN             (1*1024 - 1)
+#endif
+
+#ifndef OS_PAGE_LEN
+#define OS_PAGE_LEN             (4*1024 - 1)
+#endif
+
+#ifndef OS_BLOCK_LEN
+#define OS_BLOCK_LEN            (16*1024 - 1)
+#endif
+
+#ifndef OS_FILE_LEN
+#define OS_FILE_LEN             (64*1024 - 1)
+#endif
+
+#ifndef OS_BIG_LEN
+#define OS_BIG_LEN              (256*1024 - 1)
+#endif
+
+#ifndef OS_HUGE_LEN
+#define OS_HUGE_LEN             (1024*1024 - 1)
+#endif
+
+#ifndef OS_FILENAME_LEN
+#define OS_FILENAME_LEN         OS_LINE_LEN
+#endif
+
 #define os_malloc(_size)            malloc(_size)
 #define os_calloc(_count, _size)    calloc(_count, _size)
 #define os_realloc(_ptr, _size)     realloc(_ptr, _size)
