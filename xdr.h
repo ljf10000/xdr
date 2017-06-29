@@ -474,7 +474,7 @@ xb_offset(xdr_buffer_t *x, void *pointer)
 static inline uint32
 xb_left(xdr_buffer_t *x)
 {
-    return x->size - x->offset;
+    return (x->size > x->offset)?(x->size - x->offset):0;
 }
 
 static inline bool
