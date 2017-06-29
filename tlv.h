@@ -908,7 +908,7 @@ xcache_multi_count(xcache_t *cache)
     if (cache->multi) {
         return cache->current;
     } else {
-        return cache->tlv?1:0
+        return cache->tlv?1:0;
     }
 }
 
