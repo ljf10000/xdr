@@ -380,6 +380,7 @@ struct xtlv_st {
 #define xtlv_data_n(_tlv)       (_tlv)->d.data
 #define xtlv_data_e(_tlv)       (_tlv)->d.e.data
 #define xtlv_data(_tlv)         (xtlv_extend(_tlv)?xtlv_data_e(_tlv):xtlv_data_n(_tlv))
+#define xtlv_string(_tlv)       (char *)xtlv_data(_tlv)
 
 #define xtlv_len_n(_tlv)        (_tlv)->h.n.len
 #define xtlv_len_e(_tlv)        (_tlv)->d.e.len

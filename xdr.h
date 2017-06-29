@@ -626,7 +626,7 @@ xb_pre_file_as_file(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv, uint32 flag)
 static inline int
 xb_pre_file_as_path(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv, uint32 flag)
 {
-    char *filename = xtlv_data(tlv);
+    char *filename = xtlv_string(tlv);
     if (NULL==xb_pre_string(x, &file->file, filename, strlen(filename))) {
         return -ENOMEM;
     }
