@@ -518,7 +518,7 @@ os_fdigest(const char *file, byte digest[])
         goto error;
     }
 
-    sha256(buf, size, digest);
+    sha256((const byte *)buf, size, digest);
     
     return size;
 error:
