@@ -1006,6 +1006,7 @@ is_xrecord_normal(xrecord_t *record)
         && NULL==record->cache[xtlv_id_http_response].tlv
         && NULL==record->cache[xtlv_id_ssl_server_cert].tlv
         && NULL==record->cache[xtlv_id_ssl_client_cert].tlv
+        ;
 }
 
 static inline int
