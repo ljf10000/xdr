@@ -8,7 +8,7 @@ static struct {
     char *name;
     uint32 flag;
 } opt[] = {
-    { .name = "--dump", .flag = XTLV_OPT_DUMP },
+    { .name = "--dump",         .flag = XTLV_OPT_DUMP },
     { .name = "--file-as-path", .flag = XTLV_OPT_FILE_AS_PATH },
 };
 
