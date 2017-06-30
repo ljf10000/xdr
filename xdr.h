@@ -1287,7 +1287,6 @@ xrecord_to_xdr_ssl_cert(xdr_buffer_t *x, xdr_array_t *certs, xrecord_t *r, int i
     return 0;
 }
 
-
 static inline int
 xrecord_to_xdr_ssl(xdr_buffer_t *x, xrecord_t *r)
 {
@@ -1308,6 +1307,24 @@ xrecord_to_xdr_ssl(xdr_buffer_t *x, xrecord_t *r)
         return err;
     }
     
+    return 0;
+}
+
+static inline int
+xrecord_to_xdr(xdr_buffer_t *x, xrecord_t *r)
+{
+    int i, err;
+
+    err = xrecord_to_xdr_ssl(x, r);
+    if (err<0) {
+        return err;
+    }
+
+    err = xrecord_to_xdr_dns(x, r);
+    if (err<0) {
+        return err;
+    }
+
     return 0;
 }
 
