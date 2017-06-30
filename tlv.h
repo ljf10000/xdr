@@ -281,7 +281,6 @@ enum { XTLV_MAPPER(XTLV_OPS_ENUM) xtlv_id_end };
 #define xtlv_id_dns_ip6         xtlv_id_dns_ip6
 #define xtlv_id_end             xtlv_id_end
 
-
 #define XTLV_OPS_STRUCT(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr) [_id] = { \
     .id     = _id,      \
     .type   = _type,    \
@@ -878,8 +877,8 @@ xtlv_dump_rtsp(xtlv_t *tlv)
     XTLV_DUMP2("describe_delay      : %u", obj->describe_delay);
 }
 
-#ifndef XCACHE_EXPAND_COUNT
-#define XCACHE_EXPAND_COUNT     32
+#ifndef XTLV_CACHE_EXPAND_COUNT
+#define XTLV_CACHE_EXPAND_COUNT     32
 #endif
 
 typedef struct {
@@ -887,16 +886,16 @@ typedef struct {
     
     xtlv_t **multi;
     uint16 current, count;
-} xcache_t;
+} xtlv_cache_t;
 
 static inline bool
-is_xcache_empty(xcache_t *cache)
+is_xtlv_cache_empty(xtlv_cache_t *cache)
 {
     return NULL==cache->tlv;
 }
 
 static inline int
-xcache_multi_count(xcache_t *cache)
+xtlv_cache_multi_count(xtlv_cache_t *cache)
 {
     if (cache->multi) {
         return cache->current;
@@ -906,7 +905,7 @@ xcache_multi_count(xcache_t *cache)
 }
 
 static inline xtlv_t *
-xcache_multi_tlv(xcache_t *cache, int idx)
+xtlv_cache_multi_tlv(xtlv_cache_t *cache, int idx)
 {
     if (cache->multi) {
         if (idx < cache->current) {
@@ -924,17 +923,17 @@ xcache_multi_tlv(xcache_t *cache, int idx)
 }
 
 static inline int
-xcache_expand(xcache_t *cache)
+xtlv_cache_expand(xtlv_cache_t *cache)
 {
     if (NULL==cache->multi) {
         xtlv_dprint("init record multi ...");
         
-        cache->multi = (xtlv_t **)os_calloc(XCACHE_EXPAND_COUNT, sizeof(xtlv_t *));
+        cache->multi = (xtlv_t **)os_calloc(XTLV_CACHE_EXPAND_COUNT, sizeof(xtlv_t *));
         if (NULL==cache->multi) {
             return -ENOMEM;
         }
         cache->current = 0;
-        cache->count = XCACHE_EXPAND_COUNT;
+        cache->count = XTLV_CACHE_EXPAND_COUNT;
         
         xtlv_dprint("init record multi ok.");
     }
@@ -942,11 +941,11 @@ xcache_expand(xcache_t *cache)
     if (cache->current == cache->count) {
         xtlv_dprint("expand record multi ...");
         
-        cache->multi = (xtlv_t **)os_realloc(cache->multi, (cache->count + XCACHE_EXPAND_COUNT) * sizeof(xtlv_t *));
+        cache->multi = (xtlv_t **)os_realloc(cache->multi, (cache->count + XTLV_CACHE_EXPAND_COUNT) * sizeof(xtlv_t *));
         if (NULL==cache->multi) {
             return -ENOMEM;
         }
-        cache->count += XCACHE_EXPAND_COUNT;
+        cache->count += XTLV_CACHE_EXPAND_COUNT;
         
         xtlv_dprint("expand record multi ok.");
     }
@@ -955,17 +954,16 @@ xcache_expand(xcache_t *cache)
 }
 
 static inline int
-xcache_save_multi(xcache_t *cache, xtlv_t *tlv)
+xtlv_cache_save_multi(xtlv_cache_t *cache, xtlv_t *tlv)
 {
     int err = 0;
 
-    err = xcache_expand(cache);
+    err = xtlv_cache_expand(cache);
     if (err<0) {
         return err;
     }
 
     if (0==cache->current) {
-        xtlv_dprint("copy record multi ...");
         
         /*
         * first, save at cache->tlv
@@ -978,7 +976,6 @@ xcache_save_multi(xcache_t *cache, xtlv_t *tlv)
         xtlv_dprint("copy record multi ok.");
     }
     
-    xtlv_dprint("save record multi ...");
     cache->multi[cache->current++] = tlv;
     xtlv_dprint("save record multi ok.");
 
@@ -988,11 +985,11 @@ xcache_save_multi(xcache_t *cache, xtlv_t *tlv)
 typedef struct {
     xtlv_t *header;
     
-    xcache_t cache[xtlv_id_end];
-} xrecord_t;
+    xtlv_cache_t cache[xtlv_id_end];
+} xtlv_record_t;
 
 static inline bool
-is_xrecord_normal(xrecord_t *record)
+is_xtlv_record_normal(xtlv_record_t *record)
 {
     return NULL==record->cache[xtlv_id_file_content].tlv
         && NULL==record->cache[xtlv_id_http_request].tlv
@@ -1003,18 +1000,16 @@ is_xrecord_normal(xrecord_t *record)
 }
 
 static inline int
-xrecord_release(xrecord_t *record)
+xtlv_record_release(xtlv_record_t *record)
 {
-    xcache_t *cache;
+    xtlv_cache_t *cache;
     uint32 i;
     
     for (i=0; i<xtlv_id_end; i++) {
         cache = &record->cache[i];
         
         if (cache->multi) {
-            xtlv_dprint("release record cache:%d multi ...", i);
             os_free(cache->multi);
-            xtlv_dprint("release record cache:%d multi ok.", i);
         }
     }
     
@@ -1022,9 +1017,9 @@ xrecord_release(xrecord_t *record)
 }
 
 static inline int
-xrecord_save(xrecord_t *record, xtlv_t *tlv)
+xtlv_record_save(xtlv_record_t *record, xtlv_t *tlv)
 {
-    xcache_t *cache = &record->cache[tlv->id];
+    xtlv_cache_t *cache = &record->cache[tlv->id];
     if (NULL==cache->tlv) {
         cache->tlv = tlv;
 
@@ -1037,7 +1032,7 @@ xrecord_save(xrecord_t *record, xtlv_t *tlv)
     
     xtlv_ops_t *ops = xtlv_ops(tlv->id);
     if (XTLV_F_MULTI & ops->flag) {
-        return xtlv_error(tlv, xcache_save_multi(cache, tlv));
+        return xtlv_error(tlv, xtlv_cache_save_multi(cache, tlv));
     } 
     else {
         return xtlv_error(tlv, -e_xtlv_not_support_multi);
@@ -1045,7 +1040,7 @@ xrecord_save(xrecord_t *record, xtlv_t *tlv)
 }
 
 static inline int
-__xrecord_parse(xrecord_t *record, xtlv_t *tlv, uint32 left)
+__xtlv_record_parse(xtlv_record_t *record, xtlv_t *tlv, uint32 left)
 {
     int err = 0;
 
@@ -1058,7 +1053,7 @@ __xrecord_parse(xrecord_t *record, xtlv_t *tlv, uint32 left)
         return err;
     }
 
-    err = xrecord_save(record, tlv);
+    err = xtlv_record_save(record, tlv);
     if (err<0) {
         return err;
     }
@@ -1067,16 +1062,16 @@ __xrecord_parse(xrecord_t *record, xtlv_t *tlv, uint32 left)
         xtlv_dump(tlv);
     }
     
-    return __xrecord_parse(record, xtlv_next(tlv), left - xtlv_len(tlv));
+    return __xtlv_record_parse(record, xtlv_next(tlv), left - xtlv_len(tlv));
 }
 
 static inline int
-xrecord_parse(xrecord_t *record)
+xtlv_record_parse(xtlv_record_t *record)
 {
     xtlv_t *h = record->header;
     
     if (xtlv_id_header == h->id) {
-        return __xrecord_parse(record, xtlv_first(h), xtlv_datalen(h));
+        return __xtlv_record_parse(record, xtlv_first(h), xtlv_datalen(h));
     } else {
         return -e_xtlv_header_must_first;
     }
@@ -1086,12 +1081,12 @@ typedef struct {
     void *buffer;
     uint32 len;
     
-    xrecord_t *records;
+    xtlv_record_t *records;
     int count;
-} xblock_t;
+} xtlv_block_t;
 
 static inline int
-xblock_pre(void *buffer, uint32 left)
+xtlv_block_count(void *buffer, uint32 left)
 {
     xtlv_t *h = (xtlv_t *)buffer;
     uint32 count = 0;
@@ -1117,76 +1112,75 @@ xblock_pre(void *buffer, uint32 left)
 }
 
 static inline int
-xblock_post(xblock_t *block)
+xtlv_block_init(xtlv_block_t *block)
 {
     xtlv_t *h;
     int i;
     
-    xtlv_dprint("xblock post ...");
+    xtlv_dprint("tlv block init ...");
+    int count = xtlv_block_count(block->buffer, block->len);
+    if (count<0) {
+        return count;
+    }
+    xtlv_dprint("tlv block count:%d", count);
+
+    block->records = (xtlv_record_t *)os_calloc(count, sizeof(xtlv_record_t));
+    if (NULL==block->records) {
+        return -ENOMEM;
+    }
+    block->count = count;
+    
     for (i=0, h=(xtlv_t *)block->buffer; 
          i < block->count;
          i++, h=xtlv_next(h)) {
         block->records[i].header = h;
     }
-    xtlv_dprint("xblock post ok.");
+    xtlv_dprint("tlv block init ok.");
 
     return 0;
 }
 
-static inline int
-xblock_init(xblock_t *block, void *buffer, uint32 len)
-{
-    block->buffer   = buffer;
-    block->len      = len;
-
-    xtlv_dprint("xblock pre ...");
-    int count = xblock_pre(buffer, len);
-    if (count<0) {
-        return count;
-    }
-    xtlv_dprint("xblock pre ok.");
-
-    block->records = (xrecord_t *)os_calloc(count, sizeof(xrecord_t));
-    if (NULL==block->records) {
-        return -ENOMEM;
-    }
-    block->count = count;
-    xtlv_dprint("xblock count:%d", count);
-    
-    return xblock_post(block);
-}
-
 static inline void
-xblock_release(xblock_t *block)
+xtlv_block_release(xtlv_block_t *block)
 {
-    xtlv_dprint("release block ...");
+    xtlv_dprint("release tlv block ...");
+    
     if (block->records) {
         int i;
 
         for (i=0; i<block->count; i++) {
-            xtlv_dprint("release record:%d ...", i);
-            xrecord_release(&block->records[i]);
-            xtlv_dprint("release record:%d ok.", i);
+            // xtlv_dprint("release record:%d ...", i);
+            
+            xtlv_record_release(&block->records[i]);
+            
+            // xtlv_dprint("release record:%d ok.", i);
         }
         
         os_free(block->records);
     }
-    xtlv_dprint("release block ok.");
+    
+    xtlv_dprint("release tlv block ok.");
 }
 
 static inline int
-xblock_parse(xblock_t *block)
+xtlv_block_parse(xtlv_block_t *block)
 {
     int i, err;
+    
+    xtlv_dprint("tlv record parse ...");
 
     for (i=0; i<block->count; i++) {
-        xtlv_dprint("xrecord parse:%d ...", i);
-        err = xrecord_parse(&block->records[i]);
+        xtlv_dprint("tlv record parse:%d ...", i);
+        
+        err = xtlv_record_parse(&block->records[i]);
         if (err<0) {
             return err;
         }
-        xtlv_dprint("xrecord parse:%d ok.", i);
+        
+        xtlv_dprint("tlv record parse:%d ok.", i);
     }
+    
+    xtlv_dprint("tlv record parse ok.");
 
     return 0;
 }
