@@ -21,24 +21,25 @@ enum {
     e_xtlv_not_support_multi        = 1008,
 };
 
+typedef uint8  xtlv_u8_t;
+typedef uint16 xtlv_u16_t;
+typedef uint32 xtlv_u32_t;
+typedef uint64 xtlv_u64_t;
+
+typedef int8   xtlv_i8_t;
+typedef int16  xtlv_i16_t;
+typedef int32  xtlv_i32_t;
+typedef int64  xtlv_i64_t;
+
 typedef uint64 xdr_duration_t,  xtlv_duration_t;
 typedef uint64 xdr_time_t,      xtlv_time_t;
 #define XDR_SECOND(_us)     ((time_t)((_us)/1000000))
 
+typedef uint32 xtlv_ip4_t;
 typedef struct {
     uint32 ip[4];
 } xdr_ipaddr_t, xtlv_ip6_t;
 #define XDR_IP(_addr)   (_addr)->ip[0]
-
-#define xtlv_u8_t   uint8
-#define xtlv_u16_t  uint16
-#define xtlv_u32_t  uint32
-#define xtlv_u64_t  uint64
-#define xtlv_i8_t   int8
-#define xtlv_i16_t  int16
-#define xtlv_i32_t  int32
-#define xtlv_i64_t  int64
-#define xtlv_ip4_t  uint32
 
 enum {
     XTLV_T_u8,
@@ -71,10 +72,6 @@ enum {
 
 typedef struct xtlv_st xtlv_t;
 typedef struct xdr_buffer_st xdr_buffer_t;
-
-typedef void xtlv_dump_f(xtlv_t *tlv);
-typedef int xtlv_check_f(xtlv_t *tlv);
-typedef int xtlv_to_xdr_f(xdr_buffer_t *x, xtlv_t *tlv);
 
 static inline void xtlv_dump_u8 (xtlv_t *tlv);
 static inline void xtlv_dump_u16(xtlv_t *tlv);
@@ -173,9 +170,9 @@ typedef struct {
     uint32  maxsize;
     char    *name;
 
-    xtlv_dump_f *dump;
-    xtlv_check_f *check;
-    xtlv_to_xdr_f *toxdr;
+    void (*dump)(xtlv_t * /*tlv*/);
+    int (*check)(xtlv_t * /*tlv*/);
+    int (*toxdr)(xdr_buffer_t * /*x*/, xtlv_t * /*tlv*/);
 } xtlv_ops_t;
 
 #define xtlv_mapper_fixed(_mapper, _id, _name, _obj) \
