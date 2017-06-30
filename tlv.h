@@ -21,13 +21,13 @@ enum {
     e_xtlv_not_support_multi        = 1008,
 };
 
-typedef uint64 xdr_duration_t, xtlv_duration_t;
-typedef uint64 xdr_time_t;
+typedef uint64 xdr_duration_t,  xtlv_duration_t;
+typedef uint64 xdr_time_t,      xtlv_time_t;
 #define XDR_SECOND(_us)     ((time_t)((_us)/1000000))
 
 typedef struct {
     uint32 ip[4];
-} xdr_ipaddr_t;
+} xdr_ipaddr_t, xtlv_ip6_t;
 #define XDR_IP(_addr)   (_addr)->ip[0]
 
 #define xtlv_u8_t   uint8
@@ -39,9 +39,6 @@ typedef struct {
 #define xtlv_i32_t  int32
 #define xtlv_i64_t  int64
 #define xtlv_ip4_t  uint32
-
-#define xtlv_ip6_t      xdr_ipaddr_t
-#define xtlv_time_t     xdr_time_t
 
 enum {
     XTLV_T_u8,
