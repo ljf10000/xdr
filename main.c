@@ -9,7 +9,7 @@ static struct {
     uint32 flag;
 } opt[] = {
     { .name = "--dump",         .flag = XTLV_OPT_DUMP },
-    { .name = "--file-as-path", .flag = XTLV_OPT_FILE_AS_PATH },
+    { .name = "--file-split",   .flag = XTLV_OPT_FILE_SPLIT },
 };
 
 static int usage(void)

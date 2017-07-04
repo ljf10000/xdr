@@ -14,7 +14,6 @@
 #define XDR_ALIGN(x)    OS_ALIGN(x, 4)
 
 typedef uint32 xdr_offset_t;
-typedef uint64 big_offset_t;
 
 static inline void *
 xdr_strcpy(void *dst, void *src, uint32 size)
@@ -34,14 +33,6 @@ typedef struct {
     uint32 len;
     xdr_offset_t offset;
 } xdr_string_t, xdr_binary_t;
-
-enum {
-    XDR_FILE_FILE,
-    XDR_FILE_HTTP,
-    XDR_FILE_CERT,
-
-    XDR_FILE_END
-};
 
 enum {
     XDR_ARRAY_STRING,
@@ -90,44 +81,39 @@ typedef union {
 
 enum { XDR_DIGEST_SIZE = SHA256_DIGEST_SIZE };
 
-#define XDR_HDFS_FILENAME   "2017-01-01/0000"           // 15
-
 typedef struct {
     bkdr_t bkdr;
-    uint32 size;    // cookie size, cookie is the small file
+    uint32 size;    // file size
     byte digest[XDR_DIGEST_SIZE];
-    byte _[20];      // keep sizeof(xf_cookie_t) == 60
+    byte _[XDR_COOKIE_SIZE - sizeof(bkdr_t) - sizeof(uint32) - XDR_DIGEST_SIZE];
     
     byte body[0];
-} xf_cookie_t;
+} xdr_cookie_t;
 
-/*
-* file      := count + xdr + cookies
-* cookies   := cookie ...
-*/
-typedef struct {
-    uint32 count;   // cookie count
+enum { 
+    XDR_FILE_HEADER_SIZE    = 60,
     
-    xdr_t xdrs[0];
-} xf_file_t;
+    XDR_FILE_PAD_SIZE       = (XDR_FILE_HEADER_SIZE
+                                - sizeof(uint32) 
+                                - sizeof(time_t) 
+                                - sizeof(xdr_offset_t)
+                                - XDR_DIGEST_SIZE
+                                - sizeof(uint16)
+                                - sizeof(byte)),
+};
 
 typedef struct {
-    uint32 size;    // real file size
+    uint32 size;
+    time_t time;
+
+    xdr_offset_t offset; // just for local file
     byte digest[XDR_DIGEST_SIZE];
 
-    /*
-    * file as buffer:
-    *   file.len is file size
-    *   file.offset store file content
-    *
-    * file as path:
-    *   file.len is strlen(path)
-    *   file.offset store path
-    */
-    xdr_string_t file;  // local file
+    uint16 partition;
+    byte   type;
+    byte   _[XDR_FILE_PAD_SIZE];
 
-    big_offset_t offset;// for hdfs
-    char hdfs[1+sizeof(XDR_HDFS_FILENAME)];
+    byte body[0];
 } xdr_file_t;
 
 typedef struct {
@@ -437,20 +423,36 @@ xdr_L7(xdr_t *xdr)
     return &xdr->L7;
 }
 
+#define XDR_COOKIE_SIZE     60
+
+typedef struct {
+    uint32 count;
+
+    xdr_binary_t list[0];  // xdr_t
+} xdr_content_t;
+
+typedef struct {
+    int count;      // file count
+    int current;    // current file index
+    
+    uint32 size;    // total file size, NOT include cookie
+    byte *block;    // file block
+} xdr_block_t;
+
 struct xdr_buffer_st {
     union {
         void *buffer;
         xdr_t *xdr;
     } u;
     
-    xdr_offset_t offset;
+    xdr_offset_t current;
     uint32 size;
 };
 
 static inline void *
 xb_current(xdr_buffer_t *x)
 {
-    return x->u.buffer + x->offset;
+    return x->u.buffer + x->current;
 }
 
 static inline xdr_offset_t
@@ -462,7 +464,7 @@ xb_offset(xdr_buffer_t *x, void *pointer)
 static inline uint32
 xb_left(xdr_buffer_t *x)
 {
-    return (x->size > x->offset)?(x->size - x->offset):0;
+    return (x->size > x->current)?(x->size - x->current):0;
 }
 
 static inline bool
@@ -474,7 +476,7 @@ xb_enought(xdr_buffer_t *x, uint32 size)
 static inline void
 xb_put(xdr_buffer_t *x, uint32 size)
 {
-    x->offset += XDR_ALIGN(size);
+    x->current += XDR_ALIGN(size);
 }
 
 static inline int
@@ -591,52 +593,53 @@ xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, xtlv_t *tlv)
 }
 
 static inline int
-xb_pre_file_as_file(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv, uint32 flag)
+xb_pre_file_from_buffer(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv)
 {
     uint32 size = xtlv_datalen(tlv);
     byte *buf = xtlv_data(tlv);
     
-    // todo: save file
-    char path[1+OS_FILENAME_LEN];
-    
-    if (NULL==xb_pre_string(x, &file->file, path, strlen(path))) {
-        return -ENOMEM;
-    }
+    file->offset = 0; // todo: save local file
 
     file->size     = size;
     sha256(buf, size, file->digest);
-    
-    x->u.xdr->flag |= flag;
 
     return 0;
 }
 
 static inline int
-xb_pre_file_as_path(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv, uint32 flag)
+xb_pre_file_from_path(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv)
 {
-    char *filename = xtlv_string(tlv);
-    if (NULL==xb_pre_string(x, &file->file, filename, strlen(filename))) {
-        return -ENOMEM;
-    }
-
+    char filename[1+OS_FILENAME_LEN];
+    
+    // todo: filename <== /PREFIX/xtlv_string(tlv)
+    
     int size = os_fdigest(filename, file->digest);
     if (size < 0) {
         return size;
     }
-    file->size     = size;
-    x->u.xdr->flag |= flag;
-    
+    file->size = size;
+        
     return 0;
 }
 
 static inline int
 xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv, uint32 flag)
 {
-    if (is_xtlv_opt_file_as_path()) {
-        return xb_pre_file_as_path(x, file, tlv, flag);
+    int err;
+    
+    if (is_xtlv_opt_file_split()) {
+        err = xb_pre_file_from_path(x, file, tlv);
     } else {
-        return xb_pre_file_as_file(x, file, tlv, flag);
+        err = xb_pre_file_from_buffer(x, file, tlv);
     }
+
+    if (err<0) {
+        return err;
+    }
+
+    x->u.xdr->flag |= flag;
+
+    return 0;
 }
 
 static inline int
@@ -658,7 +661,7 @@ xb_pre_file_ex(xdr_buffer_t *x, xdr_offset_t *poffset, xtlv_t *tlv, uint32 flag)
 }
 
 #define xb_pre_by(_x, _type, _field_offsetof) \
-    (_type *)xb_pre_obj(_x, sizeof(_type), &(_x)->u.proto->_field_offsetof)
+    (_type *)xb_pre_obj(_x, sizeof(_type), &(_x)->u.xdr->_field_offsetof)
 
 #define xb_pre_L4(_x, _type)    xb_pre_by(_x, _type, offsetof_L4)
 #define xb_pre_L5(_x, _type)    xb_pre_by(_x, _type, offsetof_L5)
@@ -736,7 +739,7 @@ xb_pre_ssl(xdr_buffer_t *x)
     return xb_pre_L6(x, xdr_ssl_t);
 }
 
-#define xtlv_to_xdr_by(_x, _tlv, _field, _nt)    ({(_x)->u.proto->_field = xtlv_##_nt(_tlv); 0; })
+#define xtlv_to_xdr_by(_x, _tlv, _field, _nt)    ({(_x)->u.xdr->_field = xtlv_##_nt(_tlv); 0; })
 #define xtlv_to_xdr_obj(_x, _tlv, _obj)         ({ \
     xtlv_##_obj##_t *__src = xtlv_##_obj(_tlv);     \
     xdr_##_obj##_t *__dst = xb_pre_##_obj(_x);      \

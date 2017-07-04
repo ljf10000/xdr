@@ -70,6 +70,15 @@ enum {
     XTLV_F_FIXED = 0x02,
 };
 
+enum {
+    XDR_FILE_NONE,
+    XDR_FILE_FILE,
+    XDR_FILE_HTTP,
+    XDR_FILE_CERT,
+
+    XDR_FILE_END
+};
+
 typedef struct xtlv_st xtlv_t;
 typedef struct xdr_buffer_st xdr_buffer_t;
 
@@ -304,7 +313,7 @@ extern uint32 xdr_seq;
 
 enum {
     XTLV_OPT_DUMP = 0x01,
-    XTLV_OPT_FILE_AS_PATH = 0x02,
+    XTLV_OPT_FILE_SPLIT = 0x02,
 };
 
 static inline void
@@ -320,9 +329,9 @@ is_xtlv_opt_dump(void)
 }
 
 static inline bool
-is_xtlv_opt_file_as_path(void)
+is_xtlv_opt_file_split(void)
 {
-    return XTLV_OPT_FILE_AS_PATH==(XTLV_OPT_FILE_AS_PATH & __xtlv_opt);
+    return XTLV_OPT_FILE_SPLIT==(XTLV_OPT_FILE_SPLIT & __xtlv_opt);
 }
 
 static inline bool
@@ -593,7 +602,7 @@ xtlv_dump_binary(xtlv_t *tlv)
 {
     xtlv_ops_t *ops = xtlv_ops(tlv->id);
 
-    if (is_xtlv_opt_file_as_path()) {
+    if (is_xtlv_opt_file_split()) {
         XTLV_DUMP("id: %d, %s: %s", tlv->id, ops->name, xtlv_string(tlv));
     } else {
         XTLV_DUMP("id: %d, %s:", tlv->id, ops->name);
@@ -1086,9 +1095,10 @@ typedef struct {
 } xtlv_block_t;
 
 static inline int
-xtlv_block_count(void *buffer, uint32 left)
+xtlv_block_pre(xtlv_block_t *block)
 {
-    xtlv_t *h = (xtlv_t *)buffer;
+    xtlv_t *h = (xtlv_t *)block->buffer;
+    uint32 left = block->len;
     uint32 count = 0;
 
     while(left > 0) {
@@ -1115,20 +1125,18 @@ static inline int
 xtlv_block_init(xtlv_block_t *block)
 {
     xtlv_t *h;
-    int i;
+    int i, err;
     
     xtlv_dprint("tlv block init ...");
-    int count = xtlv_block_count(block->buffer, block->len);
-    if (count<0) {
-        return count;
+    int err = xtlv_block_pre(block);
+    if (err<0) {
+        return err;
     }
-    xtlv_dprint("tlv block count:%d", count);
 
-    block->records = (xtlv_record_t *)os_calloc(count, sizeof(xtlv_record_t));
+    block->records = (xtlv_record_t *)os_calloc(block->count, sizeof(xtlv_record_t));
     if (NULL==block->records) {
         return -ENOMEM;
     }
-    block->count = count;
     
     for (i=0, h=(xtlv_t *)block->buffer; 
          i < block->count;
