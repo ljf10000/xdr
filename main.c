@@ -60,23 +60,28 @@ int main(int argc, char *argv[])
     if (err<0) {
         err = len; goto ERROR;
     }
-
+    xtlv_dprint("file size %d", len);
+    
     int fd = open(input, O_RDONLY, S_IRUSR | S_IRGRP);
     if (fd<0) {
         err = fd; goto ERROR;
     }
+    xtlv_dprint("file fd %d", fd);
 
     buffer = mmap(NULL, len, PROT_READ, 0, fd, 0);
     if (NULL==buffer) {
         err = errno; goto ERROR;
     }
+    xtlv_dprint("file mmap 0x%x", buffer);
 
     int count = xtlv_count(buffer, len);
     if (count<0) {
         err = count; goto ERROR;
     }
+    xtlv_dprint("tlv count %d", count);
     
     err = xtlv_foreach((xtlv_t *)buffer, count, xtlv_parse, NULL);
+    xtlv_dprint("foreach error %d", err);
 
 ERROR:
     if (NULL!=buffer) {
