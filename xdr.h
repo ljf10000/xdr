@@ -1220,7 +1220,7 @@ xtlv_record_to_xdr_dns(xdr_buffer_t *x, xtlv_record_t *r)
     }
     
     xtlv_cache_t *cache = &r->cache[id];
-    if (0==cache->count)) {
+    if (0==cache->count) {
         return 0;
     }
     
