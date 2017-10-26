@@ -440,14 +440,13 @@ xtlv_dump(xtlv_t *tlv)
 }
 
 static inline int
-xtlv_error(xtlv_t *tlv, int err, char *serr)
+xtlv_error(xtlv_t *tlv, int err, const char *fmt, ...)
 {
     if (err<0) {
         xtlv_ops_t *ops = xtlv_ops(tlv->id);
 
         if (XTLV_F_FIXED & ops->flag) {
-            os_println("%s tlv name:%s fixed:%d id:%d pad:%d alen:%u hlen:%u dlen:%u", 
-                serr,
+            os_printf("%s tlv name:%s fixed:%d id:%d pad:%d alen:%u hlen:%u dlen:%u", 
                 ops->name, 
                 ops->maxsize,
                 tlv->id, 
@@ -456,14 +455,21 @@ xtlv_error(xtlv_t *tlv, int err, char *serr)
                 xtlv_hdrlen(tlv),
                 xtlv_datalen(tlv));
         } else {
-            os_println("%s tlv name:%s id:%d pad:%d alen:%u hlen:%u dlen:%u", 
-                serr,
+            os_printf("%s tlv name:%s id:%d pad:%d alen:%u hlen:%u dlen:%u", 
                 ops->name, 
                 tlv->id, 
                 tlv->pad, 
                 xtlv_len(tlv),
                 xtlv_hdrlen(tlv),
                 xtlv_datalen(tlv));
+        }
+
+        if (NULL!=fmt) {
+            va_list args;
+            
+            va_start(args, (char *)fmt);
+            vprintf(fmt, args);
+            va_end(args);
         }
     }
 

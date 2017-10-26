@@ -309,6 +309,10 @@
 #define yes_string(_is_ture)                        ((_is_ture)?__yes:__no)
 #endif
 
+#ifndef os_printf
+#define os_printf(_fmt, _args...)                   printf(_fmt, ##_args)
+#endif
+
 #ifndef os_println
 #define os_println(_fmt, _args...)                  printf(_fmt __crlf, ##_args)
 #endif
