@@ -19,6 +19,7 @@ enum {
     e_xtlv_too_small                = 7,
     e_xtlv_too_big                  = 8,
     e_xtlv_not_support_multi        = 9,
+    e_xtlv_max_multi                = 10,
 };
 
 typedef uint8  xtlv_u8_t;
@@ -904,109 +905,44 @@ xtlv_dump_rtsp(xtlv_t *tlv)
     XTLV_DUMP2("describe_delay      : %u", obj->describe_delay);
 }
 
-#ifndef XTLV_CACHE_EXPAND_COUNT
-#define XTLV_CACHE_EXPAND_COUNT     32
+#ifndef XTLV_CACHE_MULTI
+#define XTLV_CACHE_MULTI    32
 #endif
 
 typedef struct {
-    xtlv_t *tlv;
-    
-    xtlv_t **multi;
-    uint16 current, count;
+    int count;
+
+    xtlv_t *multi[XTLV_CACHE_MULTI];
 } xtlv_cache_t;
 
-static inline bool
-is_xtlv_cache_empty(xtlv_cache_t *cache)
-{
-    return NULL==cache->tlv;
-}
-
 static inline int
-xtlv_cache_multi_count(xtlv_cache_t *cache)
-{
-    if (cache->multi) {
-        return cache->current;
-    } else {
-        return cache->tlv?1:0;
-    }
-}
-
-static inline xtlv_t *
-xtlv_cache_multi_tlv(xtlv_cache_t *cache, int idx)
-{
-    if (cache->multi) {
-        if (idx < cache->current) {
-            return cache->multi[idx];
-        } else {
-            return NULL;
-        }
-    } else {
-        if (0==idx) {
-            return cache->tlv;
-        } else {
-            return NULL;
-        }
-    }
-}
-
-static inline int
-xtlv_cache_expand(xtlv_cache_t *cache)
-{
-    if (NULL==cache->multi) {
-        xtlv_dprint("init record multi ...");
-        
-        cache->multi = (xtlv_t **)os_calloc(XTLV_CACHE_EXPAND_COUNT, sizeof(xtlv_t *));
-        if (NULL==cache->multi) {
-            return -ENOMEM;
-        }
-        cache->current = 0;
-        cache->count = XTLV_CACHE_EXPAND_COUNT;
-        
-        xtlv_dprint("init record multi ok.");
-    }
-
-    if (cache->current == cache->count) {
-        xtlv_dprint("expand record multi ...");
-        
-        cache->multi = (xtlv_t **)os_realloc(cache->multi, (cache->count + XTLV_CACHE_EXPAND_COUNT) * sizeof(xtlv_t *));
-        if (NULL==cache->multi) {
-            return -ENOMEM;
-        }
-        cache->count += XTLV_CACHE_EXPAND_COUNT;
-        
-        xtlv_dprint("expand record multi ok.");
-    }
-
-    return 0;
-}
-
-static inline int
-xtlv_cache_multi_save(xtlv_cache_t *cache, xtlv_t *tlv)
+xtlv_cache_save(xtlv_cache_t *cache, xtlv_t *tlv)
 {
     int err = 0;
 
-    err = xtlv_cache_expand(cache);
-    if (err<0) {
-        return err;
+    if (cache->count < XTLV_CACHE_MULTI) {
+        if (0==cache->count) {
+            cache->multi[cache->count++] = tlv;
+
+            xtlv_dprint("save record tlv id:%d", tlv->id);
+        } else {
+            xtlv_ops_t *ops = xtlv_ops(tlv->id);
+            if (XTLV_F_MULTI & ops->flag) {
+                cache->multi[cache->count++] = tlv;
+                
+                xtlv_dprint("save record multi tlv id:%d", tlv->id);
+            } else {
+                err = -e_xtlv_not_support_multi;
+            }
+        }
+    }
+    else {
+        err = -e_xtlv_max_multi;
     }
 
-    if (0==cache->current) {
-        
-        /*
-        * first, save at cache->tlv
-        * second, save at cache->multi
-        *   so, copy cache->tlv to cache->multi[0]
-        */
-        cache->multi[0] = cache->tlv;
-        cache->current++;
-        
-        xtlv_dprint("copy record multi ok.");
-    }
+    return err;
+
     
-    cache->multi[cache->current++] = tlv;
-    xtlv_dprint("save record multi ok.");
-
-    return 0;
 }
 
 typedef struct {
@@ -1018,56 +954,20 @@ typedef struct {
 static inline bool
 is_xtlv_record_normal(xtlv_record_t *record)
 {
-    return NULL==record->cache[xtlv_id_file_content].tlv
-        && NULL==record->cache[xtlv_id_http_request].tlv
-        && NULL==record->cache[xtlv_id_http_response].tlv
-        && NULL==record->cache[xtlv_id_ssl_server_cert].tlv
-        && NULL==record->cache[xtlv_id_ssl_client_cert].tlv
+    return NULL==record->cache[xtlv_id_file_content].multi[0]
+        && NULL==record->cache[xtlv_id_http_request].multi[0]
+        && NULL==record->cache[xtlv_id_http_response].multi[0]
+        && NULL==record->cache[xtlv_id_ssl_server_cert].multi[0]
+        && NULL==record->cache[xtlv_id_ssl_client_cert].multi[0]
         ;
-}
-
-static inline int
-xtlv_record_release(xtlv_record_t *record)
-{
-    xtlv_cache_t *cache;
-    uint32 i;
-    
-    for (i=0; i<xtlv_id_end; i++) {
-        cache = &record->cache[i];
-        
-        if (cache->multi) {
-            os_free(cache->multi);
-        }
-    }
-    
-    return 0;
 }
 
 static inline int
 xtlv_record_save(xtlv_record_t *record, xtlv_t *tlv)
 {
     xtlv_cache_t *cache = &record->cache[tlv->id];
-    if (NULL==cache->tlv) {
-        cache->tlv = tlv;
 
-        xtlv_dprint("save record tlv id:%d", tlv->id);
-        
-        return 0;
-    }
-
-    xtlv_dprint("try save record multi tlv id:%d", tlv->id);
-    
-    xtlv_ops_t *ops = xtlv_ops(tlv->id);
-    if (XTLV_F_MULTI & ops->flag) {
-        return xtlv_error(tlv, 
-            xtlv_cache_multi_save(cache, tlv),
-            "xtlv_record_save multi");
-    } 
-    else {
-        return xtlv_error(tlv, 
-            -e_xtlv_not_support_multi,
-            "xtlv_record_save not support multi");
-    }
+    return xtlv_cache_save(cache, tlv);
 }
 
 static inline int
@@ -1163,12 +1063,8 @@ static inline int
 xtlv_parse(xtlv_t *h, void *data)
 {
     xtlv_record_t r = { .header = h };
-    int err = 0;
 
-    err = xtlv_record_parse(&r);
-    xtlv_record_release(&r);
-
-    return err;
+    return xtlv_record_parse(&r);
 }
 /******************************************************************************/
 #endif /* __TLV_H_d203748a8a974e6282d89ddcde27123a__ */

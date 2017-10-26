@@ -1220,14 +1220,14 @@ xtlv_record_to_xdr_dns(xdr_buffer_t *x, xtlv_record_t *r)
     }
     
     xtlv_cache_t *cache = &r->cache[id];
-    if (is_xtlv_cache_empty(cache)) {
+    if (0==cache->count)) {
         return 0;
     }
     
-    int i, count = xtlv_cache_multi_count(cache);
+    int i, count = cache->count;
 
     if (1==count && XDR_IPV4==dns->ip_version) {
-        dns->ip4 = xtlv_u32(cache->tlv);
+        dns->ip4 = xtlv_u32(cache->multi[0]);
 
         return 0;
     }
@@ -1263,11 +1263,11 @@ xtlv_record_to_xdr_ssl_cert(xdr_buffer_t *x, xdr_array_t *certs, xtlv_record_t *
     }
     
     xtlv_cache_t *cache = &r->cache[id];
-    if (is_xtlv_cache_empty(cache)) {
+    if (0==cache->count) {
         return 0;
     }
     
-    int i, err, count = xtlv_cache_multi_count(cache);
+    int i, err, count = cache->count;
     xdr_cert_t *cert;
     
     xdr_array_t *array = xb_pre_array(x, certs, XDR_ARRAY_CERT, sizeof(xdr_cert_t), count);
@@ -1278,7 +1278,7 @@ xtlv_record_to_xdr_ssl_cert(xdr_buffer_t *x, xdr_array_t *certs, xtlv_record_t *
     for (i=0; i<count; i++) {
         cert = (xdr_cert_t *)xdr_array_entry(array, i);
 
-        err = xb_pre_file(x, &cert->file, xtlv_cache_multi_tlv(cache, i), flag);
+        err = xb_pre_file(x, &cert->file, cache->multi[i], flag);
         if (err<0) {
             return err;
         }

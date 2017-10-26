@@ -381,13 +381,15 @@ os_mmap(char *file, size_t length, int prot, int flags, off_t offset)
 {
     int flag = O_RDONLY;
 
-    if (PROT_WRITE==(PROT_WRITE & prot)) {
-        flag = O_CREAT | O_RDWR;
-    }
-
     int fd = open(file, flag);
     if (fd<0) {
         return NULL;
+    }
+
+    if (PROT_WRITE==(PROT_WRITE & prot)) {
+        flag = O_CREAT | O_RDWR;
+        
+        ftruncate(fd, length);
     }
 
     void *buffer = mmap(NULL, length, prot, flags, fd, offset);
