@@ -10,15 +10,15 @@
 #endif
 
 enum {
-    e_xtlv_header_must_first        = 200,
-    e_xtlv_header_length_not_match  = 201,
-    e_xtlv_header_no_body           = 202,
-    e_xtlv_invalid_id               = 203,
-    e_xtlv_invalid_object_size      = 204,
-    e_xtlv_invalid_short_size       = 205,
-    e_xtlv_too_small                = 206,
-    e_xtlv_too_big                  = 207,
-    e_xtlv_not_support_multi        = 208,
+    e_xtlv_header_must_first        = 1,
+    e_xtlv_header_length_not_match  = 2,
+    e_xtlv_header_no_body           = 3,
+    e_xtlv_invalid_id               = 4,
+    e_xtlv_invalid_object_size      = 5,
+    e_xtlv_invalid_short_size       = 6,
+    e_xtlv_too_small                = 7,
+    e_xtlv_too_big                  = 8,
+    e_xtlv_not_support_multi        = 9,
 };
 
 typedef uint8  xtlv_u8_t;
@@ -1088,6 +1088,14 @@ xtlv_record_parse(xtlv_record_t *record)
     int err;
     
     while(left>0) {
+        os_println("left:%d tlv id:%d pad:%d alen:%u hlen:%u dlen:%u", 
+            left,
+            tlv->id, 
+            tlv->pad, 
+            xtlv_len(tlv),
+            xtlv_hdrlen(tlv),
+            xtlv_datalen(tlv));
+                
         err = xtlv_check(tlv);
         if (err<0) {
             return err;
