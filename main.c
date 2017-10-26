@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 
     err = os_readfileall(input, &buffer, &len);
     if (err<0) {
-        goto ERROR
+        goto ERROR;
     }
     xtlv_dprint("read %s size:%d", input, len);
 
