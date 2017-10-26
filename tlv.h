@@ -1110,8 +1110,8 @@ xtlv_record_parse(xtlv_record_t *record)
             xtlv_dump(tlv);
         }
 
-        tlv = xtlv_next(tlv);
         left -= xtlv_len(tlv);
+        tlv = xtlv_next(tlv);
     }
 
     return 0;
