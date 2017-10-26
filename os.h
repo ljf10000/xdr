@@ -375,6 +375,28 @@ is_option_args(char *args)
         && args[2];
 }
 
+
+static inline void *
+os_mmap(char *file, size_t length, int prot, int flags, off_t offset)
+{
+    int flag = O_RDONLY;
+
+    if (PROT_WRITE==(PROT_WRITE & prot)) {
+        flag = O_CREAT | O_RDWR;
+    }
+
+    int fd = open(file, flag);
+    if (fd<0) {
+        return NULL;
+    }
+
+    void *buffer = mmap(NULL, length, prot, flags, fd, offset);
+    close(fd);
+
+    return buffer;
+}
+
+
 typedef FILE* STREAM;
 
 #define os_fopen(_file, _mode)      fopen(_file, _mode)

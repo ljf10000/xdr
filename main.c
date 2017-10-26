@@ -62,13 +62,7 @@ int main(int argc, char *argv[])
     }
     xtlv_dprint("file size %d", len);
     
-    int fd = open(input, O_RDONLY);
-    if (fd<0) {
-        err = fd; goto ERROR;
-    }
-    xtlv_dprint("file fd %d", fd);
-
-    buffer = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0);
+    buffer = os_mmap(input, len, PROT_READ, MAP_PRIVATE, 0);
     if (NULL==buffer) {
         err = errno; goto ERROR;
     }
@@ -88,10 +82,6 @@ ERROR:
         munmap(buffer, len);
     }
 
-    if (fd > 0) {
-        close(fd);
-    }
-    
     return err;
 }
 
