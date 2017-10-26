@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
     }
     xtlv_dprint("file fd %d", fd);
 
-    buffer = mmap(NULL, len, PROT_READ, 0, fd, 0);
+    buffer = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0);
     if (NULL==buffer) {
         err = errno; goto ERROR;
     }
