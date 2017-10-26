@@ -1064,7 +1064,7 @@ xtlv_record_save(xtlv_record_t *record, xtlv_t *tlv)
             "xtlv_record_save multi");
     } 
     else {
-#if 0
+#if 1
         return xtlv_error(tlv, 
             -e_xtlv_not_support_multi,
             "xtlv_record_save not support multi");
@@ -1088,14 +1088,6 @@ xtlv_record_parse(xtlv_record_t *record)
     int err;
     
     while(left>0) {
-        os_println("left:%d tlv id:%d pad:%d alen:%u hlen:%u dlen:%u", 
-            left,
-            tlv->id, 
-            tlv->pad, 
-            xtlv_len(tlv),
-            xtlv_hdrlen(tlv),
-            xtlv_datalen(tlv));
-                
         err = xtlv_check(tlv);
         if (err<0) {
             return err;
