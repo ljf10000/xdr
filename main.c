@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     }
     xtlv_dprint("file size %d", len);
     
-    int fd = open(input, O_RDONLY, S_IRUSR | S_IRGRP);
+    int fd = open(input, O_RDONLY);
     if (fd<0) {
         err = fd; goto ERROR;
     }
