@@ -906,7 +906,7 @@ xtlv_dump_rtsp(xtlv_t *tlv)
 }
 
 #ifndef XTLV_CACHE_MULTI
-#define XTLV_CACHE_MULTI    16
+#define XTLV_CACHE_MULTI    12
 #endif
 
 typedef struct {
