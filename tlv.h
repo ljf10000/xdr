@@ -10,16 +10,15 @@
 #endif
 
 enum {
-    e_xtlv_header_must_first        = 1,
-    e_xtlv_header_length_not_match  = 2,
-    e_xtlv_header_no_body           = 3,
-    e_xtlv_invalid_id               = 4,
-    e_xtlv_invalid_object_size      = 5,
-    e_xtlv_invalid_short_size       = 6,
-    e_xtlv_too_small                = 7,
-    e_xtlv_too_big                  = 8,
-    e_xtlv_not_support_multi        = 9,
-    e_xtlv_max_multi                = 10,
+    e_xtlv_header_length_not_match  = 1,
+    e_xtlv_header_no_body           = 2,
+    e_xtlv_invalid_id               = 3,
+    e_xtlv_invalid_object_size      = 4,
+    e_xtlv_invalid_short_size       = 5,
+    e_xtlv_too_small                = 6,
+    e_xtlv_too_big                  = 7,
+    e_xtlv_not_support_multi        = 8,
+    e_xtlv_max_multi                = 9,
 };
 
 typedef uint8  xtlv_u8_t;
@@ -69,6 +68,7 @@ enum {
 enum {
     XTLV_F_MULTI = 0x01,
     XTLV_F_FIXED = 0x02,
+    XTLV_F_FILE  = 0x04,
 };
 
 enum {
@@ -268,11 +268,11 @@ typedef struct {
     xtlv_mapper_u8(_,       53, dns_count_response_extra, 0) \
     xtlv_mapper_u32(_,      54, dns_delay, 0) \
     \
-    xtlv_mapper_binary(_,   201, http_request, 0) \
-    xtlv_mapper_binary(_,   202, http_response, 0) \
-    xtlv_mapper_binary(_,   203, file_content, 0) \
-    xtlv_mapper_binary(_,   204, ssl_server_cert, XTLV_F_MULTI) \
-    xtlv_mapper_binary(_,   205, ssl_client_cert, XTLV_F_MULTI) \
+    xtlv_mapper_binary(_,   201, http_request,  XTLV_F_FILE) \
+    xtlv_mapper_binary(_,   202, http_response, XTLV_F_FILE) \
+    xtlv_mapper_binary(_,   203, file_content,  XTLV_F_FILE) \
+    xtlv_mapper_binary(_,   204, ssl_server_cert, XTLV_F_MULTI|XTLV_F_FILE) \
+    xtlv_mapper_binary(_,   205, ssl_client_cert, XTLV_F_MULTI|XTLV_F_FILE) \
     xtlv_mapper_u8(_,       206, ssl_fail_reason, 0) \
     /* end */
 
@@ -561,6 +561,8 @@ xtlv_check(xtlv_t *tlv)
 
 #define XTLV_DUMP(_fmt, _args...)       os_println(__tab _fmt, ##_args)
 #define XTLV_DUMP2(_fmt, _args...)      os_println(__tab2 _fmt, ##_args)
+#define XTLV_DUMP3(_fmt, _args...)      os_println(__tab3 _fmt, ##_args)
+#define XTLV_DUMP4(_fmt, _args...)      os_println(__tab4 _fmt, ##_args)
 
 #define XTLV_DUMP_BY(_tlv, _format, _type)  do{ \
     xtlv_ops_t *ops = xtlv_ops((_tlv)->id); \
@@ -951,17 +953,6 @@ typedef struct {
     xtlv_cache_t cache[xtlv_id_end];
 } xtlv_record_t;
 
-static inline bool
-is_xtlv_record_normal(xtlv_record_t *record)
-{
-    return NULL==record->cache[xtlv_id_file_content].multi[0]
-        && NULL==record->cache[xtlv_id_http_request].multi[0]
-        && NULL==record->cache[xtlv_id_http_response].multi[0]
-        && NULL==record->cache[xtlv_id_ssl_server_cert].multi[0]
-        && NULL==record->cache[xtlv_id_ssl_client_cert].multi[0]
-        ;
-}
-
 static inline int
 xtlv_record_save(xtlv_record_t *record, xtlv_t *tlv)
 {
@@ -974,11 +965,6 @@ static inline int
 xtlv_record_parse(xtlv_record_t *record)
 {
     xtlv_t *h = record->header;
-    
-    if (xtlv_id_header!=h->id) {
-        return -e_xtlv_header_must_first;
-    }
-
     uint32 left = xtlv_datalen(h);
     xtlv_t *tlv = xtlv_first(h);
     int err;
@@ -1003,14 +989,6 @@ xtlv_record_parse(xtlv_record_t *record)
 
     return 0;
 }
-
-typedef struct {
-    void *buffer;
-    uint32 len;
-    
-    xtlv_record_t *records;
-    int count;
-} xtlv_block_t;
 
 static inline int
 xtlv_count(void *buffer, int len)
