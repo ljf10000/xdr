@@ -366,8 +366,8 @@ static inline bool
 is_option_args(char *args)
 {
     return args 
-        && args[0] && '-'==args[0]
-        && args[1] && '-'==args[1]
+        && '-'==args[0]
+        && '-'==args[1]
         && args[2];
 }
 
