@@ -259,8 +259,8 @@ typedef struct {
     xtlv_mapper_u8(_,       44, mail_acs_type, 0) \
     xtlv_mapper_string(_,   45, dns_domain, 0) \
     xtlv_mapper_u8(_,       46, dns_ip_count, 0) \
-    xtlv_mapper_ip4(_,      47, dns_ip4, 0) \
-    xtlv_mapper_ip6(_,      48, dns_ip6, 0) \
+    xtlv_mapper_ip4(_,      47, dns_ip4, XTLV_F_MULTI) \
+    xtlv_mapper_ip6(_,      48, dns_ip6, XTLV_F_MULTI) \
     xtlv_mapper_u8(_,       49, dns_response_code, 0) \
     xtlv_mapper_u8(_,       50, dns_count_request, 0) \
     xtlv_mapper_u8(_,       51, dns_count_response_record, 0) \
@@ -271,8 +271,8 @@ typedef struct {
     xtlv_mapper_binary(_,   201, http_request, 0) \
     xtlv_mapper_binary(_,   202, http_response, 0) \
     xtlv_mapper_binary(_,   203, file_content, 0) \
-    xtlv_mapper_binary(_,   204, ssl_server_cert, 0) \
-    xtlv_mapper_binary(_,   205, ssl_client_cert, 0) \
+    xtlv_mapper_binary(_,   204, ssl_server_cert, XTLV_F_MULTI) \
+    xtlv_mapper_binary(_,   205, ssl_client_cert, XTLV_F_MULTI) \
     xtlv_mapper_u8(_,       206, ssl_fail_reason, 0) \
     /* end */
 
