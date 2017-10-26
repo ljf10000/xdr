@@ -46,9 +46,8 @@ enum {
 typedef struct {
     uint32 size;
 
-    byte count;
-    byte type;    // XDR_ARRAY_END
-    byte _[2];
+    uint16 count;
+    uint16 type;    // XDR_ARRAY_END
 
     byte entry[0];
 } xdr_array_t;
@@ -79,6 +78,7 @@ typedef union {
     void *session;
 } xdr_session_t;
 
+enum { XDR_COOKIE_SIZE = 60 };
 enum { XDR_DIGEST_SIZE = SHA256_DIGEST_SIZE };
 
 typedef struct {
@@ -93,13 +93,13 @@ typedef struct {
 enum { 
     XDR_FILE_HEADER_SIZE    = 60,
     
-    XDR_FILE_PAD_SIZE       = (XDR_FILE_HEADER_SIZE
-                                - sizeof(uint32) 
-                                - sizeof(time_t) 
-                                - sizeof(xdr_offset_t)
-                                - XDR_DIGEST_SIZE
-                                - sizeof(uint16)
-                                - sizeof(byte)),
+    XDR_FILE_PAD_SIZE       = (XDR_FILE_HEADER_SIZE     //(60
+                                - sizeof(uint32)        // -4
+                                - sizeof(time_t)        // -4
+                                - sizeof(xdr_offset_t)  // -4
+                                - XDR_DIGEST_SIZE       // -32
+                                - sizeof(uint16)        // -2
+                                - sizeof(byte)),        // -1) = 13
 };
 
 typedef struct {
@@ -261,13 +261,30 @@ xdr_dns_t;
 typedef struct {
     xdr_file_t file;
     
+    byte version;
+    byte _;
+    uint16 key_usage;
+    
+    xdr_time_t not_before;
+    xdr_time_t not_after;
+    
     char domain[1+XDR_DNS_DOMAIN_SIZE];
+    xdr_string_t serial_number;
+    xdr_string_t country_name;
+    xdr_string_t organization_name;
+    xdr_string_t organization_unit_name;
+    xdr_string_t common_name;
+    
 } xdr_cert_t;
 
 typedef struct {
     byte reason;
-    byte _[3];
+    byte verfy;
+    byte verfy_failed_idx;
+    byte _;
 
+    xdr_string_t verfy_failed_desc;
+    
     xdr_array_t cert_server; // xdr_cert_t
     xdr_array_t cert_client; // xdr_cert_t
 } xdr_ssl_t;
@@ -422,8 +439,6 @@ xdr_L7(xdr_t *xdr)
 {
     return &xdr->L7;
 }
-
-#define XDR_COOKIE_SIZE     60
 
 typedef struct {
     uint32 count;

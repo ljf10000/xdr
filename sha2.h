@@ -1,8 +1,8 @@
 #ifndef __SHA2_H_f482c6dfe05341e7b2ddf4db926acb7d__
 #define __SHA2_H_f482c6dfe05341e7b2ddf4db926acb7d__
 /******************************************************************************/
-#define SHA256_DIGEST_SIZE ( 256 / 8)   // 32
-#define SHA256_BLOCK_SIZE  ( 512 / 8)   // 64
+enum { SHA256_DIGEST_SIZE   = 256/8 }; // 32
+enum { SHA256_BLOCK_SIZE    = 512/8 }; // 64
 
 typedef struct {
     unsigned int tot_len;

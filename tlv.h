@@ -1049,40 +1049,35 @@ xtlv_record_save(xtlv_record_t *record, xtlv_t *tlv)
 }
 
 static inline int
-__xtlv_record_parse(xtlv_record_t *record, xtlv_t *tlv, uint32 left)
-{
-    int err = 0;
-
-    if (0==left) {
-        return 0;
-    }
-    
-    err = xtlv_check(tlv);
-    if (err<0) {
-        return err;
-    }
-
-    err = xtlv_record_save(record, tlv);
-    if (err<0) {
-        return err;
-    }
-
-    if (is_xtlv_opt_dump()) {
-        xtlv_dump(tlv);
-    }
-    
-    return __xtlv_record_parse(record, xtlv_next(tlv), left - xtlv_len(tlv));
-}
-
-static inline int
 xtlv_record_parse(xtlv_record_t *record)
 {
     xtlv_t *h = record->header;
     
-    if (xtlv_id_header == h->id) {
-        return __xtlv_record_parse(record, xtlv_first(h), xtlv_datalen(h));
-    } else {
+    if (xtlv_id_header!=h->id) {
         return -e_xtlv_header_must_first;
+    }
+
+    uint32 left = xtlv_datalen(h);
+    xtlv_t *tlv = xtlv_first(h);
+    int err;
+    
+    while(left>0) {
+        err = xtlv_check(tlv);
+        if (err<0) {
+            return err;
+        }
+
+        err = xtlv_record_save(record, tlv);
+        if (err<0) {
+            return err;
+        }
+
+        if (is_xtlv_opt_dump()) {
+            xtlv_dump(tlv);
+        }
+
+        tlv = xtlv_next(tlv);
+        left -= xtlv_len(tlv);
     }
 }
 
@@ -1095,11 +1090,11 @@ typedef struct {
 } xtlv_block_t;
 
 static inline int
-xtlv_block_pre(xtlv_block_t *block)
+xtlv_count(byte *buffer, int len)
 {
-    xtlv_t *h = (xtlv_t *)block->buffer;
-    uint32 left = block->len;
-    uint32 count = 0;
+    xtlv_t *h = (xtlv_t *)buffer;
+    uint32 left = (uint32)len;
+    int count = 0;
 
     while(left > 0) {
         count++;
@@ -1122,75 +1117,35 @@ xtlv_block_pre(xtlv_block_t *block)
 }
 
 static inline int
-xtlv_block_init(xtlv_block_t *block)
+xtlv_foreach(xtlv_t *header, int count, int (*each)(xtlv_t *h, void *data), void *data)
 {
+    int i, err = 0;
     xtlv_t *h;
-    int i, err;
+
+    xtlv_dprint("tlv foreach ...");
     
-    xtlv_dprint("tlv block init ...");
-    int err = xtlv_block_pre(block);
-    if (err<0) {
-        return err;
-    }
-
-    block->records = (xtlv_record_t *)os_calloc(block->count, sizeof(xtlv_record_t));
-    if (NULL==block->records) {
-        return -ENOMEM;
-    }
-    
-    for (i=0, h=(xtlv_t *)block->buffer; 
-         i < block->count;
-         i++, h=xtlv_next(h)) {
-        block->records[i].header = h;
-    }
-    xtlv_dprint("tlv block init ok.");
-
-    return 0;
-}
-
-static inline void
-xtlv_block_release(xtlv_block_t *block)
-{
-    xtlv_dprint("release tlv block ...");
-    
-    if (block->records) {
-        int i;
-
-        for (i=0; i<block->count; i++) {
-            // xtlv_dprint("release record:%d ...", i);
-            
-            xtlv_record_release(&block->records[i]);
-            
-            // xtlv_dprint("release record:%d ok.", i);
-        }
-        
-        os_free(block->records);
-    }
-    
-    xtlv_dprint("release tlv block ok.");
-}
-
-static inline int
-xtlv_block_parse(xtlv_block_t *block)
-{
-    int i, err;
-    
-    xtlv_dprint("tlv record parse ...");
-
-    for (i=0; i<block->count; i++) {
-        xtlv_dprint("tlv record parse:%d ...", i);
-        
-        err = xtlv_record_parse(&block->records[i]);
+    for (i=0, h=header; i<count; i++, h = xtlv_next(h)) {
+        err = (*each)(h, data);
         if (err<0) {
             return err;
         }
-        
-        xtlv_dprint("tlv record parse:%d ok.", i);
     }
-    
-    xtlv_dprint("tlv record parse ok.");
 
-    return 0;
+    xtlv_dprint("tlv foreach ok.");
+    
+    return err;
+}
+
+static inline int
+xtlv_parse(xtlv_t *h, void *data)
+{
+    xtlv_record_t r = { .header = h };
+    int err = 0;
+
+    err = xtlv_record_parse(&r);
+    xtlv_record_release(&r);
+
+    return err;
 }
 /******************************************************************************/
 #endif /* __TLV_H_d203748a8a974e6282d89ddcde27123a__ */

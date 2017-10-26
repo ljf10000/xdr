@@ -23,6 +23,7 @@ static int usage(void)
 
 int main(int argc, char *argv[])
 {
+    int err = 0;
     self = argv[0];
 
     argc--; argv++;
@@ -56,33 +57,23 @@ int main(int argc, char *argv[])
 
     char *buffer = NULL;
     uint32 len = 0;
-    int err;
 
     err = os_readfileall(input, &buffer, &len);
     if (err<0) {
-        return err;
+        goto ERROR
     }
     xtlv_dprint("read %s size:%d", input, len);
 
-    xtlv_block_t block = {
-        .buffer = buffer,
-        .len    = len,
-    };
-
-    err = xtlv_block_init(&block);
-    if (err<0) {
-        return err;
+    int count = xtlv_count(buffer, len);
+    if (count<0) {
+        err = count; goto ERROR;
     }
-
-    err = xtlv_block_parse(&block);
-    if (err<0) {
-        return err;
-    }
-
-    xtlv_block_release(&block);
-    os_free(buffer);
     
-    return 0;
+    err = xtlv_foreach((xtlv_t *)buffer, count, xtlv_parse, NULL);
+
+ERROR:
+    os_free(buffer);
+    return err;
 }
 
 /******************************************************************************/
