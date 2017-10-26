@@ -963,7 +963,7 @@ xtlv_cache_expand(xtlv_cache_t *cache)
 }
 
 static inline int
-xtlv_cache_save_multi(xtlv_cache_t *cache, xtlv_t *tlv)
+xtlv_cache_multi_save(xtlv_cache_t *cache, xtlv_t *tlv)
 {
     int err = 0;
 
@@ -1041,7 +1041,7 @@ xtlv_record_save(xtlv_record_t *record, xtlv_t *tlv)
     
     xtlv_ops_t *ops = xtlv_ops(tlv->id);
     if (XTLV_F_MULTI & ops->flag) {
-        return xtlv_error(tlv, xtlv_cache_save_multi(cache, tlv));
+        return xtlv_error(tlv, xtlv_cache_multi_save(cache, tlv));
     } 
     else {
         return xtlv_error(tlv, -e_xtlv_not_support_multi);

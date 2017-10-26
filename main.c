@@ -56,13 +56,20 @@ int main(int argc, char *argv[])
     char *prefix    = argv[1];
 
     char *buffer = NULL;
-    uint32 len = 0;
-
-    err = os_readfileall(input, &buffer, &len);
+    int len = os_fsize(input);
     if (err<0) {
-        goto ERROR;
+        err = len; goto ERROR;
     }
-    xtlv_dprint("read %s size:%d", input, len);
+
+    int fd = open(input, O_RDONLY, S_IRUSR | S_IRGRP);
+    if (fd<0) {
+        err = fd; goto ERROR;
+    }
+
+    buffer = mmap(NULL, len, PROT_READ, 0, fd, 0);
+    if (NULL==buffer) {
+        err = errno; goto ERROR;
+    }
 
     int count = xtlv_count(buffer, len);
     if (count<0) {
@@ -72,7 +79,14 @@ int main(int argc, char *argv[])
     err = xtlv_foreach((xtlv_t *)buffer, count, xtlv_parse, NULL);
 
 ERROR:
-    os_free(buffer);
+    if (NULL!=buffer) {
+        munmap(buffer, len);
+    }
+
+    if (fd > 0) {
+        close(fd);
+    }
+    
     return err;
 }
 

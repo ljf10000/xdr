@@ -365,7 +365,10 @@ os_time_string(time_t t)
 static inline bool
 is_option_args(char *args)
 {
-    return args && args[0] && args[1] && args[2] && '-'==args[0] && '-'==args[1];
+    return args 
+        && '-'==args[0]
+        && '-'==args[1]
+        && args[2];
 }
 
 typedef FILE* STREAM;
