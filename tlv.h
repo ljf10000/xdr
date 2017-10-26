@@ -10,15 +10,15 @@
 #endif
 
 enum {
-    e_xtlv_header_must_first        = 1000,
-    e_xtlv_header_length_not_match  = 1001,
-    e_xtlv_header_no_body           = 1002,
-    e_xtlv_invalid_id               = 1003,
-    e_xtlv_invalid_object_size      = 1004,
-    e_xtlv_invalid_short_size       = 1005,
-    e_xtlv_too_small                = 1006,
-    e_xtlv_too_big                  = 1007,
-    e_xtlv_not_support_multi        = 1008,
+    e_xtlv_header_must_first        = 200,
+    e_xtlv_header_length_not_match  = 201,
+    e_xtlv_header_no_body           = 202,
+    e_xtlv_invalid_id               = 203,
+    e_xtlv_invalid_object_size      = 204,
+    e_xtlv_invalid_short_size       = 205,
+    e_xtlv_too_small                = 206,
+    e_xtlv_too_big                  = 207,
+    e_xtlv_not_support_multi        = 208,
 };
 
 typedef uint8  xtlv_u8_t;
@@ -440,13 +440,14 @@ xtlv_dump(xtlv_t *tlv)
 }
 
 static inline int
-xtlv_error(xtlv_t *tlv, int err)
+xtlv_error(xtlv_t *tlv, int err, char *serr)
 {
     if (err<0) {
         xtlv_ops_t *ops = xtlv_ops(tlv->id);
 
         if (XTLV_F_FIXED & ops->flag) {
-            os_println("tlv name:%s fixed:%d id:%d pad:%d alen:%u hlen:%u dlen:%u", 
+            os_println("%s tlv name:%s fixed:%d id:%d pad:%d alen:%u hlen:%u dlen:%u", 
+                serr,
                 ops->name, 
                 ops->maxsize,
                 tlv->id, 
@@ -455,7 +456,8 @@ xtlv_error(xtlv_t *tlv, int err)
                 xtlv_hdrlen(tlv),
                 xtlv_datalen(tlv));
         } else {
-            os_println("tlv name:%s id:%d pad:%d alen:%u hlen:%u dlen:%u", 
+            os_println("%s tlv name:%s id:%d pad:%d alen:%u hlen:%u dlen:%u", 
+                serr,
                 ops->name, 
                 tlv->id, 
                 tlv->pad, 
@@ -478,20 +480,26 @@ xtlv_check_fixed(xtlv_t *tlv)
         case XTLV_T_u8:
         case XTLV_T_i8:
             if (0 != dlen) {
-                return xtlv_error(tlv, -e_xtlv_invalid_short_size);
+                return xtlv_error(tlv, 
+                    -e_xtlv_invalid_short_size,
+                    "xtlv_check_fixed i8");
             }
             
             break;
         case XTLV_T_u16:
         case XTLV_T_i16:
-            if (sizeof(uint32) != dlen) {
-                return xtlv_error(tlv, -e_xtlv_invalid_short_size);
+            if (sizeof(uint16) != dlen) {
+                return xtlv_error(tlv, 
+                    -e_xtlv_invalid_short_size,
+                    "xtlv_check_fixed i16");
             }
 
             break;
         default:
             if (dlen != ops->maxsize) {
-                return xtlv_error(tlv, -e_xtlv_invalid_object_size);
+                return xtlv_error(tlv, 
+                    -e_xtlv_invalid_object_size,
+                    "xtlv_check_fixed other");
             }
 
             break;
@@ -507,10 +515,14 @@ xtlv_check_dynamic(xtlv_t *tlv)
     uint32 dlen = xtlv_datalen(tlv);
     
     if (ops->minsize && dlen < ops->minsize) {
-        return xtlv_error(tlv, -e_xtlv_too_small);
+        return xtlv_error(tlv, 
+            -e_xtlv_too_small,
+            "xtlv_check_dynamic too small");
     }
     else if (ops->maxsize && dlen > ops->maxsize) {
-        return xtlv_error(tlv, -e_xtlv_too_big);
+        return xtlv_error(tlv, 
+            -e_xtlv_too_big,
+            "xtlv_check_dynamic too big");
     }
 
     return 0;
@@ -521,15 +533,21 @@ xtlv_check(xtlv_t *tlv)
 {
     xtlv_ops_t *ops = xtlv_ops(tlv->id);
     if (NULL==ops) {
-        return xtlv_error(tlv, -e_xtlv_invalid_id);
+        return xtlv_error(tlv, 
+            -e_xtlv_invalid_id,
+            "xtlv_check invalid id");
     }
 
     if (xtlv_len(tlv) < xtlv_hdrlen(tlv)) {
-        return xtlv_error(tlv, -e_xtlv_too_small);
+        return xtlv_error(tlv, 
+            -e_xtlv_too_small,
+            "xtlv_check too small");
     }
 
     if (ops->check) {
-        return xtlv_error(tlv, (*ops->check)(tlv));
+        return xtlv_error(tlv, 
+            (*ops->check)(tlv),
+            "xtlv_check ops check");
     }
 
     // use default checker
@@ -1041,10 +1059,14 @@ xtlv_record_save(xtlv_record_t *record, xtlv_t *tlv)
     
     xtlv_ops_t *ops = xtlv_ops(tlv->id);
     if (XTLV_F_MULTI & ops->flag) {
-        return xtlv_error(tlv, xtlv_cache_multi_save(cache, tlv));
+        return xtlv_error(tlv, 
+            xtlv_cache_multi_save(cache, tlv),
+            "xtlv_record_save multi");
     } 
     else {
-        return xtlv_error(tlv, -e_xtlv_not_support_multi);
+        return xtlv_error(tlv, 
+            -e_xtlv_not_support_multi,
+            "xtlv_record_save not support multi");
     }
 }
 
