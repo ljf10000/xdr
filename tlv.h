@@ -488,7 +488,7 @@ xtlv_check_fixed(xtlv_t *tlv)
             break;
         case XTLV_T_u16:
         case XTLV_T_i16:
-            if (sizeof(uint16) != dlen) {
+            if (sizeof(uint32) != dlen) {
                 return xtlv_error(tlv, 
                     -e_xtlv_invalid_short_size,
                     "xtlv_check_fixed i16");
@@ -1064,13 +1064,9 @@ xtlv_record_save(xtlv_record_t *record, xtlv_t *tlv)
             "xtlv_record_save multi");
     } 
     else {
-#if 1
         return xtlv_error(tlv, 
             -e_xtlv_not_support_multi,
             "xtlv_record_save not support multi");
-#else
-        return 0;
-#endif
     }
 }
 
