@@ -447,7 +447,7 @@ xtlv_error(xtlv_t *tlv, int err, char *serr)
 
         if (XTLV_F_FIXED & ops->flag) {
             os_println("%s tlv name:%s fixed:%d id:%d pad:%d alen:%u hlen:%u dlen:%u", 
-                serr,
+                serr?serr:"",
                 ops->name, 
                 ops->maxsize,
                 tlv->id, 
@@ -457,7 +457,7 @@ xtlv_error(xtlv_t *tlv, int err, char *serr)
                 xtlv_datalen(tlv));
         } else {
             os_println("%s tlv name:%s id:%d pad:%d alen:%u hlen:%u dlen:%u", 
-                serr,
+                serr?serr:"",
                 ops->name, 
                 tlv->id, 
                 tlv->pad, 
@@ -1064,9 +1064,13 @@ xtlv_record_save(xtlv_record_t *record, xtlv_t *tlv)
             "xtlv_record_save multi");
     } 
     else {
+#if 0
         return xtlv_error(tlv, 
             -e_xtlv_not_support_multi,
             "xtlv_record_save not support multi");
+#else
+        return 0;
+#endif
     }
 }
 
