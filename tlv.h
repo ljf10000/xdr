@@ -1079,6 +1079,8 @@ xtlv_record_parse(xtlv_record_t *record)
         tlv = xtlv_next(tlv);
         left -= xtlv_len(tlv);
     }
+
+    return 0;
 }
 
 typedef struct {
@@ -1090,7 +1092,7 @@ typedef struct {
 } xtlv_block_t;
 
 static inline int
-xtlv_count(byte *buffer, int len)
+xtlv_count(void *buffer, int len)
 {
     xtlv_t *h = (xtlv_t *)buffer;
     uint32 left = (uint32)len;
