@@ -1,6 +1,6 @@
 #include "xdr.h"
 
-DECLARE_XTLV_VARS;
+DECLARE_TLV_VARS;
 /******************************************************************************/
 static char *self;
 
@@ -8,8 +8,8 @@ static struct {
     char *name;
     uint32 flag;
 } opt[] = {
-    { .name = "--dump",         .flag = XTLV_OPT_DUMP },
-    { .name = "--file-split",   .flag = XTLV_OPT_FILE_SPLIT },
+    { .name = "--dump",         .flag = TLV_OPT_DUMP },
+    { .name = "--file-split",   .flag = TLV_OPT_FILE_SPLIT },
 };
 
 static int usage(void)
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
         int i;
         for (i=0; i<os_count_of(opt); i++) {
             if (0==strcmp(opt[i].name, args)) {
-                xtlv_opt_set(opt[i].flag);
+                tlv_opt_set(opt[i].flag);
             }
         }
         
@@ -60,22 +60,22 @@ int main(int argc, char *argv[])
     if (err<0) {
         err = len; goto ERROR;
     }
-    xtlv_dprint("file size %d", len);
+    tlv_dprint("file size %d", len);
     
     buffer = os_mmap(input, len, PROT_READ, MAP_PRIVATE, 0);
     if (NULL==buffer) {
         err = errno; goto ERROR;
     }
-    xtlv_dprint("file mmap 0x%x", buffer);
+    tlv_dprint("file mmap 0x%x", buffer);
 
-    int count = xtlv_count(buffer, len);
+    int count = tlv_count(buffer, len);
     if (count<0) {
         err = count; goto ERROR;
     }
-    xtlv_dprint("tlv count %d", count);
+    tlv_dprint("tlv count %d", count);
     
-    err = xtlv_foreach((xtlv_t *)buffer, count, xtlv_parse, NULL);
-    xtlv_dprint("foreach error %d", err);
+    err = tlv_foreach((tlv_t *)buffer, count, tlv_parse, NULL);
+    tlv_dprint("foreach error %d", err);
 
 ERROR:
     if (NULL!=buffer) {

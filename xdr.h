@@ -117,7 +117,7 @@ typedef struct {
 } xdr_file_t;
 
 typedef struct {
-    // begin, same as xtlv_http_t
+    // begin, same as tlv_http_t
     xdr_time_t time_request;
     xdr_time_t time_first_response;
     xdr_time_t time_last_content;
@@ -142,7 +142,7 @@ typedef struct {
     byte ie;
     byte portal;
     byte _;
-    // end, same as xtlv_http_t
+    // end, same as tlv_http_t
     
     xdr_string_t host;
     xdr_string_t url;
@@ -159,7 +159,7 @@ typedef struct {
 xdr_http_t;
 
 typedef struct {
-    // begin, same as xtlv_sip_t
+    // begin, same as tlv_sip_t
     byte call_direction;
     byte call_type;
     byte hangup_reason;
@@ -176,7 +176,7 @@ typedef struct {
 
         uint16 v;
     } u;
-    // end, same as xtlv_sip_t
+    // end, same as tlv_sip_t
     
     xdr_string_t calling_number;
     xdr_string_t called_number;
@@ -185,7 +185,7 @@ typedef struct {
 xdr_sip_t;
 
 typedef struct {
-    // begin, same as xtlv_rtsp_t
+    // begin, same as tlv_rtsp_t
     uint16 port_client_start;
     uint16 port_client_end;
     uint16 port_server_start;
@@ -194,7 +194,7 @@ typedef struct {
     uint16 count_audio;
     
     uint32 describe_delay;
-    // end, same as xtlv_rtsp_t
+    // end, same as tlv_rtsp_t
     
     xdr_string_t url;
     xdr_string_t user_agent;
@@ -581,9 +581,9 @@ xb_pre_string(xdr_buffer_t *x, xdr_string_t *obj, void *buf, uint32 len)
 }
 
 static inline int
-xb_pre_string_ex(xdr_buffer_t *x, xdr_string_t *obj, xtlv_t *tlv)
+xb_pre_string_ex(xdr_buffer_t *x, xdr_string_t *obj, tlv_t *tlv)
 {
-    return xb_pre_string(x, obj, xtlv_data(tlv), xtlv_datalen(tlv))?0:-ENOMEM;
+    return xb_pre_string(x, obj, tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
 }
 
 static inline xdr_binary_t *
@@ -602,16 +602,16 @@ xb_pre_binnary(xdr_buffer_t *x, xdr_binary_t *obj, void *buf, uint32 len)
 }
 
 static inline int
-xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, xtlv_t *tlv)
+xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, tlv_t *tlv)
 {
-    return xb_pre_binnary(x, obj, xtlv_data(tlv), xtlv_datalen(tlv))?0:-ENOMEM;
+    return xb_pre_binnary(x, obj, tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
 }
 
 static inline int
-xb_pre_file_from_buffer(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv)
+xb_pre_file_from_buffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 {
-    uint32 size = xtlv_datalen(tlv);
-    byte *buf = xtlv_data(tlv);
+    uint32 size = tlv_datalen(tlv);
+    byte *buf = tlv_data(tlv);
     
     file->offset = 0; // todo: save local file
 
@@ -622,11 +622,11 @@ xb_pre_file_from_buffer(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv)
 }
 
 static inline int
-xb_pre_file_from_path(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv)
+xb_pre_file_from_path(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 {
     char filename[1+OS_FILENAME_LEN];
     
-    // todo: filename <== /PREFIX/xtlv_string(tlv)
+    // todo: filename <== /PREFIX/tlv_string(tlv)
     
     int size = os_fdigest(filename, file->digest);
     if (size < 0) {
@@ -638,11 +638,11 @@ xb_pre_file_from_path(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv)
 }
 
 static inline int
-xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv, uint32 flag)
+xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv, uint32 flag)
 {
     int err;
     
-    if (is_xtlv_opt_file_split()) {
+    if (is_tlv_opt_file_split()) {
         err = xb_pre_file_from_path(x, file, tlv);
     } else {
         err = xb_pre_file_from_buffer(x, file, tlv);
@@ -658,7 +658,7 @@ xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, xtlv_t *tlv, uint32 flag)
 }
 
 static inline int
-xb_pre_file_ex(xdr_buffer_t *x, xdr_offset_t *poffset, xtlv_t *tlv, uint32 flag)
+xb_pre_file_ex(xdr_buffer_t *x, xdr_offset_t *poffset, tlv_t *tlv, uint32 flag)
 {
     xdr_file_t *file = (xdr_file_t *)xb_pre(x, sizeof(xdr_file_t));
     if (NULL==file) {
@@ -754,9 +754,9 @@ xb_pre_ssl(xdr_buffer_t *x)
     return xb_pre_L6(x, xdr_ssl_t);
 }
 
-#define xtlv_to_xdr_by(_x, _tlv, _field, _nt)    ({(_x)->u.xdr->_field = xtlv_##_nt(_tlv); 0; })
-#define xtlv_to_xdr_obj(_x, _tlv, _obj)         ({ \
-    xtlv_##_obj##_t *__src = xtlv_##_obj(_tlv);     \
+#define tlv_to_xdr_by(_x, _tlv, _field, _nt)    ({(_x)->u.xdr->_field = tlv_##_nt(_tlv); 0; })
+#define tlv_to_xdr_obj(_x, _tlv, _obj)         ({ \
+    tlv_##_obj##_t *__src = tlv_##_obj(_tlv);     \
     xdr_##_obj##_t *__dst = xb_pre_##_obj(_x);      \
                                                     \
     os_objcpy(__dst, __src);                        \
@@ -766,21 +766,21 @@ xb_pre_ssl(xdr_buffer_t *x)
 
 
 static inline int
-xtlv_to_xdr_session_state(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_session_state(xdr_buffer_t *x, tlv_t *tlv)
 {
-    return xtlv_to_xdr_by(x, tlv, session_state, u8);
+    return tlv_to_xdr_by(x, tlv, session_state, u8);
 }
 
 static inline int
-xtlv_to_xdr_appid(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_appid(xdr_buffer_t *x, tlv_t *tlv)
 {
-    return xtlv_to_xdr_by(x, tlv, appid, u8);
+    return tlv_to_xdr_by(x, tlv, appid, u8);
 }
 
 static inline int
-xtlv_to_xdr_session(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_session(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xtlv_session_t *src = xtlv_session(tlv);
+    tlv_session_t *src = tlv_session(tlv);
     
     if (XDR_IPV4==src->ver) {
         xdr_session4_t *dst = xb_pre_session4(x);
@@ -811,21 +811,21 @@ xtlv_to_xdr_session(xdr_buffer_t *x, xtlv_t *tlv)
 }
 
 static inline int
-xtlv_to_xdr_session_st(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_session_st(xdr_buffer_t *x, tlv_t *tlv)
 {
-    return xtlv_to_xdr_obj(x, tlv, session_st);
+    return tlv_to_xdr_obj(x, tlv, session_st);
 }
 
 static inline int
-xtlv_to_xdr_service_st(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_service_st(xdr_buffer_t *x, tlv_t *tlv)
 {
-    return xtlv_to_xdr_obj(x, tlv, service_st);
+    return tlv_to_xdr_obj(x, tlv, service_st);
 }
 
 static inline int
-xtlv_to_xdr_session_time(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_session_time(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xtlv_session_time_t *tm = xtlv_session_time(tlv);
+    tlv_session_time_t *tm = tlv_session_time(tlv);
     
     x->u.xdr->session_time_create = tm->create;
     x->u.xdr->session_time_start  = tm->start;
@@ -835,269 +835,269 @@ xtlv_to_xdr_session_time(xdr_buffer_t *x, xtlv_t *tlv)
 }
 
 static inline int
-xtlv_to_xdr_tcp(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_tcp(xdr_buffer_t *x, tlv_t *tlv)
 {
-    return xtlv_to_xdr_obj(x, tlv, tcp);
+    return tlv_to_xdr_obj(x, tlv, tcp);
 }
 
 static inline int
-xtlv_to_xdr_first_response_delay(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_first_response_delay(xdr_buffer_t *x, tlv_t *tlv)
 {
-    return xtlv_to_xdr_by(x, tlv, first_response_delay, u32);
+    return tlv_to_xdr_by(x, tlv, first_response_delay, u32);
 }
 
 static inline int
-xtlv_to_xdr_L7(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_L7(xdr_buffer_t *x, tlv_t *tlv)
 {
-    os_objcpy(&x->u.xdr->L7, xtlv_L7(tlv));
+    os_objcpy(&x->u.xdr->L7, tlv_L7(tlv));
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_http(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_http(xdr_buffer_t *x, tlv_t *tlv)
 {
-    return xtlv_to_xdr_obj(x, tlv, http);
+    return tlv_to_xdr_obj(x, tlv, http);
 }
 
 static inline int
-xtlv_to_xdr_http_host(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_http_host(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->host, tlv);
 }
 
 static inline int
-xtlv_to_xdr_http_url(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_http_url(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->url, tlv);
 }
 
 static inline int
-xtlv_to_xdr_http_host_xonline(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_http_host_xonline(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->host_xonline, tlv);
 }
 
 static inline int
-xtlv_to_xdr_http_user_agent(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_http_user_agent(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->user_agent, tlv);
 }
 
 static inline int
-xtlv_to_xdr_http_content(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_http_content(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->content, tlv);
 }
 
 static inline int
-xtlv_to_xdr_http_refer(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_http_refer(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->refer, tlv);
 }
 
 static inline int
-xtlv_to_xdr_http_cookie(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_http_cookie(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->cookie, tlv);
 }
 
 static inline int
-xtlv_to_xdr_http_location(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_http_location(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->location, tlv);
 }
 
 static inline int
-xtlv_to_xdr_sip(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_sip(xdr_buffer_t *x, tlv_t *tlv)
 {
-    return xtlv_to_xdr_obj(x, tlv, sip);
+    return tlv_to_xdr_obj(x, tlv, sip);
 }
 
 static inline int
-xtlv_to_xdr_sip_calling_number(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_sip_calling_number(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_sip(x)->calling_number, tlv);
 }
 
 static inline int
-xtlv_to_xdr_sip_called_number(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_sip_called_number(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_sip(x)->called_number, tlv);
 }
 
 static inline int
-xtlv_to_xdr_sip_session_id(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_sip_session_id(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_sip(x)->session_id, tlv);
 }
 
 static inline int
-xtlv_to_xdr_rtsp(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_rtsp(xdr_buffer_t *x, tlv_t *tlv)
 {
-    return xtlv_to_xdr_obj(x, tlv, rtsp);
+    return tlv_to_xdr_obj(x, tlv, rtsp);
 }
 
 static inline int
-xtlv_to_xdr_rtsp_url(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_rtsp_url(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_rtsp(x)->url, tlv);
 }
 
 static inline int
-xtlv_to_xdr_rtsp_user_agent(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_rtsp_user_agent(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_rtsp(x)->user_agent, tlv);
 }
 
 static inline int
-xtlv_to_xdr_rtsp_server_ip(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_rtsp_server_ip(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_rtsp(x)->server_ip, tlv);
 }
 
 static inline int
-xtlv_to_xdr_ftp_status(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_ftp_status(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_ftp(x)->status, tlv);
 }
 
 static inline int
-xtlv_to_xdr_ftp_user(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_ftp_user(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_ftp(x)->user, tlv);
 }
 
 static inline int
-xtlv_to_xdr_ftp_pwd(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_ftp_pwd(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_ftp(x)->pwd, tlv);
 }
 
 static inline int
-xtlv_to_xdr_ftp_trans_mode(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_ftp_trans_mode(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_ftp(x)->trans_mode = xtlv_u8(tlv);
+    xb_pre_ftp(x)->trans_mode = tlv_u8(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_ftp_trans_type(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_ftp_trans_type(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_ftp(x)->trans_type = xtlv_u8(tlv);
+    xb_pre_ftp(x)->trans_type = tlv_u8(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_ftp_filename(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_ftp_filename(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_ftp(x)->filename, tlv);
 }
 
 static inline int
-xtlv_to_xdr_ftp_filesize(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_ftp_filesize(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_ftp(x)->filesize = xtlv_u32(tlv);
+    xb_pre_ftp(x)->filesize = tlv_u32(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_ftp_response_delay(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_ftp_response_delay(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_ftp(x)->response_delay = xtlv_duration(tlv);
+    xb_pre_ftp(x)->response_delay = tlv_duration(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_ftp_trans_duration(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_ftp_trans_duration(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_ftp(x)->trans_duration = xtlv_duration(tlv);
+    xb_pre_ftp(x)->trans_duration = tlv_duration(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_mail_msg_type(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_mail_msg_type(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_mail(x)->msg_type = xtlv_u16(tlv);
+    xb_pre_mail(x)->msg_type = tlv_u16(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_mail_status_code(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_mail_status_code(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_mail(x)->status_code = xtlv_i16(tlv);
+    xb_pre_mail(x)->status_code = tlv_i16(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_mail_user(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_mail_user(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_mail(x)->user, tlv);
 }
 
 static inline int
-xtlv_to_xdr_mail_sender(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_mail_sender(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_mail(x)->sender, tlv);
 }
 
 static inline int
-xtlv_to_xdr_mail_length(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_mail_length(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_mail(x)->length = xtlv_u32(tlv);
+    xb_pre_mail(x)->length = tlv_u32(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_mail_domain(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_mail_domain(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_mail(x)->domain, tlv);
 }
 
 static inline int
-xtlv_to_xdr_mail_recver(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_mail_recver(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_mail(x)->recver, tlv);
 }
 
 static inline int
-xtlv_to_xdr_mail_hdr(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_mail_hdr(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_mail(x)->hdr, tlv);
 }
 
 static inline int
-xtlv_to_xdr_mail_acs_type(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_mail_acs_type(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_mail(x)->acs_type = xtlv_u8(tlv);
+    xb_pre_mail(x)->acs_type = tlv_u8(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_dns_domain(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_dns_domain(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_dns(x)->domain, tlv);
 }
 
 static inline int
-xtlv_to_xdr_dns_ip_count(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_dns_ip_count(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_dns(x)->ip_count = xtlv_u8(tlv);
+    xb_pre_dns(x)->ip_count = tlv_u8(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_dns_ip4(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_dns_ip4(xdr_buffer_t *x, tlv_t *tlv)
 {
     xb_pre_dns(x)->ip_version = XDR_IPV4;
     
@@ -1105,7 +1105,7 @@ xtlv_to_xdr_dns_ip4(xdr_buffer_t *x, xtlv_t *tlv)
 }
 
 static inline int
-xtlv_to_xdr_dns_ip6(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_dns_ip6(xdr_buffer_t *x, tlv_t *tlv)
 {
     xb_pre_dns(x)->ip_version = XDR_IPV6;
     
@@ -1113,93 +1113,93 @@ xtlv_to_xdr_dns_ip6(xdr_buffer_t *x, xtlv_t *tlv)
 }
 
 static inline int
-xtlv_to_xdr_dns_response_code(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_dns_response_code(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_dns(x)->response_code = xtlv_u8(tlv);
+    xb_pre_dns(x)->response_code = tlv_u8(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_dns_count_request(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_dns_count_request(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_dns(x)->count_request = xtlv_u8(tlv);
+    xb_pre_dns(x)->count_request = tlv_u8(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_dns_count_response_record(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_dns_count_response_record(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_dns(x)->count_response_record = xtlv_u8(tlv);
+    xb_pre_dns(x)->count_response_record = tlv_u8(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_dns_count_response_auth(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_dns_count_response_auth(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_dns(x)->count_response_auth = xtlv_u8(tlv);
+    xb_pre_dns(x)->count_response_auth = tlv_u8(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_dns_count_response_extra(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_dns_count_response_extra(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_dns(x)->count_response_extra = xtlv_u8(tlv);
+    xb_pre_dns(x)->count_response_extra = tlv_u8(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_dns_delay(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_dns_delay(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_dns(x)->delay = xtlv_u32(tlv);
+    xb_pre_dns(x)->delay = tlv_u32(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_to_xdr_http_request(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_http_request(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_file_ex(x, &xb_pre_http(x)->offsetof_request, tlv, XDR_F_HTTP_REQUEST);
 }
 
 static inline int
-xtlv_to_xdr_http_response(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_http_response(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_file_ex(x, &xb_pre_http(x)->offsetof_response, tlv, XDR_F_HTTP_RESPONSE);
 }
 
 static inline int
-xtlv_to_xdr_file_content(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_file_content(xdr_buffer_t *x, tlv_t *tlv)
 {
     return xb_pre_file_ex(x, &x->u.xdr->offsetof_file_content, tlv, XDR_F_FILE);
 }
 
 static inline int
-xtlv_to_xdr_ssl_server_cert(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_ssl_server_cert(xdr_buffer_t *x, tlv_t *tlv)
 {
     return 0; // do nothing
 }
 
 static inline int
-xtlv_to_xdr_ssl_client_cert(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_ssl_client_cert(xdr_buffer_t *x, tlv_t *tlv)
 {
     return 0; // do nothing
 }
 
 static inline int
-xtlv_to_xdr_ssl_fail_reason(xdr_buffer_t *x, xtlv_t *tlv)
+tlv_to_xdr_ssl_fail_reason(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xb_pre_ssl(x)->reason = xtlv_u8(tlv);
+    xb_pre_ssl(x)->reason = tlv_u8(tlv);
     
     return 0;
 }
 
 static inline int
-xtlv_record_to_xdr_dns(xdr_buffer_t *x, xtlv_record_t *r)
+tlv_record_to_xdr_dns(xdr_buffer_t *x, tlv_record_t *r)
 {
     xdr_dns_t *dns = xdr_dns(x->u.xdr);
     if (NULL==dns) {
@@ -1210,16 +1210,16 @@ xtlv_record_to_xdr_dns(xdr_buffer_t *x, xtlv_record_t *r)
     int id;
     
     if (XDR_IPV4 == dns->ip_version) {
-        id = xtlv_id_dns_ip4;
+        id = tlv_id_dns_ip4;
         type = XDR_ARRAY_IP4;
         size = sizeof(uint32);
     } else {
-        id = xtlv_id_dns_ip6;
+        id = tlv_id_dns_ip6;
         type = XDR_ARRAY_IP6;
         size = sizeof(xdr_ipaddr_t);
     }
     
-    xtlv_cache_t *cache = &r->cache[id];
+    tlv_cache_t *cache = &r->cache[id];
     if (0==cache->count) {
         return 0;
     }
@@ -1227,7 +1227,7 @@ xtlv_record_to_xdr_dns(xdr_buffer_t *x, xtlv_record_t *r)
     int i, count = cache->count;
 
     if (1==count && XDR_IPV4==dns->ip_version) {
-        dns->ip4 = xtlv_u32(cache->multi[0]);
+        dns->ip4 = tlv_u32(cache->multi[0]);
 
         return 0;
     }
@@ -1238,31 +1238,31 @@ xtlv_record_to_xdr_dns(xdr_buffer_t *x, xtlv_record_t *r)
     }
     
     for (i=0; i<count; i++) {
-        xtlv_t *tlv = cache->multi[i];
+        tlv_t *tlv = cache->multi[i];
 
-        memcpy(xdr_array_entry(array, i), xtlv_data(tlv), size);
+        memcpy(xdr_array_entry(array, i), tlv_data(tlv), size);
     }
 
     return 0;
 }
 
 static inline int
-xtlv_record_to_xdr_ssl_cert(xdr_buffer_t *x, xdr_array_t *certs, xtlv_record_t *r, int id)
+tlv_record_to_xdr_ssl_cert(xdr_buffer_t *x, xdr_array_t *certs, tlv_record_t *r, int id)
 {
     uint32 flag = 0;
     
     switch (id) {
-        case xtlv_id_ssl_server_cert:
+        case tlv_id_ssl_server_cert:
             flag = XDR_F_SSL_SERVER_CERT;
             break;
-        case xtlv_id_ssl_client_cert:
+        case tlv_id_ssl_client_cert:
             flag = XDR_F_SSL_CLIENT_CERT;
             break;
         default:
             return -1;
     }
     
-    xtlv_cache_t *cache = &r->cache[id];
+    tlv_cache_t *cache = &r->cache[id];
     if (0==cache->count) {
         return 0;
     }
@@ -1288,7 +1288,7 @@ xtlv_record_to_xdr_ssl_cert(xdr_buffer_t *x, xdr_array_t *certs, xtlv_record_t *
 }
 
 static inline int
-xtlv_record_to_xdr_ssl(xdr_buffer_t *x, xtlv_record_t *r)
+tlv_record_to_xdr_ssl(xdr_buffer_t *x, tlv_record_t *r)
 {
     xdr_ssl_t *ssl = xdr_ssl(x->u.xdr);
     if (NULL==ssl) {
@@ -1297,12 +1297,12 @@ xtlv_record_to_xdr_ssl(xdr_buffer_t *x, xtlv_record_t *r)
     
     int err;
 
-    err = xtlv_record_to_xdr_ssl_cert(x, &ssl->cert_server, r, xtlv_id_ssl_server_cert);
+    err = tlv_record_to_xdr_ssl_cert(x, &ssl->cert_server, r, tlv_id_ssl_server_cert);
     if (err<0) {
         return err;
     }
 
-    err = xtlv_record_to_xdr_ssl_cert(x, &ssl->cert_client, r, xtlv_id_ssl_client_cert);
+    err = tlv_record_to_xdr_ssl_cert(x, &ssl->cert_client, r, tlv_id_ssl_client_cert);
     if (err<0) {
         return err;
     }
@@ -1311,16 +1311,16 @@ xtlv_record_to_xdr_ssl(xdr_buffer_t *x, xtlv_record_t *r)
 }
 
 static inline int
-xtlv_record_to_xdr(xdr_buffer_t *x, xtlv_record_t *r)
+tlv_record_to_xdr(xdr_buffer_t *x, tlv_record_t *r)
 {
     int i, err;
 
-    err = xtlv_record_to_xdr_ssl(x, r);
+    err = tlv_record_to_xdr_ssl(x, r);
     if (err<0) {
         return err;
     }
 
-    err = xtlv_record_to_xdr_dns(x, r);
+    err = tlv_record_to_xdr_dns(x, r);
     if (err<0) {
         return err;
     }
