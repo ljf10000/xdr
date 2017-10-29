@@ -35,10 +35,10 @@ typedef uint64 xdr_duration_t,  tlv_duration_t;
 typedef uint64 xdr_time_t,      tlv_time_t;
 #define XDR_SECOND(_us)     ((time_t)((_us)/1000000))
 
-typedef uint32 tlv_ip4_t;
+typedef uint32 xdr_ip4_t, tlv_ip4_t;
 typedef struct {
     uint32 ip[4];
-} xdr_ipaddr_t, tlv_ip6_t;
+} xdr_ipaddr_t, xdr_ip6_t, tlv_ip6_t;
 #define XDR_IP(_addr)   (_addr)->ip[0]
 
 enum {

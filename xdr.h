@@ -14,9 +14,12 @@
 #define XDR_ALIGN(x)    OS_ALIGN(x, 4)
 
 typedef uint32 xdr_offset_t;
+typedef uint32 xdr_size_t;
+typedef uint32 xdr_delay_t;
+typedef uint32 xdr_flag_t;
 
 static inline void *
-xdr_strcpy(void *dst, void *src, uint32 size)
+xdr_strcpy(void *dst, void *src, xdr_size_t size)
 {
     byte *p = (byte *)memcpy(dst, src, size);
     
@@ -30,8 +33,8 @@ typedef struct {
     * not include '\0'
     *   real len must align 4
     */
-    uint32 len;
-    xdr_offset_t offset;
+    xdr_size_t      size;
+    xdr_offset_t    offset;
 } xdr_string_t, xdr_binary_t;
 
 enum {
@@ -44,7 +47,7 @@ enum {
 };
 
 typedef struct {
-    uint32 size;
+    xdr_size_t size;
 
     uint16 count;
     uint16 type;    // XDR_ARRAY_END
@@ -67,8 +70,8 @@ typedef struct {
     uint16 sport;
     uint16 dport;
     
-    uint32 sip;
-    uint32 dip;
+    xdr_ip4_t sip;
+    xdr_ip4_t dip;
 } xdr_session4_t;
 
 typedef union {
@@ -83,9 +86,9 @@ enum { XDR_DIGEST_SIZE = SHA256_DIGEST_SIZE };
 
 typedef struct {
     bkdr_t bkdr;
-    uint32 size;    // file size
+    xdr_size_t size;    // file size
     byte digest[XDR_DIGEST_SIZE];
-    byte _[XDR_COOKIE_SIZE - sizeof(bkdr_t) - sizeof(uint32) - XDR_DIGEST_SIZE];
+    byte _[XDR_COOKIE_SIZE - sizeof(bkdr_t) - sizeof(xdr_size_t) - XDR_DIGEST_SIZE];
     
     byte body[0];
 } xdr_cookie_t;
@@ -94,7 +97,7 @@ enum {
     XDR_FILE_HEADER_SIZE    = 60,
     
     XDR_FILE_PAD_SIZE       = (XDR_FILE_HEADER_SIZE     //(60
-                                - sizeof(uint32)        // -4
+                                - sizeof(xdr_size_t)    // -4
                                 - sizeof(time_t)        // -4
                                 - sizeof(xdr_offset_t)  // -4
                                 - XDR_DIGEST_SIZE       // -32
@@ -103,7 +106,7 @@ enum {
 };
 
 typedef struct {
-    uint32 size;
+    xdr_size_t size;
     time_t time;
 
     xdr_offset_t offset; // just for local file
@@ -123,7 +126,7 @@ typedef struct {
     xdr_time_t time_last_content;
     xdr_duration_t service_delay;
     
-    uint32 content_length;
+    xdr_size_t content_length;
     
     uint16 status_code;
     byte method;
@@ -193,7 +196,7 @@ typedef struct {
     uint16 count_video;
     uint16 count_audio;
     
-    uint32 describe_delay;
+    xdr_delay_t describe_delay;
     // end, same as tlv_rtsp_t
     
     xdr_string_t url;
@@ -206,7 +209,7 @@ typedef struct {
     byte trans_type;
     byte _[2];
     
-    uint32 filesize;
+    xdr_size_t filesize;
     xdr_duration_t response_delay;
     xdr_duration_t trans_duration;
     
@@ -219,7 +222,7 @@ typedef struct {
 typedef struct {
     uint16 msg_type;
      int16 status_code;
-    uint32 length;
+    xdr_size_t length;
     
     byte acs_type;
     byte _[3];
@@ -244,14 +247,14 @@ typedef struct {
     byte ip_count;
     byte _;
 
-    uint32 delay;
+    xdr_delay_t delay;
     /*
     * if 1==ip_count, 0==ip_version
     *   then 
     *       ip4 is the ip address
     *       the ip array is not used
     */
-    uint32 ip4;
+    xdr_ip4_t ip4;
     
     xdr_array_t ip; // uint32
     xdr_string_t domain;
@@ -340,9 +343,9 @@ typedef struct {
     
     bkdr_t bkdr;
 
-    uint32 total;   // total size
-    uint32 flag;    // XDR_F_XXX
-    uint32 first_response_delay;
+    xdr_size_t total;   // total size
+    xdr_flag_t flag;    // XDR_F_XXX
+    xdr_delay_t first_response_delay;
 
     xdr_offset_t offsetof_session;
     xdr_offset_t offsetof_session_st;
@@ -450,7 +453,7 @@ typedef struct {
     int count;      // file count
     int current;    // current file index
     
-    uint32 size;    // total file size, NOT include cookie
+    xdr_size_t size;    // total file size, NOT include cookie
     byte *block;    // file block
 } xdr_block_t;
 
@@ -461,7 +464,7 @@ struct xdr_buffer_st {
     } u;
     
     xdr_offset_t current;
-    uint32 size;
+    xdr_size_t size;
 };
 
 static inline void *
@@ -476,29 +479,29 @@ xb_offset(xdr_buffer_t *x, void *pointer)
     return pointer - (void *)x;
 }
 
-static inline uint32
+static inline xdr_size_t
 xb_left(xdr_buffer_t *x)
 {
     return (x->size > x->current)?(x->size - x->current):0;
 }
 
 static inline bool
-xb_enought(xdr_buffer_t *x, uint32 size)
+xb_enought(xdr_buffer_t *x, xdr_size_t size)
 {
     return xb_left(x) >= XDR_ALIGN(size);
 }
 
 static inline void
-xb_put(xdr_buffer_t *x, uint32 size)
+xb_put(xdr_buffer_t *x, xdr_size_t size)
 {
     x->current += XDR_ALIGN(size);
 }
 
 static inline int
-xb_expand(xdr_buffer_t *x, uint32 size)
+xb_expand(xdr_buffer_t *x, xdr_size_t size)
 {
     if (false==xb_enought(x, size)) {
-        uint32 expand = os_max(XDR_EXPAND, size);
+        xdr_size_t expand = os_max(XDR_EXPAND, size);
         
         x->u.buffer = os_realloc(x->u.buffer, x->size + expand);
         if (NULL==x->u.buffer) {
@@ -518,7 +521,7 @@ xb_obj(xdr_buffer_t *x, xdr_offset_t offset)
 }
 
 static inline byte *
-xb_pre(xdr_buffer_t *x, uint32 size)
+xb_pre(xdr_buffer_t *x, xdr_size_t size)
 {
     if (xb_expand(x, size) < 0) {
         return NULL;
@@ -532,7 +535,7 @@ xb_pre(xdr_buffer_t *x, uint32 size)
 }
 
 static inline void *
-xb_pre_obj(xdr_buffer_t *x, uint32 size, xdr_offset_t *poffset)
+xb_pre_obj(xdr_buffer_t *x, xdr_size_t size, xdr_offset_t *poffset)
 {
     xdr_offset_t offset = *poffset;
     if (offset) {
@@ -550,9 +553,9 @@ xb_pre_obj(xdr_buffer_t *x, uint32 size, xdr_offset_t *poffset)
 }
 
 static inline xdr_array_t *
-xb_pre_array(xdr_buffer_t *x, xdr_array_t *a, uint32 type, uint32 size, uint32 count)
+xb_pre_array(xdr_buffer_t *x, xdr_array_t *a, int type, xdr_size_t size, int count)
 {
-    uint32 allsize = count * XDR_ALIGN(size);
+    xdr_size_t allsize = count * XDR_ALIGN(size);
     byte *p = xb_pre(x, allsize);
     if (NULL==p) {
         return NULL;
@@ -566,15 +569,15 @@ xb_pre_array(xdr_buffer_t *x, xdr_array_t *a, uint32 type, uint32 size, uint32 c
 }
 
 static inline xdr_string_t *
-xb_pre_string(xdr_buffer_t *x, xdr_string_t *obj, void *buf, uint32 len)
+xb_pre_string(xdr_buffer_t *x, xdr_string_t *obj, void *buf, xdr_size_t size)
 {
-    xdr_string_t *p = (xdr_string_t *)xb_pre(x, XDR_ALIGN(1+len));
+    xdr_string_t *p = (xdr_string_t *)xb_pre(x, XDR_ALIGN(1+size));
     if (NULL==p) {
         return NULL;
     }
-    xdr_strcpy(p, buf, len);
+    xdr_strcpy(p, buf, size);
     
-    obj->len = len;
+    obj->size = size;
     obj->offset = xb_offset(x, p);
 
     return p;
@@ -587,15 +590,15 @@ xb_pre_string_ex(xdr_buffer_t *x, xdr_string_t *obj, tlv_t *tlv)
 }
 
 static inline xdr_binary_t *
-xb_pre_binnary(xdr_buffer_t *x, xdr_binary_t *obj, void *buf, uint32 len)
+xb_pre_binnary(xdr_buffer_t *x, xdr_binary_t *obj, void *buf, xdr_size_t size)
 {
-    xdr_binary_t *p = (xdr_binary_t *)xb_pre(x, XDR_ALIGN(len));
+    xdr_binary_t *p = (xdr_binary_t *)xb_pre(x, XDR_ALIGN(size));
     if (NULL==p) {
         return NULL;
     }
-    memcpy(p, buf, len);
+    memcpy(p, buf, size);
     
-    obj->len = len;
+    obj->size = size;
     obj->offset = xb_offset(x, p);
 
     return p;
@@ -610,7 +613,7 @@ xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, tlv_t *tlv)
 static inline int
 xb_pre_file_from_buffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 {
-    uint32 size = tlv_datalen(tlv);
+    xdr_size_t size = tlv_datalen(tlv);
     byte *buf = tlv_data(tlv);
     
     file->offset = 0; // todo: save local file
@@ -638,7 +641,7 @@ xb_pre_file_from_path(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 }
 
 static inline int
-xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv, uint32 flag)
+xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv, xdr_flag_t flag)
 {
     int err;
     
@@ -658,7 +661,7 @@ xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv, uint32 flag)
 }
 
 static inline int
-xb_pre_file_ex(xdr_buffer_t *x, xdr_offset_t *poffset, tlv_t *tlv, uint32 flag)
+xb_pre_file_ex(xdr_buffer_t *x, xdr_offset_t *poffset, tlv_t *tlv, xdr_flag_t flag)
 {
     xdr_file_t *file = (xdr_file_t *)xb_pre(x, sizeof(xdr_file_t));
     if (NULL==file) {
@@ -1206,13 +1209,13 @@ tlv_record_to_xdr_dns(xdr_buffer_t *x, tlv_record_t *r)
         return 0;
     }
 
-    uint32 size, type;
+    xdr_size_t size, type;
     int id;
     
     if (XDR_IPV4 == dns->ip_version) {
         id = tlv_id_dns_ip4;
         type = XDR_ARRAY_IP4;
-        size = sizeof(uint32);
+        size = sizeof(xdr_size_t);
     } else {
         id = tlv_id_dns_ip6;
         type = XDR_ARRAY_IP6;
@@ -1249,7 +1252,7 @@ tlv_record_to_xdr_dns(xdr_buffer_t *x, tlv_record_t *r)
 static inline int
 tlv_record_to_xdr_ssl_cert(xdr_buffer_t *x, xdr_array_t *certs, tlv_record_t *r, int id)
 {
-    uint32 flag = 0;
+    xdr_flag_t flag = 0;
     
     switch (id) {
         case tlv_id_ssl_server_cert:
