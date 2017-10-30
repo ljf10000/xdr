@@ -560,10 +560,14 @@ xb_enought(xdr_buffer_t *x, xdr_size_t size)
     return xb_left(x) >= XDR_ALIGN(size);
 }
 
-static inline void
+static inline void *
 xb_put(xdr_buffer_t *x, xdr_size_t size)
 {
+    void *current = xb_current(x);
+    
     x->current += XDR_ALIGN(size);
+
+    return current;
 }
 
 static inline int
@@ -587,18 +591,10 @@ xb_obj(xdr_buffer_t *x, xdr_offset_t offset)
     return XDR_OBJ(x->u.xdr, offset);
 }
 
-static inline byte *
+static inline void *
 xb_pre(xdr_buffer_t *x, xdr_size_t size)
 {
-    if (xb_expand(x, size) < 0) {
-        return NULL;
-    }
-    
-    byte *current = (byte *)xb_current(x);
-    
-    xb_put(x, size);
-    
-    return current;
+    return (0==xb_expand(x, size))?xb_put(x, size):NULL;
 }
 
 static inline void *
@@ -609,7 +605,7 @@ xb_pre_obj(xdr_buffer_t *x, xdr_size_t size, xdr_offset_t *poffset)
         return xb_obj(x, offset);
     }
     
-    byte *p = xb_pre(x, size);
+    void *p = xb_pre(x, size);
     if (NULL==p) {
         return NULL;
     }
@@ -623,7 +619,7 @@ static inline xdr_array_t *
 xb_pre_array(xdr_buffer_t *x, xdr_array_t *a, int type, xdr_size_t size, int count)
 {
     xdr_size_t allsize = count * XDR_ALIGN(size);
-    byte *p = xb_pre(x, allsize);
+    void *p = xb_pre(x, allsize);
     if (NULL==p) {
         return NULL;
     }
@@ -1420,6 +1416,7 @@ tlv_record_to_xdr(xdr_buffer_t *x, tlv_record_t *r)
 }
 
 typedef struct {
+    char *path;
     xdr_buffer_t tlv, xdr;
 
     int count;
@@ -1451,14 +1448,13 @@ xpair_open(xpair_t *pair)
     }
     
     tlv->size = size;
-    xdr->size = 2*size;
-
-    err = xb_open(tlv);
+    err = xb_open(tlv, true);
     if (err<0) {
         goto ERROR;
     }
 
-    err = xb_open(xdr);
+    xdr->size = 2*size;
+    err = xb_open(xdr, false);
     if (err<0) {
         goto ERROR;
     }
