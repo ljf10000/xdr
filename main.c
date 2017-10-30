@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 
         int err = tlv_to_xdr(&pair);
         if (err<0) {
-            return mv2_break(err);
+            return mv2_go(err);
         }
 
         return mv2_ok;
