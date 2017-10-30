@@ -43,21 +43,21 @@ typedef struct {
 
 #if 1
 #define TLV_T_MAPPER(_) \
-    _(u8,       0), \
-    _(u16,      1), \
-    _(u32,      2), \
-    _(u64,      3), \
-    _(i8,       4), \
-    _(i16,      5), \
-    _(i32,      6), \
-    _(i64,      7), \
-    _(string,   8), \
-    _(binary,   9), \
-    _(object,   10),\
-    _(time,     11),\
-    _(duration, 12),\
-    _(ip4,      13),\
-    _(ip6,      14),\
+    _(TLV_T,    u8,     0), \
+    _(TLV_T,    u16,      1), \
+    _(TLV_T,    u32,      2), \
+    _(TLV_T,    u64,      3), \
+    _(TLV_T,    i8,       4), \
+    _(TLV_T,    i16,      5), \
+    _(TLV_T,    i32,      6), \
+    _(TLV_T,    i64,      7), \
+    _(TLV_T,    string,   8), \
+    _(TLV_T,    binary,   9), \
+    _(TLV_T,    object,   10),\
+    _(TLV_T,    time,     11),\
+    _(TLV_T,    duration, 12),\
+    _(TLV_T,    ip4,      13),\
+    _(TLV_T,    ip6,      14),\
     /* end */
 DECLARE_ENUM(TLV_T, tlv_type, TLV_T_MAPPER, TLV_T_END);
 
@@ -91,9 +91,9 @@ enum {
 
 #if 1
 #define XDR_FILE_MAPPER(_) \
-    _(file, 0), \
-    _(http, 1), \
-    _(cert, 2), \
+    _(XDR_FILE, file, 0), \
+    _(XDR_FILE, http, 1), \
+    _(XDR_FILE, cert, 2), \
     /* end */
 DECLARE_ENUM(XDR_FILE, xdr_file, XDR_FILE_MAPPER, XDR_FILE_END);
 

@@ -326,6 +326,7 @@ enum {
     XDR_CLASS_P2P       = 108,
     XDR_CLASS_VIDEO     = 109,
     XDR_CLASS_IM        = 110,
+    XDR_CLASS_SSL       = 111,
 };
 
 typedef struct {
@@ -352,12 +353,10 @@ typedef struct {
     xdr_offset_t offsetof_service_st;
     xdr_offset_t offsetof_alert;
     xdr_offset_t offsetof_file_content;
-    // tcp
-    xdr_offset_t offsetof_L4;
-    // http/sip/rtsp/ftp/mail/dns
-    xdr_offset_t offsetof_L5;
-    // ssl
-    xdr_offset_t offsetof_L6;
+    
+    xdr_offset_t offsetof_L4; // tcp
+    xdr_offset_t offsetof_L5; // http/sip/rtsp/ftp/mail/dns
+    xdr_offset_t offsetof_L6; // ssl
 
     xdr_L7_t L7;
 
