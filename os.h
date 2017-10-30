@@ -469,9 +469,7 @@ __mv2_return(int control, int error)
 
 #define mv2_break(_result)      __mv2_return(__MV_BREAK, _result)
 #define mv2_go(_result)         __mv2_return(__MV_GO, _result)
-enum {
-    mv2_ok = 0,
-};
+enum { mv2_ok = 0 };
 
 #define is_mv2_break(_mv)       (__MV_BREAK==mv2_control(_mv))
 #define is_mv2_go(_mv)          (__MV_GO==mv2_control(_mv))

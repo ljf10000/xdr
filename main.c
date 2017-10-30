@@ -14,7 +14,7 @@ static struct {
 
 static int usage(void)
 {
-    os_println("%s [OPTION] input-file prefix", self);
+    os_println("%s [OPTION] tlv-path xdr-path sha-path", self);
     os_println(__tab "OPTION:");
     os_println(__tab "--dump: dump all");
 
@@ -47,13 +47,33 @@ int main(int argc, char *argv[])
         argc--; argv++;
     }
 
-    if (2 != argc) {
+    if (3 != argc) {
         return usage();
     }
 
-    xpair_t pair = XPAIR_INITER(argv[0], argv[1]);
+    char *tlv_path = argv[0];
+    char *xdr_path = argv[1];
+    char *sha_path = argv[2];
 
-    return tlv_to_xdr(&pair);
+    mv_t handle(const char *path, const char *file)
+    {
+        char tlv[1+OS_FILENAME_LEN] = {0};
+        char xdr[1+OS_FILENAME_LEN] = {0};
+        
+        os_snprintf(tlv, OS_FILENAME_LEN, "%s/%s", tlv_path, file);
+        os_snprintf(xdr, OS_FILENAME_LEN, "%s/%s", xdr_path, file);
+        
+        xpair_t pair = XPAIR_INITER(tlv, xdr, sha_path);
+
+        int err = tlv_to_xdr(&pair);
+        if (err<0) {
+            return mv2_break(err);
+        }
+
+        return mv2_ok;
+    }
+    
+    return os_fscan_dir(tlv_path, false, NULL, handle);
 }
 
 /******************************************************************************/

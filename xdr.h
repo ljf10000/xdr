@@ -458,6 +458,7 @@ typedef struct {
 
 struct xdr_buffer_st {
     char *file;
+    char *path; // sha path
     
     union {
         void *buffer;
@@ -469,8 +470,9 @@ struct xdr_buffer_st {
     xdr_size_t      size;
     xdr_offset_t    current;
 };
-#define XBUFFER_INITER(_file) { \
+#define XBUFFER_INITER(_file, _path) { \
     .file = _file,  \
+    .path = _path,  \
     .fd   = -1,     \
 } /* end */
 
@@ -1412,14 +1414,13 @@ tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
 }
 
 typedef struct {
-    char *path;
     xdr_buffer_t tlv, xdr;
 
     int count;
 } xpair_t;
-#define XPAIR_INITER(_input, _output) { \
-    .tlv = XBUFFER_INITER(_input),      \
-    .xdr = XBUFFER_INITER(_output),     \
+#define XPAIR_INITER(_tlv_file, _xdr_file, _sha_path) { \
+    .tlv = XBUFFER_INITER(_tlv_file, _sha_path), \
+    .xdr = XBUFFER_INITER(_xdr_file, _sha_path), \
 }   /* end */
 
 static inline int
