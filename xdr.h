@@ -483,11 +483,10 @@ xb_mmap(xdr_buffer_t *x, bool readonly)
         ftruncate(x->fd, x->size);
     }
 
-    void *buffer = mmap(NULL, x->size, prot, MAP_PRIVATE, x->fd, 0);
-    if (NULL==buffer) {
+    x->u.buffer = mmap(NULL, x->size, prot, MAP_PRIVATE, x->fd, 0);
+    if (NULL==x->u.buffer) {
         return -errno;
     }
-    x->u.buffer = buffer;
 
     return 0;
 }
@@ -506,13 +505,11 @@ static inline int
 xb_open(xdr_buffer_t *x, bool readonly)
 {
     int flag = readonly?O_RDONLY:(O_CREAT|O_RDWR);
-    int fd = -1;
     
-    fd = open(x->file, flag);
-    if (fd<0) {
-        return NULL;
+    x->fd = open(x->file, flag);
+    if (x->fd<0) {
+        return -errno;
     }
-    x->fd = fd;
     
     return xb_mmap(x, readonly);
 }
@@ -1437,8 +1434,8 @@ xpair_close(xpair_t *pair)
 static inline int
 xpair_open(xpair_t *pair)
 {
-    xdr_buffer_t *tlv = &pair.tlv;
-    xdr_buffer_t *xdr = &pair.xdr;
+    xdr_buffer_t *tlv = &pair->tlv;
+    xdr_buffer_t *xdr = &pair->xdr;
     int err;
     
     int size = os_fsize(tlv->file);
