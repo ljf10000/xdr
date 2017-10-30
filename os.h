@@ -682,7 +682,7 @@ os_fscan_dir
     const char *path, 
     bool recur,
     os_fscan_file_filter_f *filter,
-    os_fscan_file_handle_f *handle,
+    os_fscan_file_handle_f *handle
 )
 {
     DIR *dir = NULL;
