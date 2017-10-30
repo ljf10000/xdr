@@ -317,6 +317,14 @@
 #define os_println(_fmt, _args...)                  printf(_fmt __crlf, ##_args)
 #endif
 
+#ifndef os_sprintf
+#define os_sprintf(_buf, _fmt, _args...)            sprintf(_buf, _fmt, ##_args)
+#endif
+
+#ifndef os_vsprintf
+#define os_vsprintf(_buf, _fmt, _args)              vsprintf(_buf, _fmt, _args)
+#endif
+
 #ifndef os_snprintf
 #define os_snprintf(_buf, _size, _fmt,_args...)     snprintf(_buf, _size, _fmt, ##_args)
 #endif
@@ -333,6 +341,14 @@
 */
 #ifndef os_saprintf
 #define os_saprintf(_buf, _fmt, _args...)           os_snprintf(_buf, sizeof(_buf), _fmt, ##_args)
+#endif
+
+#ifndef os_assert
+#define os_assert(x)            assert(x)
+#endif
+
+#ifndef os_assertV
+#define os_assertV(_x)          (os_assert(0), _x)
 #endif
 
 #if 0
@@ -401,6 +417,64 @@ static inline int mod_getidbyname(const char *name);
     os_fake_declare                 \
     /* end */
     
+
+enum {
+    __MV_GO             = 0,
+    __MV_BREAK          = 1,
+};
+
+typedef int32 mv_t;
+
+typedef union {
+    mv_t v;
+
+    struct {
+        int32 error:24;
+        int32 control:8;
+    } v2;
+    
+    struct {
+        int32 error:16;
+        int32 control:8;
+        int32 private:8;
+    } v3;
+    
+    struct {
+        int32 error:8;
+        int32 control:8;
+        int32 private:8;
+        int32 value:8;
+    } v4;
+}
+mv_u;
+
+#define MV_INITER               { .v = 0 }
+
+#define mv2_error(_mv)          (_mv).v2.error
+#define mv2_control(_mv)        (_mv).v2.control
+#define __mv2_INITER(_control, _error)  { \
+    .v2 = {                 \
+        .error  = _error,   \
+        .control= _control, \
+    }                       \
+}
+
+static inline mv_t 
+__mv2_return(int control, int error)
+{
+    mv_u mv = __mv2_INITER(control, error);
+
+    return mv.v;
+}
+
+#define mv2_break(_result)      __mv2_return(__MV_BREAK, _result)
+#define mv2_go(_result)         __mv2_return(__MV_GO, _result)
+enum {
+    mv2_ok = 0,
+};
+
+#define is_mv2_break(_mv)       (__MV_BREAK==mv2_control(_mv))
+#define is_mv2_go(_mv)          (__MV_GO==mv2_control(_mv))
 
 /*
 * just for single-thread, unsafe for multi-thread
@@ -473,6 +547,14 @@ typedef FILE* STREAM;
 #define os_fflush(_stream)          fflush(_stream)
 #define os_ferror(_stream)          ferror(_stream)
 #define os_fdopen(_fd, _flag)       fdopen(_fd, _flag)
+
+static inline bool
+os_fexist(const char *file)
+{
+    int fd = open(file, O_RDONLY, S_IRUSR | S_IRGRP);
+
+    return fd<0?false:(close(fd), true);
+}
 
 static inline int
 os_fsize(const char *file)
@@ -555,6 +637,143 @@ os_readfileall(const char *file, char **content, uint32 *filesize)
     return err;
 error:
     os_free(buf);
+
+    return err;
+}
+
+static inline bool
+is_current_dir(const char *file/* not include path */)
+{
+    return '.'==file[0] && 0==file[1];
+}
+
+static inline bool
+is_father_dir(const char *file/* not include path */)
+{
+    return '.'==file[0] && '.'==file[1] && 0==file[2];
+}
+
+/*
+* @file: not include path
+*/
+typedef mv_t os_fscan_file_handle_f(const char *path, const char *file);
+typedef bool os_fscan_file_filter_f(const char *path, const char *file);
+
+#ifndef FILE_DPRINT
+#define FILE_DPRINT             0
+#endif
+
+#if FILE_DPRINT
+#define file_println(_fmt, _args...)    os_println(_fmt, ##_args)
+#else
+#define file_println(_fmt, _args...)    os_do_nothing()
+#endif
+
+#define os_closedir(_dir) do {  \
+    if (_dir) {                 \
+        closedir(_dir);         \
+        _dir = NULL;            \
+    }                           \
+}while(0)  /* end */
+
+static inline int 
+os_fscan_dir
+(
+    const char *path, 
+    bool recur,
+    os_fscan_file_filter_f *filter,
+    os_fscan_file_handle_f *handle,
+)
+{
+    DIR *dir = NULL;
+    struct dirent *d = NULL;
+    struct stat st;
+    char fullname[1+OS_LINE_LEN];
+    mv_u mv;
+    int err = 0;
+
+    if (NULL==path) {
+        return os_assertV(-1);
+    }
+
+    file_println("begin scan %s", path);
+    
+    dir = opendir(path);
+    if (NULL == dir) {
+        file_println("open dir %s error:%d", path, -errno);
+        
+        err = -errno; goto error;
+    }
+    
+    while (NULL != (d=readdir(dir))) {
+        /* 
+        * d->d_name
+        *   just name, not include path 
+        */
+        file_println("scan %s/%s", path, d->d_name);
+
+        /*
+        * skip . and ..
+        */
+        if (is_current_dir(d->d_name) || is_father_dir(d->d_name)) {
+            file_println("skip %s/%s", path, d->d_name);
+            
+            continue;
+        }
+
+        os_saprintf(fullname, "%s/%s", path, d->d_name);
+        err = stat(fullname, &st);
+        if (err<0) {
+            file_println("stat %s error:%d", fullname, -errno);
+            
+            continue;
+        }
+        
+        /*
+        * dir
+        */
+        if (S_ISDIR(st.st_mode)) {
+            if (recur) {
+                char line[1+OS_LINE_LEN];
+
+                os_sprintf(line, "%s/%s", path, d->d_name);
+                
+                err = os_fscan_dir(line, recur, filter, handle);
+                if (err<0) {
+                    goto error;
+                }
+            } else {
+                continue;
+            }
+        }
+        
+        /*
+        * file filter
+        */
+        if (filter && (*filter)(path, d->d_name)) {
+            file_println("filter %s/%s", path, d->d_name);
+            
+            continue;
+        }
+        
+        /*
+        * file handle
+        */
+        if (handle) {
+            mv.v = (*handle)(path, d->d_name);
+            if (is_mv2_break(mv)) {
+                err = mv2_error(mv);
+
+                file_println("handle %s/%s error:%d", path, d->d_name, err);
+                
+                goto error;
+            }
+        }
+    }
+
+    file_println("end scan %s error:%d", path, err);
+error:
+    os_closedir(dir);
 
     return err;
 }
