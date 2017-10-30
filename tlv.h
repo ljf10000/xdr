@@ -1001,15 +1001,15 @@ typedef struct {
 #define TLV_RECORD_INITER(_header)  { .header = _header }
 
 static inline int
-tlv_record_save(tlv_record_t *record, tlv_t *tlv)
+tlv_record_save(tlv_record_t *r, tlv_t *tlv)
 {
-    tlv_cache_t *cache = &record->cache[tlv->id];
+    tlv_cache_t *cache = &r->cache[tlv->id];
 
     return tlv_cache_save(cache, tlv);
 }
 
 static inline int
-tlv_record_parse(tlv_record_t *record)
+tlv_record_parse(tlv_record_t *r)
 {
     int walk(tlv_t *tlv) 
     {
@@ -1020,7 +1020,7 @@ tlv_record_parse(tlv_record_t *record)
             return err;
         }
 
-        err = tlv_record_save(record, tlv);
+        err = tlv_record_save(r, tlv);
         if (err<0) {
             return err;
         }
@@ -1029,12 +1029,12 @@ tlv_record_parse(tlv_record_t *record)
             tlv_dump(tlv);
         }
 
-        record->count++;
+        r->count++;
         
         return 0;
     }
     
-    return tlv_walk(tlv_first(record->header), tlv_datalen(record->header), walk);
+    return tlv_walk(tlv_first(r->header), tlv_datalen(r->header), walk);
 }
 /******************************************************************************/
 #endif /* __TLV_H_d203748a8a974e6282d89ddcde27123a__ */
