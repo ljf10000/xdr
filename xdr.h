@@ -1261,7 +1261,7 @@ tlv_to_xdr_ssl_fail_reason(xdr_buffer_t *x, tlv_t *tlv)
 }
 
 static inline int
-tlv_record_to_xdr_dns(xdr_buffer_t *x, tlv_record_t *r)
+tlv_record_to_xdr_dns(tlv_record_t *r, xdr_buffer_t *x)
 {
     xdr_dns_t *dns = xdr_dns(x->u.xdr);
     if (NULL==dns) {
@@ -1309,7 +1309,7 @@ tlv_record_to_xdr_dns(xdr_buffer_t *x, tlv_record_t *r)
 }
 
 static inline int
-tlv_record_to_xdr_ssl_cert(xdr_buffer_t *x, xdr_array_t *certs, tlv_record_t *r, int id)
+tlv_record_to_xdr_ssl_cert(tlv_record_t *r, xdr_buffer_t *x, xdr_array_t *certs, int id)
 {
     xdr_flag_t flag = 0;
     
@@ -1350,7 +1350,7 @@ tlv_record_to_xdr_ssl_cert(xdr_buffer_t *x, xdr_array_t *certs, tlv_record_t *r,
 }
 
 static inline int
-tlv_record_to_xdr_ssl(xdr_buffer_t *x, tlv_record_t *r)
+tlv_record_to_xdr_ssl(tlv_record_t *r, xdr_buffer_t *x)
 {
     xdr_ssl_t *ssl = xdr_ssl(x->u.xdr);
     if (NULL==ssl) {
@@ -1359,12 +1359,12 @@ tlv_record_to_xdr_ssl(xdr_buffer_t *x, tlv_record_t *r)
     
     int err;
 
-    err = tlv_record_to_xdr_ssl_cert(x, &ssl->cert_server, r, tlv_id_ssl_server_cert);
+    err = tlv_record_to_xdr_ssl_cert(r, x, &ssl->cert_server, tlv_id_ssl_server_cert);
     if (err<0) {
         return err;
     }
 
-    err = tlv_record_to_xdr_ssl_cert(x, &ssl->cert_client, r, tlv_id_ssl_client_cert);
+    err = tlv_record_to_xdr_ssl_cert(r, x, &ssl->cert_client, tlv_id_ssl_client_cert);
     if (err<0) {
         return err;
     }
@@ -1373,7 +1373,7 @@ tlv_record_to_xdr_ssl(xdr_buffer_t *x, tlv_record_t *r)
 }
 
 static inline int
-tlv_record_to_xdr(xdr_buffer_t *x, tlv_record_t *r)
+tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
 {
     tlv_cache_t *cache;
     tlv_ops_t *ops;
@@ -1398,12 +1398,12 @@ tlv_record_to_xdr(xdr_buffer_t *x, tlv_record_t *r)
         }
     }
     
-    err = tlv_record_to_xdr_ssl(x, r);
+    err = tlv_record_to_xdr_ssl(r, x);
     if (err<0) {
         return err;
     }
 
-    err = tlv_record_to_xdr_dns(x, r);
+    err = tlv_record_to_xdr_dns(r, x);
     if (err<0) {
         return err;
     }
