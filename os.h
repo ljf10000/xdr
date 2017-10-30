@@ -656,8 +656,8 @@ is_father_dir(const char *file/* not include path */)
 /*
 * @file: not include path
 */
-typedef mv_t os_fscan_file_handle_f(const char *path, const char *file);
-typedef bool os_fscan_file_filter_f(const char *path, const char *file);
+typedef mv_t os_fscan_handle_t(const char *path, const char *file);
+typedef bool os_fscan_filter_t(const char *path, const char *file);
 
 #ifndef FILE_DPRINT
 #define FILE_DPRINT             0
@@ -677,13 +677,7 @@ typedef bool os_fscan_file_filter_f(const char *path, const char *file);
 }while(0)  /* end */
 
 static inline int 
-os_fscan_dir
-(
-    const char *path, 
-    bool recur,
-    os_fscan_file_filter_f *filter,
-    os_fscan_file_handle_f *handle
-)
+os_fscan_dir(const char *path, bool recur, os_fscan_filter_t *filter, os_fscan_handle_t *handle)
 {
     DIR *dir = NULL;
     struct dirent *d = NULL;
