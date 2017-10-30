@@ -52,37 +52,9 @@ int main(int argc, char *argv[])
         return usage();
     }
 
-    char *input     = argv[0];
-    char *prefix    = argv[1];
+    xpair_t pair = XPAIR_INITER(argv[0], argv[1]);
 
-    char *buffer = NULL;
-    int len = os_fsize(input);
-    if (err<0) {
-        err = len; goto ERROR;
-    }
-    tlv_dprint("file size %d", len);
-    
-    buffer = os_mmap(input, len, PROT_READ, MAP_PRIVATE, 0);
-    if (NULL==buffer) {
-        err = errno; goto ERROR;
-    }
-    tlv_dprint("file mmap 0x%x", buffer);
-
-    int count = tlv_count(buffer, len);
-    if (count<0) {
-        err = count; goto ERROR;
-    }
-    tlv_dprint("tlv count %d", count);
-    
-    err = tlv_foreach((tlv_t *)buffer, count, tlv_parse, NULL);
-    tlv_dprint("foreach error %d", err);
-
-ERROR:
-    if (NULL!=buffer) {
-        munmap(buffer, len);
-    }
-
-    return err;
+    return tlv_to_xdr(&pair);
 }
 
 /******************************************************************************/

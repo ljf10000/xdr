@@ -8,7 +8,7 @@
 #endif
 
 #ifndef XDR_EXPAND
-#define XDR_EXPAND      (32*1024)
+#define XDR_EXPAND      (128*1024)
 #endif
 
 #define XDR_ALIGN(x)    OS_ALIGN(x, 4)
@@ -458,14 +458,83 @@ typedef struct {
 } xdr_block_t;
 
 struct xdr_buffer_st {
+    char *file;
+    
     union {
         void *buffer;
+        tlv_t *tlv;
         xdr_t *xdr;
     } u;
-    
-    xdr_offset_t current;
-    xdr_size_t size;
+
+    int             fd;
+    xdr_size_t      size;
+    xdr_offset_t    current;
 };
+#define XBUFFER_INITER(_file) { \
+    .file = _file;  \
+    .fd   = -1;     \
+} /* end */
+
+static inline int
+xb_mmap(xdr_buffer_t *x, bool readonly)
+{
+    int prot = readonly?PROT_READ:PROT_WRITE;
+
+    if (!readonly) {
+        ftruncate(x->fd, x->size);
+    }
+
+    void *buffer = mmap(NULL, x->size, prot, MAP_PRIVATE, x->fd, 0);
+    if (NULL==buffer) {
+        return -errno;
+    }
+    x->u.buffer = buffer;
+
+    return 0;
+}
+
+static inline int
+xb_munmap(xdr_buffer_t *x)
+{
+    if (x->u.buffer) {
+        munmap(x->u.buffer, x->size); x->u.buffer = NULL;
+    }
+
+    return 0;
+}
+
+static inline int
+xb_open(xdr_buffer_t *x, bool readonly)
+{
+    int flag = readonly?O_RDONLY:(O_CREAT|O_RDWR);
+    int fd = -1;
+    
+    fd = open(x->file, flag);
+    if (fd<0) {
+        return NULL;
+    }
+    x->fd = fd;
+    
+    return xb_mmap(x, readonly);
+}
+
+static inline int
+xb_close(xdr_buffer_t *x)
+{
+    if (x->fd > 0) {
+        close(x->fd); x->fd = -1;
+    }
+
+    return xb_munmap(x);
+}
+
+static inline int
+xb_reopen(xdr_buffer_t *x, bool readonly)
+{
+    xb_munmap(x);
+
+    return xb_mmap(x, readonly);
+}
 
 static inline void *
 xb_current(xdr_buffer_t *x)
@@ -501,14 +570,12 @@ static inline int
 xb_expand(xdr_buffer_t *x, xdr_size_t size)
 {
     if (false==xb_enought(x, size)) {
-        xdr_size_t expand = os_max(XDR_EXPAND, size);
+        x->size += os_max(XDR_EXPAND, size);
         
-        x->u.buffer = os_realloc(x->u.buffer, x->size + expand);
-        if (NULL==x->u.buffer) {
-            return -ENOMEM;
+        int err = xb_reopen(x, false);
+        if (err<0) {
+            return err;
         }
-        
-        x->size += expand;
     }
 
     return 0;
@@ -1316,8 +1383,29 @@ tlv_record_to_xdr_ssl(xdr_buffer_t *x, tlv_record_t *r)
 static inline int
 tlv_record_to_xdr(xdr_buffer_t *x, tlv_record_t *r)
 {
-    int i, err;
+    tlv_cache_t *cache;
+    tlv_ops_t *ops;
+    tlv_t *tlv;
+    int i, j, err;
 
+    for (i=0; i<tlv_id_end; i++) {
+        cache = &r->cache[i];
+
+        if (cache->count>0) {
+            for (j=0; j<cache->count; j++) {
+                tlv = cache->multi[j];
+                ops = tlv_ops(tlv);
+
+                if (ops->toxdr) {
+                    err = (*ops->toxdr)(x, tlv);
+                    if (err<0) {
+                        return err;
+                    }
+                }
+            }
+        }
+    }
+    
     err = tlv_record_to_xdr_ssl(x, r);
     if (err<0) {
         return err;
@@ -1331,5 +1419,96 @@ tlv_record_to_xdr(xdr_buffer_t *x, tlv_record_t *r)
     return 0;
 }
 
+typedef struct {
+    xdr_buffer_t tlv, xdr;
+
+    int count;
+} xpair_t;
+#define XPAIR_INITER(_input, _output) { \
+    .tlv = XBUFFER_INITER(_input),      \
+    .xdr = XBUFFER_INITER(_output),     \
+}
+
+static inline int
+xpair_close(xpair_t *pair)
+{
+    xb_close(&pair->tlv);
+    xb_close(&pair->xdr);
+
+    return 0;
+}
+
+static inline int
+xpair_open(xpair_t *pair)
+{
+    xdr_buffer_t *tlv = &pair.tlv;
+    xdr_buffer_t *xdr = &pair.xdr;
+    int err;
+    
+    int size = os_fsize(tlv->file);
+    if (err<0) {
+        err = size; goto ERROR;
+    }
+    
+    tlv->size = size;
+    xdr->size = 2*size;
+
+    err = xb_open(tlv);
+    if (err<0) {
+        goto ERROR;
+    }
+
+    err = xb_open(xdr);
+    if (err<0) {
+        goto ERROR;
+    }
+
+    return 0;
+ERROR:
+    xpair_close(pair);
+    
+    return err;
+}
+
+static inline int
+tlv_to_xdr(xpair_t *pair)
+{
+    int err = 0;
+
+    int walk(tlv_t *header)
+    {
+        tlv_record_t r = TLV_RECORD_INITER(header);
+        int err;
+        
+        err = tlv_record_parse(&r);
+        if (err<0) {
+            return err;
+        }
+
+        err = tlv_record_to_xdr(&r, &pair->xdr);
+        if (err<0) {
+            return err;
+        }
+        
+        pair->count++;
+
+        return 0;
+    }
+
+    err = xpair_open(pair);
+    if (err<0) {
+        goto ERROR;
+    }
+
+    err = tlv_walk(pair->tlv.u.tlv, pair->tlv.size, walk);
+    if (err<0) {
+        goto ERROR;
+    }
+
+ERROR:
+    xpair_close(pair);
+
+    return err;
+}
 /******************************************************************************/
 #endif /* __XDR_H_049defbc41a4441e855ee0479dad96eb__ */

@@ -209,8 +209,8 @@
 #define os_do_nothing()                 do{}while(0)
 #endif
 
-#ifndef os_extern_unused_var
-#define os_extern_unused_var            extern int ____os_extern_unused_var____
+#ifndef os_fake_declare
+#define os_fake_declare                 extern int __os_value_not_used_forever
 #endif
 
 #ifndef is_good_value
@@ -334,6 +334,73 @@
 #ifndef os_saprintf
 #define os_saprintf(_buf, _fmt, _args...)           os_snprintf(_buf, sizeof(_buf), _fmt, ##_args)
 #endif
+
+#if 0
+/*
+* ENUM: c enum macro
+*
+*/
+#define XXX_ENUM_MAPPER(_) \
+    _(NAME_A, VALUE_A), \
+    _(NAME_A, VALUE_B), \
+    _(NAME_A, VALUE_C), \
+    /* end */
+DECLARE_ENUM(MOD, mod, MOD_ENUM_MAPPER, MOD_END);
+
+static inline enum_ops_t *mod_ops(void);
+static inline bool is_good_mod(int id);
+static inline char *mod_getnamebyid(int id);
+static inline int mod_getidbyname(const char *name);
+
+#define MOD_NAME_A      MOD_NAME_A
+#define MOD_NAME_B      MOD_NAME_B
+#define MOD_NAME_C      MOD_NAME_C
+#define MOD_END         MOD_END
+#endif
+
+#define __ENUM_MAP_VALUE(_MOD, _name, _value)   _MOD##_##_name = _value
+#define __ENUM_MAP_NAME(_MOD, _name, _value)    [_MOD##_##_name] = #_name
+
+#define DECLARE_ENUM(_MOD, _mod, _mapper, _end) \
+    enum {                          \
+        _mapper(__ENUM_MAP_VALUE)   \
+                                    \
+        _end                        \
+    };                              \
+                                    \
+    static inline bool              \
+    is_good_##_mod(int id)          \
+    {                               \
+        return is_good_enum(id, _end); \
+    }                               \
+                                    \
+    static inline char **           \
+    __##_mod##_strings(void)        \
+    {                               \
+        static char *array[_end] = { _mapper(__ENUM_MAP_NAME) }; \
+                                    \
+        return array;               \
+    }                               \
+                                    \
+    static inline char *            \
+    _mod##_getnamebyid(int id)      \
+    {                               \
+        char **array = __##_mod##_strings(); \
+                                    \
+        return is_good_##_mod(id)?array[id]:__unknow; \
+    }                               \
+                                    \
+    static inline int               \
+    _mod##_getidbyname(const char *s) \
+    {                               \
+        char **array = __##_mod##_strings(); \
+                                    \
+        return os_array_search_str(array, s, 0, _end); \
+    }                               \
+                                    \
+    os_fake_declare                 \
+    /* end */
+    
 
 /*
 * just for single-thread, unsafe for multi-thread

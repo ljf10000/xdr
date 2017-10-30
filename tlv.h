@@ -41,29 +41,47 @@ typedef struct {
 } xdr_ipaddr_t, xdr_ip6_t, tlv_ip6_t;
 #define XDR_IP(_addr)   (_addr)->ip[0]
 
-enum {
-    TLV_T_u8,
-    TLV_T_u16,
-    TLV_T_u32,
-    TLV_T_u64,
-    
-    TLV_T_i8,
-    TLV_T_i16,
-    TLV_T_i32,
-    TLV_T_i64,
-    
-    TLV_T_string,
-    TLV_T_binary,
-    TLV_T_object,
-    
-    TLV_T_time,    // u64
-    TLV_T_duration,// u64
-    
-    TLV_T_ip4,     // u32
-    TLV_T_ip6,     // 4 * u32
-    
-    TLV_T_end
-};
+#if 1
+#define TLV_T_MAPPER(_) \
+    _(u8,       0), \
+    _(u16,      1), \
+    _(u32,      2), \
+    _(u64,      3), \
+    _(i8,       4), \
+    _(i16,      5), \
+    _(i32,      6), \
+    _(i64,      7), \
+    _(string,   8), \
+    _(binary,   9), \
+    _(object,   10),\
+    _(time,     11),\
+    _(duration, 12),\
+    _(ip4,      13),\
+    _(ip6,      14),\
+    /* end */
+DECLARE_ENUM(TLV_T, tlv_type, TLV_T_MAPPER, TLV_T_END);
+
+static inline bool is_good_tlv_type(int id);
+static inline char *tlv_type_getnamebyid(int id);
+static inline int tlv_type_getidbyname(const char *name);
+
+#define TLV_T_u8        TLV_T_u8
+#define TLV_T_u16       TLV_T_u16
+#define TLV_T_u32       TLV_T_u32
+#define TLV_T_u64       TLV_T_u64
+#define TLV_T_i8        TLV_T_i8
+#define TLV_T_i16       TLV_T_i16
+#define TLV_T_i32       TLV_T_i32
+#define TLV_T_i64       TLV_T_i64
+#define TLV_T_string    TLV_T_string
+#define TLV_T_binary    TLV_T_binary
+#define TLV_T_object    TLV_T_object
+#define TLV_T_time      TLV_T_time
+#define TLV_T_duration  TLV_T_duration
+#define TLV_T_ip4       TLV_T_ip4
+#define TLV_T_ip6       TLV_T_ip6
+#define TLV_T_END       TLV_T_END
+#endif
 
 enum {
     TLV_F_MULTI = 0x01,
@@ -71,14 +89,23 @@ enum {
     TLV_F_FILE  = 0x04,
 };
 
-enum {
-    XDR_FILE_NONE,
-    XDR_FILE_FILE,
-    XDR_FILE_HTTP,
-    XDR_FILE_CERT,
+#if 1
+#define XDR_FILE_MAPPER(_) \
+    _(file, 0), \
+    _(http, 1), \
+    _(cert, 2), \
+    /* end */
+DECLARE_ENUM(XDR_FILE, xdr_file, XDR_FILE_MAPPER, XDR_FILE_END);
 
-    XDR_FILE_END
-};
+static inline bool is_good_xdr_file(int id);
+static inline char *xdr_file_getnamebyid(int id);
+static inline int xdr_file_getidbyname(const char *name);
+
+#define XDR_FILE_file   XDR_FILE_file
+#define XDR_FILE_http   XDR_FILE_http
+#define XDR_FILE_cert   XDR_FILE_cert
+#define XDR_FILE_END    XDR_FILE_END
+#endif
 
 typedef struct tlv_st tlv_t;
 typedef struct xdr_buffer_st xdr_buffer_t;
@@ -185,10 +212,10 @@ typedef struct {
     int (*toxdr)(xdr_buffer_t * /*x*/, tlv_t * /*tlv*/);
 } tlv_ops_t;
 
-#define tlv_mapper_fixed(_mapper, _id, _name, _obj, _flag) \
-    _mapper(_name, _id, TLV_T_##_obj, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_obj##_t), tlv_dump_##_obj, NULL, tlv_to_xdr_##_name)
-#define tlv_mapper_dynamic(_mapper, _id, _name, _obj, _flag) \
-    _mapper(_name, _id, TLV_T_##_obj, _flag, 0, 0, tlv_dump_##_obj, NULL, tlv_to_xdr_##_name)
+#define tlv_mapper_fixed(_mapper, _id, _name, _type, _flag) \
+    _mapper(_name, _id, TLV_T_##_type, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_type##_t), tlv_dump_##_type, NULL, tlv_to_xdr_##_name)
+#define tlv_mapper_dynamic(_mapper, _id, _name, _type, _flag) \
+    _mapper(_name, _id, TLV_T_##_type, _flag, 0, 0, tlv_dump_##_type, NULL, tlv_to_xdr_##_name)
 
 #define tlv_mapper_object(_mapper, _id, _name, _flag) \
     _mapper(_name, _id, TLV_T_object, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_name##_t), tlv_dump_##_name, NULL, tlv_to_xdr_##_name)
@@ -306,15 +333,15 @@ enum { TLV_MAPPER(__TLV_ENUM) tlv_id_end };
     uint32 __tlv_opt; \
     uint32 xdr_seq; \
     tlv_ops_t __tlv_ops[tlv_id_end] = { TLV_MAPPER(__TLV_STRUCT) }; \
-    os_extern_unused_var /* end */
+    os_fake_declare /* end */
 
 extern tlv_ops_t __tlv_ops[];
 extern uint32 __tlv_opt;
 extern uint32 xdr_seq;
 
 enum {
-    TLV_OPT_DUMP = 0x01,
-    TLV_OPT_FILE_SPLIT = 0x02,
+    TLV_OPT_DUMP        = 0x01,
+    TLV_OPT_FILE_SPLIT  = 0x02,
 };
 
 static inline void
@@ -341,15 +368,7 @@ is_good_tlv_id(int id)
     return is_good_enum(id, tlv_id_end);
 }
 
-static inline tlv_ops_t *
-tlv_ops(int id)
-{
-    if (false==is_good_tlv_id(id)) {
-        return NULL;
-    }
-
-    return &__tlv_ops[id];
-}
+#define TLV_OPS(_id)    (is_good_tlv_id(_id)?&__tlv_ops[_id]:NULL)
 
 struct tlv_st {
     byte    id;
@@ -376,6 +395,8 @@ struct tlv_st {
         } e;
     } d;
 };
+
+static inline tlv_ops_t *tlv_ops(tlv_t *tlv) { return TLV_OPS(tlv->id); }
 
 #define tlv_extend(_tlv)       (_tlv)->h.e.e
 
@@ -430,10 +451,34 @@ struct tlv_st {
 #define tlv_sip(_tlv)          (tlv_sip_t *)tlv_data(_tlv)
 #define tlv_rtsp(_tlv)         (tlv_rtsp_t *)tlv_data(_tlv)
 
+static inline int
+tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv))
+{
+    int err;
+
+    while(left>0) {
+        if (left < tlv_hdrlen(tlv)) {
+            return -e_tlv_too_small;
+        }
+        else if (left < tlv_len(tlv)) {
+            return -e_tlv_too_small;
+        }
+        
+        err = (*walk)(tlv);
+        if (err<0) {
+            return err;
+        }
+
+        left -= tlv_len(tlv); tlv = tlv_next(tlv);
+    }
+
+    return 0;
+}
+
 static inline void
 tlv_dump(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv->id);
+    tlv_ops_t *ops = tlv_ops(tlv);
 
     if (ops->dump) {
         (*ops->dump)(tlv);
@@ -444,7 +489,7 @@ static inline int
 tlv_error(tlv_t *tlv, int err, char *serr)
 {
     if (err<0) {
-        tlv_ops_t *ops = tlv_ops(tlv->id);
+        tlv_ops_t *ops = tlv_ops(tlv);
 
         if (TLV_F_FIXED & ops->flag) {
             os_println("%s tlv name:%s fixed:%d id:%d pad:%d alen:%u hlen:%u dlen:%u", 
@@ -474,7 +519,7 @@ tlv_error(tlv_t *tlv, int err, char *serr)
 static inline int
 tlv_check_fixed(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv->id);
+    tlv_ops_t *ops = tlv_ops(tlv);
     uint32 dlen = tlv_datalen(tlv);
     
     switch (ops->type) {
@@ -483,7 +528,7 @@ tlv_check_fixed(tlv_t *tlv)
             if (0 != dlen) {
                 return tlv_error(tlv, 
                     -e_tlv_invalid_short_size,
-                    "tlv_check_fixed i8");
+                    "tlv check fixed i8");
             }
             
             break;
@@ -492,7 +537,7 @@ tlv_check_fixed(tlv_t *tlv)
             if (sizeof(uint32) != dlen) {
                 return tlv_error(tlv, 
                     -e_tlv_invalid_short_size,
-                    "tlv_check_fixed i16");
+                    "tlv check fixed i16");
             }
 
             break;
@@ -500,7 +545,7 @@ tlv_check_fixed(tlv_t *tlv)
             if (dlen != ops->maxsize) {
                 return tlv_error(tlv, 
                     -e_tlv_invalid_object_size,
-                    "tlv_check_fixed other");
+                    "tlv check fixed other");
             }
 
             break;
@@ -512,18 +557,18 @@ tlv_check_fixed(tlv_t *tlv)
 static inline int
 tlv_check_dynamic(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv->id);
+    tlv_ops_t *ops = tlv_ops(tlv);
     uint32 dlen = tlv_datalen(tlv);
     
     if (ops->minsize && dlen < ops->minsize) {
         return tlv_error(tlv, 
             -e_tlv_too_small,
-            "tlv_check_dynamic too small");
+            "tlv check dynamic too small");
     }
     else if (ops->maxsize && dlen > ops->maxsize) {
         return tlv_error(tlv, 
             -e_tlv_too_big,
-            "tlv_check_dynamic too big");
+            "tlv check dynamic too big");
     }
 
     return 0;
@@ -532,23 +577,23 @@ tlv_check_dynamic(tlv_t *tlv)
 static inline int
 tlv_check(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv->id);
+    tlv_ops_t *ops = tlv_ops(tlv);
     if (NULL==ops) {
         return tlv_error(tlv, 
             -e_tlv_invalid_id,
-            "tlv_check invalid id");
+            "tlv check invalid id");
     }
 
     if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
         return tlv_error(tlv, 
             -e_tlv_too_small,
-            "tlv_check too small");
+            "tlv check too small");
     }
 
     if (ops->check) {
         return tlv_error(tlv, 
             (*ops->check)(tlv),
-            "tlv_check ops check");
+            "tlv check ops check");
     }
 
     // use default checker
@@ -565,7 +610,7 @@ tlv_check(tlv_t *tlv)
 #define TLV_DUMP4(_fmt, _args...)      os_println(__tab4 _fmt, ##_args)
 
 #define TLV_DUMP_BY(_tlv, _format, _type)  do{ \
-    tlv_ops_t *ops = tlv_ops((_tlv)->id); \
+    tlv_ops_t *ops = tlv_ops(_tlv);         \
                                             \
     TLV_DUMP("id: %d, %s: " _format, (_tlv)->id, ops->name, tlv_##_type(_tlv)); \
 }while(0)
@@ -585,14 +630,14 @@ static inline void tlv_dump_string(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%s", string);
 static inline void 
 tlv_dump_time(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv->id);
+    tlv_ops_t *ops = tlv_ops(tlv);
 
     TLV_DUMP("id:%d, %s: %s", tlv->id, ops->name, os_time_string(XDR_SECOND(tlv_time(tlv))));
 }
 
 static inline void tlv_dump_duration(tlv_t *tlv) 
 {
-    tlv_ops_t *ops = tlv_ops(tlv->id);
+    tlv_ops_t *ops = tlv_ops(tlv);
     tlv_duration_t d = tlv_duration(tlv);
     uint32 s = (uint32)(d>>32);
     uint32 us= (uint32)(d & 0xffffffff);
@@ -603,7 +648,7 @@ static inline void tlv_dump_duration(tlv_t *tlv)
 static inline void 
 tlv_dump_ip4(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv->id);
+    tlv_ops_t *ops = tlv_ops(tlv);
 
     uint32 ip = tlv_ip4(tlv); // ip = htonl(ip);
     
@@ -613,7 +658,7 @@ tlv_dump_ip4(tlv_t *tlv)
 static inline void 
 tlv_dump_ip6(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv->id);
+    tlv_ops_t *ops = tlv_ops(tlv);
 
     TLV_DUMP("id: %d, %s: ipv6 address", tlv->id, ops->name);
 }
@@ -621,7 +666,7 @@ tlv_dump_ip6(tlv_t *tlv)
 static inline void 
 tlv_dump_binary(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv->id);
+    tlv_ops_t *ops = tlv_ops(tlv);
 
     if (is_tlv_opt_file_split()) {
         TLV_DUMP("id: %d, %s: %s", tlv->id, ops->name, tlv_string(tlv));
@@ -692,7 +737,7 @@ tlv_dump_session_st(tlv_t *tlv)
     tlv_session_st_t *obj = tlv_session_st(tlv);
     int i;
     
-    TLV_DUMP("id: %d, %s:", tlv->id, tlv_ops(tlv->id)->name);
+    TLV_DUMP("id: %d, %s:", tlv->id, tlv_ops(tlv)->name);
 
     for (i=0; i<2; i++) {
         char c = (0==i)?'u':'d';
@@ -928,7 +973,7 @@ tlv_cache_save(tlv_cache_t *cache, tlv_t *tlv)
 
             tlv_dprint("save record tlv id:%d", tlv->id);
         } else {
-            tlv_ops_t *ops = tlv_ops(tlv->id);
+            tlv_ops_t *ops = tlv_ops(tlv);
             if (TLV_F_MULTI & ops->flag) {
                 cache->multi[cache->count++] = tlv;
                 
@@ -949,9 +994,11 @@ tlv_cache_save(tlv_cache_t *cache, tlv_t *tlv)
 
 typedef struct {
     tlv_t *header;
+    int count;
     
     tlv_cache_t cache[tlv_id_end];
 } tlv_record_t;
+#define TLV_RECORD_INITER(_header)  { .header = _header }
 
 static inline int
 tlv_record_save(tlv_record_t *record, tlv_t *tlv)
@@ -964,12 +1011,10 @@ tlv_record_save(tlv_record_t *record, tlv_t *tlv)
 static inline int
 tlv_record_parse(tlv_record_t *record)
 {
-    tlv_t *h = record->header;
-    uint32 left = tlv_datalen(h);
-    tlv_t *tlv = tlv_first(h);
-    int err;
-    
-    while(left>0) {
+    int walk(tlv_t *tlv) 
+    {
+        int err;
+
         err = tlv_check(tlv);
         if (err<0) {
             return err;
@@ -984,65 +1029,12 @@ tlv_record_parse(tlv_record_t *record)
             tlv_dump(tlv);
         }
 
-        left -= tlv_len(tlv); tlv = tlv_next(tlv);
-    }
-
-    return 0;
-}
-
-static inline int
-tlv_count(void *buffer, int len)
-{
-    tlv_t *h = (tlv_t *)buffer;
-    uint32 left = (uint32)len;
-    int count = 0;
-
-    while(left > 0) {
-        count++;
+        record->count++;
         
-        if (left < tlv_hdrlen(h)) {
-            return -e_tlv_too_small;
-        }
-        else if (left < tlv_len(h)) {
-            return -e_tlv_too_small;
-        }
-        else if (left == tlv_len(h)) {
-            break;
-        }
-
-        left -= tlv_len(h);
-        h = tlv_next(h);
+        return 0;
     }
-
-    return count;
-}
-
-static inline int
-tlv_foreach(tlv_t *header, int count, int (*each)(tlv_t *h, void *data), void *data)
-{
-    int i, err = 0;
-    tlv_t *h;
-
-    tlv_dprint("tlv foreach ...");
     
-    for (i=0, h=header; i<count; i++, h = tlv_next(h)) {
-        err = (*each)(h, data);
-        if (err<0) {
-            return err;
-        }
-    }
-
-    tlv_dprint("tlv foreach ok.");
-    
-    return err;
-}
-
-static inline int
-tlv_parse(tlv_t *h, void *data)
-{
-    tlv_record_t r = { .header = h };
-
-    return tlv_record_parse(&r);
+    return tlv_walk(tlv_first(record->header), tlv_datalen(record->header), walk);
 }
 /******************************************************************************/
 #endif /* __TLV_H_d203748a8a974e6282d89ddcde27123a__ */
