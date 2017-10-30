@@ -23,7 +23,6 @@ static int usage(void)
 
 int main(int argc, char *argv[])
 {
-    int err = 0;
     self = argv[0];
 
     argc--; argv++;

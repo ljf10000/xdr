@@ -1439,7 +1439,7 @@ xpair_open(xpair_t *pair)
     int err;
     
     int size = os_fsize(tlv->file);
-    if (err<0) {
+    if (size<0) {
         err = size; goto ERROR;
     }
     
