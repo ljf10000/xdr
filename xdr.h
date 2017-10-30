@@ -470,8 +470,8 @@ struct xdr_buffer_st {
     xdr_offset_t    current;
 };
 #define XBUFFER_INITER(_file) { \
-    .file = _file;  \
-    .fd   = -1;     \
+    .file = _file,  \
+    .fd   = -1,     \
 } /* end */
 
 static inline int
@@ -1423,7 +1423,7 @@ typedef struct {
 #define XPAIR_INITER(_input, _output) { \
     .tlv = XBUFFER_INITER(_input),      \
     .xdr = XBUFFER_INITER(_output),     \
-}
+}   /* end */
 
 static inline int
 xpair_close(xpair_t *pair)
