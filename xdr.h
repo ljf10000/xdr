@@ -696,7 +696,8 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
     byte *buf   = tlv_data(tlv);
     int len     = tlv_binlen(tlv);
     if (len<0) {
-        xdr_dprint("tlv extern %d, pad=%d, len=%d, hdrlen=%d, datalen=%d", 
+        xdr_dprint("tlv id:%d, extern %d, pad=%d, len=%d, hdrlen=%d, datalen=%d", 
+            tlv->id,
             tlv_extend(tlv), 
             tlv->pad,
             tlv_len(tlv),
