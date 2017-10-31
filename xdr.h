@@ -366,7 +366,6 @@ typedef struct {
 } xdr_alert_t;
 
 enum {
-    XDR_F_IPV6              = 0x0001,
     XDR_F_FILE              = 0x0002,
     XDR_F_HTTP_REQUEST      = 0x0004,
     XDR_F_HTTP_RESPONSE     = 0x0008,
@@ -758,7 +757,7 @@ xb_pre_file_from_path(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 }
 
 static inline int
-xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv, xdr_flag_t flag)
+xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 {
     int err;
     
@@ -772,20 +771,20 @@ xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv, xdr_flag_t flag)
         return err;
     }
 
-    x->u.xdr->flag |= flag;
+    x->u.xdr->flag |= tlv_ops(tlv)->flag;
 
     return 0;
 }
 
 static inline int
-xb_pre_file_ex(xdr_buffer_t *x, xdr_offset_t *poffset, tlv_t *tlv, xdr_flag_t flag)
+xb_pre_file_ex(xdr_buffer_t *x, xdr_offset_t *poffset, tlv_t *tlv)
 {
     xdr_file_t *file = (xdr_file_t *)xb_pre(x, sizeof(xdr_file_t));
     if (NULL==file) {
         return -ENOMEM;
     }
 
-    int err = xb_pre_file(x, file, tlv, flag);
+    int err = xb_pre_file(x, file, tlv);
     if (err<0) {
         return err;
     }
@@ -1283,19 +1282,19 @@ tlv_to_xdr_dns_delay(xdr_buffer_t *x, tlv_t *tlv)
 static inline int
 tlv_to_xdr_http_request(xdr_buffer_t *x, tlv_t *tlv)
 {
-    return xb_pre_file_ex(x, &xb_pre_http(x)->offsetof_request, tlv, XDR_F_HTTP_REQUEST);
+    return xb_pre_file_ex(x, &xb_pre_http(x)->offsetof_request, tlv);
 }
 
 static inline int
 tlv_to_xdr_http_response(xdr_buffer_t *x, tlv_t *tlv)
 {
-    return xb_pre_file_ex(x, &xb_pre_http(x)->offsetof_response, tlv, XDR_F_HTTP_RESPONSE);
+    return xb_pre_file_ex(x, &xb_pre_http(x)->offsetof_response, tlv);
 }
 
 static inline int
 tlv_to_xdr_file_content(xdr_buffer_t *x, tlv_t *tlv)
 {
-    return xb_pre_file_ex(x, &x->u.xdr->offsetof_file_content, tlv, XDR_F_FILE);
+    return xb_pre_file_ex(x, &x->u.xdr->offsetof_file_content, tlv);
 }
 
 static inline int
@@ -1382,23 +1381,10 @@ tlv_record_to_xdr_ssl_cert(tlv_record_t *r, xdr_buffer_t *x, xdr_array_t *certs,
         return -ENOMEM;
     }
     
-    xdr_flag_t flag = 0;
-    
-    switch (id) {
-        case tlv_id_ssl_server_cert:
-            flag = XDR_F_SSL_SERVER_CERT;
-            break;
-        case tlv_id_ssl_client_cert:
-            flag = XDR_F_SSL_CLIENT_CERT;
-            break;
-        default:
-            return -1;
-    }
-    
     for (i=0; i<count; i++) {
         cert = (xdr_cert_t *)xdr_array_entry(array, i);
 
-        err = xb_pre_file(x, &cert->file, cache->multi[i], flag);
+        err = xb_pre_file(x, &cert->file, cache->multi[i]);
         if (err<0) {
             return err;
         }

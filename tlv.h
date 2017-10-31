@@ -64,9 +64,18 @@ static inline int tlv_type_getidbyname(const char *name);
 #endif
 
 enum {
-    TLV_F_MULTI = 0x01,
-    TLV_F_FIXED = 0x02,
-    TLV_F_FILE  = 0x04,
+    TLV_F_MULTI             = 0x0001,
+    TLV_F_FIXED             = 0x0002,
+    
+    TLV_F_FILE_CONTENT      = 0x0010,
+    TLV_F_HTTP_REQUEST      = 0x0020,
+    TLV_F_HTTP_RESPONSE     = 0x0040,
+    TLV_F_SSL_SERVER_CERT   = 0x0080,
+    TLV_F_SSL_CLIENT_CERT   = 0x0100,
+
+    TLV_F_HTTP              = TLV_F_HTTP_REQUEST|TLV_F_HTTP_RESPONSE,
+    TLV_F_SSL               = TLV_F_SSL_SERVER_CERT|TLV_F_SSL_CLIENT_CERT,
+    TLV_F_FILE              = TLV_F_FILE_CONTENT|TLV_F_HTTP|TLV_F_SSL,
 };
 
 typedef struct tlv_st tlv_t;
@@ -257,11 +266,11 @@ typedef struct {
     tlv_mapper_u8(_,       53, dns_count_response_extra, 0) \
     tlv_mapper_u32(_,      54, dns_delay, 0) \
     \
-    tlv_mapper_binary(_,   201, http_request,  TLV_F_FILE) \
-    tlv_mapper_binary(_,   202, http_response, TLV_F_FILE) \
-    tlv_mapper_binary(_,   203, file_content,  TLV_F_FILE) \
-    tlv_mapper_binary(_,   204, ssl_server_cert, TLV_F_MULTI|TLV_F_FILE) \
-    tlv_mapper_binary(_,   205, ssl_client_cert, TLV_F_MULTI|TLV_F_FILE) \
+    tlv_mapper_binary(_,   201, http_request,  TLV_F_HTTP_REQUEST) \
+    tlv_mapper_binary(_,   202, http_response, TLV_F_HTTP_RESPONSE) \
+    tlv_mapper_binary(_,   203, file_content,  TLV_F_FILE_CONTENT) \
+    tlv_mapper_binary(_,   204, ssl_server_cert, TLV_F_MULTI|TLV_F_SSL_SERVER_CERT) \
+    tlv_mapper_binary(_,   205, ssl_client_cert, TLV_F_MULTI|TLV_F_SSL_CLIENT_CERT) \
     tlv_mapper_u8(_,       206, ssl_fail_reason, 0) \
     /* end */
 
