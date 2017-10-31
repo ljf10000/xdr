@@ -637,12 +637,6 @@ os_mmap_r(char *file, int (*handle)(void *buf, int len))
 static inline bool
 OS_HAS_SUFFIX(char *s, int len, char *suffix, int suffix_len)
 {
-    os_println("s:%d:%s, cmp:%d:%s, suffix:%d:%s, bool:%d", 
-        len, s,
-        suffix_len, s + len - suffix_len,
-        suffix_len, suffix,
-        (len > suffix_len)?U32CMP(s + len - suffix_len, suffix):false);
-
     return (len > suffix_len)?U32CMP(s + len - suffix_len, suffix):false;
 }
 
