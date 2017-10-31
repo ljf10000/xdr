@@ -572,8 +572,8 @@ os_mmap_w(char *file, void *buf, int len, int flag)
     }
 
     memcpy(mem, buf, len);
-    msync(mem, size, flag);
-    munmap(mem, size);
+    msync(mem, len, flag);
+    munmap(mem, len);
 
     return 0;
 }
