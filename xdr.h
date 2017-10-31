@@ -14,6 +14,61 @@
 #define XDR_ALIGN(x)        OS_ALIGN(x, 4)
 #define XDR_EXPAND_ALIGN(x) OS_ALIGN(x, XDR_EXPAND)
 
+#if 1
+#define XDR_FILE_MAPPER(_) \
+    _(XDR_FILE, file, 0), \
+    _(XDR_FILE, http, 1), \
+    _(XDR_FILE, cert, 2), \
+    /* end */
+DECLARE_ENUM(XDR_FILE, xdr_file, XDR_FILE_MAPPER, XDR_FILE_END);
+
+static inline bool is_good_xdr_file(int id);
+static inline char *xdr_file_getnamebyid(int id);
+static inline int xdr_file_getidbyname(const char *name);
+
+#define XDR_FILE_file   XDR_FILE_file
+#define XDR_FILE_http   XDR_FILE_http
+#define XDR_FILE_cert   XDR_FILE_cert
+#define XDR_FILE_END    XDR_FILE_END
+#endif
+
+static inline int
+tlvid_to_filetype(int id)
+{
+    switch(id) {
+        case tlv_id_http_request:   // down
+        case tlv_id_http_response:
+            return XDR_FILE_http;
+        case tlv_id_file_content:
+            return XDR_FILE_file;
+        case tlv_id_ssl_server_cert:// down
+        case tlv_id_ssl_client_cert:
+            return XDR_FILE_cert;
+        default:
+            return -1;
+    }
+}
+
+#if 1
+#define XDR_ARRAY_MAPPER(_) \
+    _(XDR_ARRAY, string,0), \
+    _(XDR_ARRAY, ip4,   1), \
+    _(XDR_ARRAY, ip6,   2), \
+    _(XDR_ARRAY, cert,  3), \
+    /* end */
+DECLARE_ENUM(XDR_ARRAY, xdr_array, XDR_ARRAY_MAPPER, XDR_ARRAY_END);
+
+static inline bool is_good_xdr_array(int id);
+static inline char *xdr_array_getnamebyid(int id);
+static inline int xdr_array_getidbyname(const char *name);
+
+#define XDR_ARRAY_string    XDR_ARRAY_string
+#define XDR_ARRAY_ip4       XDR_ARRAY_ip4
+#define XDR_ARRAY_ip6       XDR_ARRAY_ip6
+#define XDR_ARRAY_cert      XDR_ARRAY_cert
+#define XDR_ARRAY_END       XDR_FILE_END
+#endif
+
 typedef uint32 xdr_offset_t;
 typedef uint32 xdr_size_t;
 typedef uint32 xdr_delay_t;
@@ -37,15 +92,6 @@ typedef struct {
     xdr_size_t      size;
     xdr_offset_t    offset;
 } xdr_string_t, xdr_binary_t;
-
-enum {
-    XDR_ARRAY_STRING,
-    XDR_ARRAY_IP4,
-    XDR_ARRAY_IP6,
-    XDR_ARRAY_CERT,
-    
-    XDR_ARRAY_END
-};
 
 typedef struct {
     xdr_size_t size;
@@ -100,25 +146,38 @@ enum {
     XDR_FILE_PAD_SIZE       = (XDR_FILE_HEADER_SIZE     //(60
                                 - sizeof(xdr_size_t)    // -4
                                 - sizeof(time_t)        // -4
-                                - sizeof(xdr_offset_t)  // -4
-                                - XDR_DIGEST_SIZE       // -32
-                                - sizeof(uint16)        // -2
-                                - sizeof(byte)),        // -1) = 13
+                                - sizeof(bkdr_t)        // -4
+                                - XDR_DIGEST_SIZE),     // -32) = 12
 };
 
 typedef struct {
-    xdr_size_t size;
-    time_t time;
-
-    xdr_offset_t offset; // just for local file
+    xdr_size_t  size;
+    time_t      time;
+    bkdr_t      bkdr;
     byte digest[XDR_DIGEST_SIZE];
-
-    uint16 partition;
-    byte   type;
-    byte   _[XDR_FILE_PAD_SIZE];
-
+    byte _[XDR_FILE_PAD_SIZE];
+    
     byte body[0];
 } xdr_file_t;
+
+static inline int
+xb_file(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv, int id)
+{
+    char filename[1+OS_FILENAME_LEN] = {0};
+    char digest[1+2*XDR_DIGEST_SIZE] = {0};
+    byte *buf   = tlv_data(tlv);
+    int len     = tlv_binlen(tlv);
+    
+    sha256(buf, len, file->digest);
+    file->size = len;
+    file->time = time(NULL);
+    file->bkdr = os_bkdr(file->digest, sizeof(file->digest));
+
+    os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
+    os_saprintf(filename, "%s/%s/%s", x->path, xdr_file_getnamebyid(id), digest);
+
+    return os_mmap_w_async(filename, buf, len);
+}
 
 typedef struct {
     // begin, same as tlv_http_t
@@ -674,21 +733,12 @@ xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, tlv_t *tlv)
 static inline int
 xb_pre_file_from_buffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 {
-    char filename[1+OS_FILENAME_LEN] = {0};
-    char digest[1+2*XDR_DIGEST_SIZE] = {0};
-    
-    xdr_size_t size = tlv_binlen(tlv);
-    byte *buf = tlv_data(tlv);
-
-    file->size     = size;
-    sha256(buf, size, file->digest);
-
-    file->offset = 0; // todo: save local file
-
-    os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
-    os_saprintf(filename, "%s/%s", x->path, digest);
-
-    return os_mmapw(filename, buf, size, MS_ASYNC);
+    int id = tlvid_to_filetype(tlv->id);
+    if (id<0) {
+        return -EBADIDX;
+    } else {
+        return xb_file(x, file, tlv, id);
+    }
 }
 
 static inline int
@@ -1281,11 +1331,11 @@ tlv_record_to_xdr_dns(tlv_record_t *r, xdr_buffer_t *x)
     
     if (XDR_IPV4 == dns->ip_version) {
         id = tlv_id_dns_ip4;
-        type = XDR_ARRAY_IP4;
+        type = XDR_ARRAY_ip4;
         size = sizeof(xdr_size_t);
     } else {
         id = tlv_id_dns_ip6;
-        type = XDR_ARRAY_IP6;
+        type = XDR_ARRAY_ip6;
         size = sizeof(xdr_ipaddr_t);
     }
     
@@ -1319,6 +1369,19 @@ tlv_record_to_xdr_dns(tlv_record_t *r, xdr_buffer_t *x)
 static inline int
 tlv_record_to_xdr_ssl_cert(tlv_record_t *r, xdr_buffer_t *x, xdr_array_t *certs, int id)
 {
+    tlv_cache_t *cache = &r->cache[id];
+    if (0==cache->count) {
+        return 0;
+    }
+    
+    int i, err, count = cache->count;
+    xdr_cert_t *cert;
+    
+    xdr_array_t *array = xb_pre_array(x, certs, XDR_ARRAY_cert, sizeof(xdr_cert_t), count);
+    if (NULL==array) {
+        return -ENOMEM;
+    }
+    
     xdr_flag_t flag = 0;
     
     switch (id) {
@@ -1330,19 +1393,6 @@ tlv_record_to_xdr_ssl_cert(tlv_record_t *r, xdr_buffer_t *x, xdr_array_t *certs,
             break;
         default:
             return -1;
-    }
-    
-    tlv_cache_t *cache = &r->cache[id];
-    if (0==cache->count) {
-        return 0;
-    }
-    
-    int i, err, count = cache->count;
-    xdr_cert_t *cert;
-    
-    xdr_array_t *array = xb_pre_array(x, certs, XDR_ARRAY_CERT, sizeof(xdr_cert_t), count);
-    if (NULL==array) {
-        return -ENOMEM;
     }
     
     for (i=0; i<count; i++) {

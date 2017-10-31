@@ -515,14 +515,6 @@ is_option_args(char *args)
         && args[2];
 }
 
-typedef FILE* STREAM;
-
-#define os_fopen(_file, _mode)      fopen(_file, _mode)
-#define os_feof(_stream)            (_stream?!!feof(_stream):true)
-#define os_fflush(_stream)          fflush(_stream)
-#define os_ferror(_stream)          ferror(_stream)
-#define os_fdopen(_fd, _flag)       fdopen(_fd, _flag)
-
 static inline bool
 os_fexist(const char *file)
 {
@@ -543,77 +535,6 @@ os_fsize(const char *file)
     } else {
         return st.st_size;
     }
-}
-
-static inline int
-os_fread(STREAM stream, void *buf, int size)
-{
-    int err = fread(buf, 1, size, stream);
-
-    return (err<0)?-errno:err;
-}
-
-static inline int
-os_fwrite(STREAM stream, const void *buf, int size)
-{
-    int err = fwrite(buf, 1, size, stream);
-    
-    os_fflush(stream);
-    
-    return (err<0)?-errno:err;
-}
-
-static inline int
-os_readfile(const char *file, void *buf, int size)
-{
-    STREAM f = NULL;
-    int err = 0;
-
-    f = os_fopen(file, "r");
-    if (NULL==f) {
-        err = -errno; goto error;
-    }
-
-    int len = os_fread(f, buf, size);
-    if (size!=len) {
-        err = -errno; goto error;
-    }
-
-error:
-    fclose(f);
-
-    return err;
-}
-
-static inline int
-os_readfileall(const char *file, char **content, uint32 *filesize)
-{
-    char *buf = NULL;
-    int size, err = 0;
-    
-    size = os_fsize(file);
-    if (size<0) {
-        goto error;
-    }
-
-    buf = (char *)os_malloc(size);
-    if (NULL==buf) {
-        goto error;
-    }
-    
-    err = os_readfile(file, buf, size);
-    if (err<0) {
-        goto error;
-    }
-
-    *filesize   = size;
-    *content    = buf;
-    
-    return err;
-error:
-    os_free(buf);
-
-    return err;
 }
 
 static inline void *
@@ -643,7 +564,7 @@ os_mmap(char *file, size_t length, off_t offset, bool readonly)
 }
 
 static inline int
-os_mmapw(char *file, void *buf, int len, int flag)
+os_mmap_w(char *file, void *buf, int len, int flag)
 {
     void *mem = os_mmap(file, len, 0, false);
     if (NULL==mem) {
@@ -658,7 +579,19 @@ os_mmapw(char *file, void *buf, int len, int flag)
 }
 
 static inline int
-os_mmapr(char *file, int (*handle)(void *buf, int len))
+os_mmap_w_sync(char *file, void *buf, int len)
+{
+    return os_mmap_w(file, buf, len, MS_SYNC);
+}
+
+static inline int
+os_mmap_w_async(char *file, void *buf, int len)
+{
+    return os_mmap_w(file, buf, len, MS_ASYNC);
+}
+
+static inline int
+os_mmap_r(char *file, int (*handle)(void *buf, int len))
 {
     int size = os_fsize(file);
     if (size<0) {
@@ -673,137 +606,6 @@ os_mmapr(char *file, int (*handle)(void *buf, int len))
     int err = (*handle)(mem, size);
 
     munmap(mem, size);
-
-    return err;
-}
-
-static inline bool
-is_current_dir(const char *file/* not include path */)
-{
-    return '.'==file[0] && 0==file[1];
-}
-
-static inline bool
-is_father_dir(const char *file/* not include path */)
-{
-    return '.'==file[0] && '.'==file[1] && 0==file[2];
-}
-
-/*
-* @file: not include path
-*/
-typedef mv_t os_fscan_handle_t(const char *path, const char *file);
-typedef bool os_fscan_filter_t(const char *path, const char *file);
-
-#ifndef FILE_DPRINT
-#define FILE_DPRINT             0
-#endif
-
-#if FILE_DPRINT
-#define file_println(_fmt, _args...)    os_println(_fmt, ##_args)
-#else
-#define file_println(_fmt, _args...)    os_do_nothing()
-#endif
-
-#define os_closedir(_dir) do {  \
-    if (_dir) {                 \
-        closedir(_dir);         \
-        _dir = NULL;            \
-    }                           \
-}while(0)  /* end */
-
-static inline int 
-os_fscan_dir(const char *path, bool recur, os_fscan_filter_t *filter, os_fscan_handle_t *run)
-{
-    DIR *dir = NULL;
-    struct dirent *d = NULL;
-    struct stat st;
-    char fullname[1+OS_LINE_LEN];
-    mv_u mv;
-    int err = 0;
-
-    if (NULL==path) {
-        return os_assertV(-EINVAL1);
-    }
-
-    file_println("begin scan %s", path);
-    
-    dir = opendir(path);
-    if (NULL == dir) {
-        file_println("open dir %s error:%d", path, -errno);
-        
-        err = -errno; goto error;
-    }
-    
-    while (NULL != (d=readdir(dir))) {
-        /* 
-        * d->d_name
-        *   just name, not include path 
-        */
-        file_println("scan %s/%s", path, d->d_name);
-
-        /*
-        * skip . and ..
-        */
-        if (is_current_dir(d->d_name) || is_father_dir(d->d_name)) {
-            file_println("skip %s/%s", path, d->d_name);
-            
-            continue;
-        }
-
-        os_saprintf(fullname, "%s/%s", path, d->d_name);
-        err = stat(fullname, &st);
-        if (err<0) {
-            file_println("stat %s error:%d", fullname, -errno);
-            
-            continue;
-        }
-        
-        /*
-        * dir
-        */
-        if (S_ISDIR(st.st_mode)) {
-            if (recur) {
-                char line[1+OS_LINE_LEN];
-
-                os_sprintf(line, "%s/%s", path, d->d_name);
-                
-                err = os_fscan_dir(line, recur, filter, run);
-                if (err<0) {
-                    goto error;
-                }
-            } else {
-                continue;
-            }
-        }
-        
-        /*
-        * file filter
-        */
-        if (filter && (*filter)(path, d->d_name)) {
-            file_println("filter %s/%s", path, d->d_name);
-            
-            continue;
-        }
-        
-        /*
-        * file run
-        */
-        if (run) {
-            mv.v = (*run)(path, d->d_name);
-            if (is_mv2_break(mv)) {
-                err = mv2_error(mv);
-
-                file_println("run %s/%s error:%d", path, d->d_name, err);
-                
-                goto error;
-            }
-        }
-    }
-
-    file_println("end scan %s error:%d", path, err);
-error:
-    os_closedir(dir);
 
     return err;
 }
@@ -826,24 +628,6 @@ error:
 
 #define os_array_search_str(_array, _string, _begin, _end) \
     os_array_search(_array, _string, strcmp, _begin, _end)
-
-
-static inline bool
-os_str_has_suffix(char *s, char *suffix)
-{
-    if (s && suffix) {
-        int len = strlen(s);
-        int len_suffix = strlen(suffix);
-
-        if (len > len_suffix) {
-            char *p = s + (len - len_suffix);
-
-            return 0==memcmp(p, suffix, len_suffix);
-        }
-    }
-
-    return false;
-}
 
 #define UXXCMP(_type, _a, _b)   (*(_type *)(_a) == *(_type *)(_b))
 #define U16CMP(_a, _b)          UXXCMP(uint16, _a, _b)
@@ -899,7 +683,7 @@ os_fdigest(const char *file, byte digest[])
         sha256((const byte *)buf, len, digest);
     }
     
-    return os_mmapr(file, handle);
+    return os_mmap_r(file, handle);
 }
 
 static inline int

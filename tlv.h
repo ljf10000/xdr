@@ -69,21 +69,6 @@ enum {
     TLV_F_FILE  = 0x04,
 };
 
-#if 1
-#define XDR_FILE_MAPPER(_) \
-    _(XDR_FILE, file, 0), \
-    _(XDR_FILE, http, 1), \
-    _(XDR_FILE, cert, 2), \
-    /* end */
-DECLARE_ENUM(XDR_FILE, xdr_file, XDR_FILE_MAPPER, XDR_FILE_END);
-
-static inline bool is_good_xdr_file(int id);
-static inline char *xdr_file_getnamebyid(int id);
-static inline int xdr_file_getidbyname(const char *name);
-
-#define XDR_FILE_END    XDR_FILE_END
-#endif
-
 typedef struct tlv_st tlv_t;
 typedef struct xdr_buffer_st xdr_buffer_t;
 
