@@ -641,7 +641,7 @@ static inline xdr_string_t *
 xb_pre_string(xdr_buffer_t *x, xdr_string_t *obj, void *buf, xdr_size_t size)
 {
     xdr_dprint("xb_pre_string ...");
-    xdr_string_t *p = (xdr_string_t *)xb_pre(x, XDR_ALIGN(1+size));
+    void *p = xb_pre(x, XDR_ALIGN(1+size));
     if (NULL==p) {
         return NULL;
     }
@@ -665,7 +665,7 @@ xb_pre_string_ex(xdr_buffer_t *x, xdr_string_t *obj, tlv_t *tlv)
 static inline xdr_binary_t *
 xb_pre_binnary(xdr_buffer_t *x, xdr_binary_t *obj, void *buf, xdr_size_t size)
 {
-    xdr_binary_t *p = (xdr_binary_t *)xb_pre(x, XDR_ALIGN(size));
+    void *p = xb_pre(x, XDR_ALIGN(size));
     if (NULL==p) {
         return NULL;
     }
