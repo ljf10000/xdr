@@ -51,6 +51,9 @@ static int xdr_handle(inotify_ev_t *ev, char *path[PATH_END])
 
     os_saprintf(tlv, "%s/%s", path[PATH_TLV], ev->name);
     os_saprintf(xdr, "%s/%s", path[PATH_XDR], ev->name);
+
+    xdr_dprint("handle tlv:%s", tlv);
+    xdr_dprint("handle xdr:%s", xdr);
     
     int err = tlv_to_xdr(&pair);
     if (err<0) {
@@ -62,12 +65,14 @@ static int xdr_handle(inotify_ev_t *ev, char *path[PATH_END])
 
 static int remove_handle(inotify_ev_t *ev, char *path[PATH_END])
 {
-    char tlv[1+OS_FILENAME_LEN] = {0};
+    char filename[1+OS_FILENAME_LEN] = {0};
 
-    os_saprintf(tlv, "%s/%s", path[PATH_TLV], ev->name);
+    os_saprintf(filename, "%s/%s", path[PATH_TLV], ev->name);
 
-    remove(tlv);
-
+    remove(filename);
+    
+    xdr_dprint("remove %s", filename);
+    
     return 0;
 }
 

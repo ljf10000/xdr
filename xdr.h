@@ -15,6 +15,12 @@
 #define XDR_EXPAND_ALIGN(x) OS_ALIGN(x, XDR_EXPAND)
 
 #if 1
+#define xdr_dprint(_fmt, _args...)     os_println(_fmt, ##_args)
+#else
+#define xdr_dprint(_fmt, _args...)     os_do_nothing()
+#endif
+
+#if 1
 #define XDR_ARRAY_MAPPER(_) \
     _(XDR_ARRAY, string,0), \
     _(XDR_ARRAY, ip4,   1), \
