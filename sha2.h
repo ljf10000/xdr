@@ -254,13 +254,9 @@ sha256(const byte *message, unsigned int len, byte digest[SHA256_DIGEST_SIZE])
 {
     sha256_ctx ctx;
 
-    os_println("sha256 buf=0x%x, len=%d, digest=0x%x ...", message, len, digest);
     sha256_init(&ctx);
-    os_println("sha256 buf=0x%x, len=%d, digest=0x%x 1...", message, len, digest);
     sha256_update(&ctx, message, len);
-    os_println("sha256 buf=0x%x, len=%d, digest=0x%x 2...", message, len, digest);
     sha256_final(&ctx, digest);
-    os_println("sha256 buf=0x%x, len=%d, digest=0x%x ok.", message, len, digest);
 }
 /******************************************************************************/
 #endif /* __SHA2_H_f482c6dfe05341e7b2ddf4db926acb7d__ */
