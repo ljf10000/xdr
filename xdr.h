@@ -497,10 +497,12 @@ xb_mmap(xdr_buffer_t *x, bool readonly)
         ftruncate(x->fd, x->size);
     }
 
+    xdr_dprint("xb_mmap ...");
     x->u.buffer = mmap(NULL, x->size, prot, flag, x->fd, 0);
     if (NULL==x->u.buffer) {
         return -errno;
     }
+    xdr_dprint("xb_mmap 0x%x ok.", x->u.buffer);
 
     return 0;
 }
@@ -509,7 +511,9 @@ static inline int
 xb_munmap(xdr_buffer_t *x)
 {
     if (x->u.buffer) {
+        xdr_dprint("xb_munmap 0x%x ...", x->u.buffer);
         munmap(x->u.buffer, x->size); x->u.buffer = NULL;
+        xdr_dprint("xb_munmap ok.", x->u.buffer);
     }
 
     return 0;
@@ -916,7 +920,11 @@ tlv_to_xdr_session_st(xdr_buffer_t *x, tlv_t *tlv)
 static inline int
 tlv_to_xdr_service_st(xdr_buffer_t *x, tlv_t *tlv)
 {
-    return tlv_to_xdr_obj(x, tlv, service_st);
+    xdr_dprint("tlv_to_xdr_service_st %d ...", tlv->id);
+    int err = tlv_to_xdr_obj(x, tlv, service_st);
+    xdr_dprint("tlv_to_xdr_service_st %d ok.", tlv->id);
+
+    return err;
 }
 
 static inline int
