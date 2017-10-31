@@ -847,10 +847,14 @@ xb_pre_ssl(xdr_buffer_t *x)
 
 #define tlv_to_xdr_by(_x, _tlv, _field, _nt)    ({(_x)->u.xdr->_field = tlv_##_nt(_tlv); 0; })
 #define tlv_to_xdr_obj(_x, _tlv, _obj)         ({ \
+    xdr_dprint("tlv_to_xdr_obj 1 ..."); \
     tlv_##_obj##_t *__src = tlv_##_obj(_tlv);     \
+    xdr_dprint("tlv_to_xdr_obj 2 ..."); \
     xdr_##_obj##_t *__dst = xb_pre_##_obj(_x);      \
+    xdr_dprint("tlv_to_xdr_obj 3 ..."); \
                                                     \
     os_objcpy(__dst, __src);                        \
+    xdr_dprint("tlv_to_xdr_obj 4 ..."); \
                                                     \
     0;                                              \
 })  /* end */
@@ -928,7 +932,11 @@ tlv_to_xdr_session_time(xdr_buffer_t *x, tlv_t *tlv)
 static inline int
 tlv_to_xdr_tcp(xdr_buffer_t *x, tlv_t *tlv)
 {
-    return tlv_to_xdr_obj(x, tlv, tcp);
+    xdr_dprint("tlv_to_xdr_tcp %d ...", tlv->id);
+    int err = tlv_to_xdr_obj(x, tlv, tcp);
+    xdr_dprint("tlv_to_xdr_tcp %d ok.", tlv->id);
+
+    return err;
 }
 
 static inline int
