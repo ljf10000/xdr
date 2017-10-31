@@ -1404,7 +1404,7 @@ tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
                     if (err<0) {
                         return err;
                     }
-                    xdr_dprint("toxdr %d ...", i);
+                    xdr_dprint("toxdr %d ok.", i);
                 }
             }
         }
