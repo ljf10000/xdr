@@ -958,14 +958,10 @@ tlv_cache_save(tlv_cache_t *cache, tlv_t *tlv)
     if (cache->count < TLV_CACHE_MULTI) {
         if (0==cache->count) {
             cache->multi[cache->count++] = tlv;
-
-            tlv_dprint("save record tlv id:%d", tlv->id);
         } else {
             tlv_ops_t *ops = tlv_ops(tlv);
             if (TLV_F_MULTI & ops->flag) {
                 cache->multi[cache->count++] = tlv;
-                
-                tlv_dprint("save record multi tlv id:%d", tlv->id);
             } else {
                 err = -ENOSUPPORT;
             }
