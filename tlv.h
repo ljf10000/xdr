@@ -64,19 +64,36 @@ static inline int tlv_type_getidbyname(const char *name);
 #endif
 
 enum {
-    TLV_F_MULTI             = 0x0001,
-    TLV_F_FIXED             = 0x0002,
+    TLV_F_MULTI             = 0x1000,
+    TLV_F_FIXED             = 0x2000,
     
-    TLV_F_FILE_CONTENT      = 0x0010,
-    TLV_F_HTTP_REQUEST      = 0x0020,
-    TLV_F_HTTP_RESPONSE     = 0x0040,
-    TLV_F_SSL_SERVER_CERT   = 0x0080,
-    TLV_F_SSL_CLIENT_CERT   = 0x0100,
+    TLV_F_FILE_CONTENT      = 0x0001,
+    TLV_F_HTTP_REQUEST      = 0x0002,
+    TLV_F_HTTP_RESPONSE     = 0x0004,
+    TLV_F_SSL_SERVER_CERT   = 0x0008,
+    TLV_F_SSL_CLIENT_CERT   = 0x0010,
 
     TLV_F_HTTP              = TLV_F_HTTP_REQUEST|TLV_F_HTTP_RESPONSE,
     TLV_F_SSL               = TLV_F_SSL_SERVER_CERT|TLV_F_SSL_CLIENT_CERT,
     TLV_F_FILE              = TLV_F_FILE_CONTENT|TLV_F_HTTP|TLV_F_SSL,
 };
+
+static inline const char *
+getdirbyflag(int flag)
+{
+    if (TLV_F_FILE_CONTENT & flag) {
+        return "file";
+    }
+    else if(TLV_F_HTTP & flag) {
+        return "http";
+    }
+    else if(TLV_F_SSL & flag) {
+        return "ssl"
+    }
+    else {
+        return NULL;
+    }
+}
 
 typedef struct tlv_st tlv_t;
 typedef struct xdr_buffer_st xdr_buffer_t;
