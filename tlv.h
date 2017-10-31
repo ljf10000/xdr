@@ -1003,25 +1003,19 @@ tlv_record_parse(tlv_record_t *r)
     {
         int err;
 
-        tlv_dprint("tlv check ...");
         err = tlv_check(tlv);
         if (err<0) {
             return err;
         }
-        tlv_dprint("tlv check ok.");
 
-        tlv_dprint("tlv record save ...");
         err = tlv_record_save(r, tlv);
         if (err<0) {
             return err;
         }
-        tlv_dprint("tlv record save ok.");
 
-        tlv_dprint("tlv dump ...");
         if (is_tlv_opt_dump()) {
             tlv_dump(tlv);
         }
-        tlv_dprint("tlv dump ok.");
 
         r->count++;
         
