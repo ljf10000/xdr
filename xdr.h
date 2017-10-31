@@ -576,14 +576,18 @@ static inline int
 xb_expand(xdr_buffer_t *x, xdr_size_t size)
 {
     if (false==xb_enought(x, size)) {
+        xdr_dprint("xb_munmap ...");
         xb_munmap(x);
+        xdr_dprint("xb_munmap ok.");
 
         x->size += XDR_EXPAND_ALIGN(size);
 
+        xdr_dprint("xb_mmap ...");
         int err = xb_mmap(x, false);
         if (err<0) {
             return err;
         }
+        xdr_dprint("xb_mmap ok.");
     }
 
     return 0;
