@@ -547,7 +547,7 @@ xb_current(xdr_buffer_t *x)
 static inline xdr_offset_t
 xb_offset(xdr_buffer_t *x, void *pointer)
 {
-    return pointer - (void *)x;
+    return pointer - x->u.buffer;
 }
 
 static inline xdr_size_t
