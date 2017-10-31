@@ -686,34 +686,25 @@ xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, tlv_t *tlv)
 static inline int
 xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 {
-    xdr_dprint("xb_pre_file_bybuffer 1...");
     const char *dir = getdirbyflag(tlv_ops(tlv)->flag);
     if (NULL==dir) {
         return -ENOSUPPORT;
     }
-    xdr_dprint("xb_pre_file_bybuffer 2...");
     
     char filename[1+OS_FILENAME_LEN] = {0};
     char digest[1+2*XDR_DIGEST_SIZE] = {0};
     byte *buf   = tlv_data(tlv);
     int len     = tlv_binlen(tlv);
-    xdr_dprint("xb_pre_file_bybuffer 3...");
     
     sha256(buf, len, file->digest);
-    xdr_dprint("xb_pre_file_bybuffer 4...");
     file->size = len;
     file->time = time(NULL);
-    xdr_dprint("xb_pre_file_bybuffer 5...");
     file->bkdr = os_bkdr(file->digest, sizeof(file->digest));
-    xdr_dprint("xb_pre_file_bybuffer 6...");
     
     os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
-    xdr_dprint("xb_pre_file_bybuffer 7...");
     os_saprintf(filename, "%s/%s/%s", x->path, dir, digest);
-    xdr_dprint("xb_pre_file_bybuffer 8...");
 
     int err = os_mmap_w_async(filename, buf, len);
-    xdr_dprint("xb_pre_file_bybuffer 9...");
 
     return err;
 }
