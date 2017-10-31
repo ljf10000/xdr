@@ -28,12 +28,17 @@ static inline void
 ev_debug(inotify_ev_t *ev)
 {
     if (ev->mask & IN_CLOSE_WRITE) {
-        xdr_dprint("event close write %s", ev->name);
+        xdr_dprint("event close write";
     }
 
     if (ev->mask & IN_MOVED_TO) {
-        xdr_dprint("event move to %s", ev->name);
+        xdr_dprint("event move to");
     }
+
+    xdr_dprint("event file:%s, len:%d, real:%d",
+        ev->name,
+        ev->len,
+        inotify_ev_len(ev));
 }
 
 static struct {
