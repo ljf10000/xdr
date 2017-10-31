@@ -56,6 +56,8 @@ static int xdr_handle(inotify_ev_t *ev, char *path[PATH_END])
     if (err<0) {
         // log
     }
+
+    return 0;
 }
 
 static int remove_handle(inotify_ev_t *ev, char *path[PATH_END])

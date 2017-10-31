@@ -239,14 +239,14 @@ sha256_final(sha256_ctx *ctx, byte digest[SHA256_DIGEST_SIZE])
 
     sha256_transf(ctx, ctx->block, block_nb);
 
-   sha2_UNPACK32(ctx->h[0], &digest[ 0]);
-   sha2_UNPACK32(ctx->h[1], &digest[ 4]);
-   sha2_UNPACK32(ctx->h[2], &digest[ 8]);
-   sha2_UNPACK32(ctx->h[3], &digest[12]);
-   sha2_UNPACK32(ctx->h[4], &digest[16]);
-   sha2_UNPACK32(ctx->h[5], &digest[20]);
-   sha2_UNPACK32(ctx->h[6], &digest[24]);
-   sha2_UNPACK32(ctx->h[7], &digest[28]);
+    sha2_UNPACK32(ctx->h[0], &digest[ 0]);
+    sha2_UNPACK32(ctx->h[1], &digest[ 4]);
+    sha2_UNPACK32(ctx->h[2], &digest[ 8]);
+    sha2_UNPACK32(ctx->h[3], &digest[12]);
+    sha2_UNPACK32(ctx->h[4], &digest[16]);
+    sha2_UNPACK32(ctx->h[5], &digest[20]);
+    sha2_UNPACK32(ctx->h[6], &digest[24]);
+    sha2_UNPACK32(ctx->h[7], &digest[28]);
 }
 
 static inline void 

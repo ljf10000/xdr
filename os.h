@@ -515,30 +515,6 @@ is_option_args(char *args)
         && args[2];
 }
 
-
-static inline void *
-os_mmap(char *file, size_t length, off_t offset, bool readonly)
-{
-    int fflag = readonly?O_RDONLY:(O_CREAT|O_RDWR);
-    int mflag = readonly?MAP_PRIVATE:MAP_SHARED;
-    int prot  = readonly?PROT_READ:(PROT_READ|PROT_WRITE);
-
-    int fd = open(file, fflag);
-    if (fd<0) {
-        return NULL;
-    }
-
-    if (!readonly) {
-        ftruncate(fd, length);
-    }
-
-    void *buffer = mmap(NULL, length, prot, mflag, fd, offset);
-    close(fd);
-
-    return buffer;
-}
-
-
 typedef FILE* STREAM;
 
 #define os_fopen(_file, _mode)      fopen(_file, _mode)
@@ -636,6 +612,67 @@ os_readfileall(const char *file, char **content, uint32 *filesize)
     return err;
 error:
     os_free(buf);
+
+    return err;
+}
+
+static inline void *
+os_mmap(char *file, size_t length, off_t offset, bool readonly)
+{
+    int fflag = readonly?O_RDONLY:(O_CREAT|O_RDWR);
+    int mflag = readonly?MAP_PRIVATE:MAP_SHARED;
+    int prot  = readonly?PROT_READ:(PROT_READ|PROT_WRITE);
+
+    int fd = open(file, fflag);
+    if (fd<0) {
+        return NULL;
+    }
+
+    if (0==length) {
+        length = os_fsize(file);
+    }
+
+    if (!readonly) {
+        ftruncate(fd, length);
+    }
+
+    void *buffer = mmap(NULL, length, prot, mflag, fd, offset);
+    close(fd);
+
+    return buffer;
+}
+
+static inline int
+os_mmapw(char *file, void *buf, int len, int flag)
+{
+    void *mem = os_mmap(file, len, 0, false);
+    if (NULL==mem) {
+        return -errno;
+    }
+
+    memcpy(mem, buf, len);
+    msync(mem, size, flag);
+    munmap(mem, size);
+
+    return 0;
+}
+
+static inline int
+os_mmapr(char *file, int (*handle)(void *buf, int len))
+{
+    int size = os_fsize(file);
+    if (size<0) {
+        return size;
+    }
+    
+    void *mem = os_mmap(file, size, 0, true);
+    if (NULL==mem) {
+        return -errno;
+    }
+
+    int err = (*handle)(mem, size);
+
+    munmap(mem, size);
 
     return err;
 }
@@ -857,31 +894,12 @@ os_bkdr(const void *binary, uint32 len)
 static inline int
 os_fdigest(const char *file, byte digest[])
 {
-    char *buf = NULL;
-    int size, err = 0;
-    
-    size = os_fsize(file);
-    if (size<0) {
-        goto error;
-    }
-
-    buf = (char *)os_malloc(size);
-    if (NULL==buf) {
-        goto error;
+    int handle(void *buf, int len)
+    {
+        sha256((const byte *)buf, len, digest);
     }
     
-    err = os_readfile(file, buf, size);
-    if (err<0) {
-        goto error;
-    }
-
-    sha256((const byte *)buf, size, digest);
-    
-    return size;
-error:
-    os_free(buf);
-
-    return err;
+    return os_mmapr(file, handle);
 }
 
 static inline int

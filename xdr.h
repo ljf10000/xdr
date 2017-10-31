@@ -688,16 +688,7 @@ xb_pre_file_from_buffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
     os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
     os_saprintf(filename, "%s/%s", x->path, digest);
 
-    void *mem = os_mmap(filename, size, 0, false);
-    if (NULL==mem) {
-        return -errno;
-    }
-
-    memcpy(mem, buf, size);
-    msync(mem, size, MS_ASYNC);
-    munmap(mem, size);
-
-    return 0;
+    return os_mmapw(filename, buf, size, MS_ASYNC);
 }
 
 static inline int
@@ -712,7 +703,7 @@ xb_pre_file_from_path(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
         return size;
     }
     file->size = size;
-        
+
     return 0;
 }
 
