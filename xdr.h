@@ -566,8 +566,10 @@ static inline void *
 xb_put(xdr_buffer_t *x, xdr_size_t size)
 {
     void *current = xb_current(x);
-    
+
+    xdr_dprint("xb_put %d:%d ...", x->current, XDR_ALIGN(size));
     x->current += XDR_ALIGN(size);
+    xdr_dprint("xb_put %d:%d ok.", x->current, XDR_ALIGN(size));
 
     return current;
 }
