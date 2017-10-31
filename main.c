@@ -14,15 +14,13 @@ enum {
     PATH_END
 };
 
-typedef struct inotify_event inotify_ev_t;
-
 #define EVMASK              (IN_CLOSE_WRITE|IN_MOVED_TO)
 #define EVCOUNT             128
-#define EVSIZE(_namelen)    (sizeof(inotify_ev_t) + _namelen + 1)
-#define EVNEXT(_ev)         (inotify_ev_t *)((char *)(_ev) + EVSIZE((_ev)->len - 1))
-#define ISXDR(_ev)          OS_HAS_SUFFIX((_ev)->name, (_ev)->len-1, XDR_SUFFIX, sizeof(XDR_SUFFIX)-1)
+#define EVSIZE              INOTIFY_EVSIZE
+#define EVNEXT(_ev)         inotify_ev_next(_ev)
+#define ISXDR(_ev)          OS_HAS_SUFFIX((_ev)->name, inotify_ev_len(_ev), XDR_SUFFIX, sizeof(XDR_SUFFIX)-1)
 
-static char EVBUF[EVCOUNT * EVSIZE(NAME_MAX)];
+static char EVBUF[EVCOUNT * INOTIFY_EVSIZE];
 
 static char *self;
 

@@ -745,5 +745,26 @@ os_bin2hex(char *hex, int space, byte *buf, int size)
     return len;
 }
 
+typedef struct inotify_event inotify_ev_t;
+
+#define INOTIFY_EVSIZE  (sizeof(inotify_ev_t) + NAME_MAX + 1)
+
+static inline inotify_ev_t *
+inotify_ev_next(inotify_ev_t *ev)
+{
+    return (inotify_ev_t *)((char *)ev + sizeof(inotify_ev_t) + ev->len);
+}
+
+static inline int 
+inotify_ev_len(inotify_ev_t *ev)
+{
+    char *p = ev->name + ev->len - 1;
+
+    while(0==*p--) {
+        ;
+    }
+
+    return p - ev->name + 1;
+}
 /******************************************************************************/
 #endif
