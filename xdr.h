@@ -849,9 +849,9 @@ xb_pre_ssl(xdr_buffer_t *x)
 #define tlv_to_xdr_obj(_x, _tlv, _obj)         ({ \
     xdr_dprint("tlv_to_xdr_obj 1 ..."); \
     tlv_##_obj##_t *__src = tlv_##_obj(_tlv);     \
-    xdr_dprint("tlv_to_xdr_obj 2 ..."); \
+    xdr_dprint("tlv_to_xdr_obj 2 src=0x%x size=%d...", __src, sizeof(*__src)); \
     xdr_##_obj##_t *__dst = xb_pre_##_obj(_x);      \
-    xdr_dprint("tlv_to_xdr_obj 3 ..."); \
+    xdr_dprint("tlv_to_xdr_obj 3 dst=0x%x size=%d...", __dst, sizeof(*__dst)); \
                                                     \
     os_objcpy(__dst, __src);                        \
     xdr_dprint("tlv_to_xdr_obj 4 ..."); \
