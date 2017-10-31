@@ -1,5 +1,6 @@
 #ifndef __OS_H_50e2a6b4bce849f794e249a3334cb890__
 #define __OS_H_50e2a6b4bce849f794e249a3334cb890__
+#include "error.h"
 /******************************************************************************/
 #ifndef int8
 #define int8            int8_t
@@ -391,7 +392,7 @@ static inline int mod_getidbyname(const char *name);
     }                               \
                                     \
     static inline char **           \
-    __##_mod##_strings(void)        \
+    _mod##_strings(void)            \
     {                               \
         static char *array[_end] = { _mapper(__ENUM_MAP_NAME) }; \
                                     \
@@ -401,7 +402,7 @@ static inline int mod_getidbyname(const char *name);
     static inline char *            \
     _mod##_getnamebyid(int id)      \
     {                               \
-        char **array = __##_mod##_strings(); \
+        char **array = _mod##_strings(); \
                                     \
         return is_good_##_mod(id)?array[id]:__unknow; \
     }                               \
@@ -409,7 +410,7 @@ static inline int mod_getidbyname(const char *name);
     static inline int               \
     _mod##_getidbyname(const char *s) \
     {                               \
-        char **array = __##_mod##_strings(); \
+        char **array = _mod##_strings(); \
                                     \
         return os_array_search_str(array, s, 0, _end); \
     }                               \
@@ -516,22 +517,22 @@ is_option_args(char *args)
 
 
 static inline void *
-os_mmap(char *file, size_t length, int prot, int flags, off_t offset)
+os_mmap(char *file, size_t length, off_t offset, bool readonly)
 {
-    int flag = O_RDONLY;
+    int fflag = readonly?O_RDONLY:(O_CREAT|O_RDWR);
+    int mflag = readonly?MAP_PRIVATE:MAP_SHARED;
+    int prot  = readonly?PROT_READ:(PROT_READ|PROT_WRITE);
 
-    int fd = open(file, flag);
+    int fd = open(file, fflag);
     if (fd<0) {
         return NULL;
     }
 
-    if (PROT_WRITE==(PROT_WRITE & prot)) {
-        flag = O_CREAT | O_RDWR;
-        
+    if (!readonly) {
         ftruncate(fd, length);
     }
 
-    void *buffer = mmap(NULL, length, prot, flags, fd, offset);
+    void *buffer = mmap(NULL, length, prot, mflag, fd, offset);
     close(fd);
 
     return buffer;
@@ -675,7 +676,7 @@ typedef bool os_fscan_filter_t(const char *path, const char *file);
 }while(0)  /* end */
 
 static inline int 
-os_fscan_dir(const char *path, bool recur, os_fscan_filter_t *filter, os_fscan_handle_t *handle)
+os_fscan_dir(const char *path, bool recur, os_fscan_filter_t *filter, os_fscan_handle_t *run)
 {
     DIR *dir = NULL;
     struct dirent *d = NULL;
@@ -685,7 +686,7 @@ os_fscan_dir(const char *path, bool recur, os_fscan_filter_t *filter, os_fscan_h
     int err = 0;
 
     if (NULL==path) {
-        return os_assertV(-1);
+        return os_assertV(-EINVAL1);
     }
 
     file_println("begin scan %s", path);
@@ -730,7 +731,7 @@ os_fscan_dir(const char *path, bool recur, os_fscan_filter_t *filter, os_fscan_h
 
                 os_sprintf(line, "%s/%s", path, d->d_name);
                 
-                err = os_fscan_dir(line, recur, filter, handle);
+                err = os_fscan_dir(line, recur, filter, run);
                 if (err<0) {
                     goto error;
                 }
@@ -749,14 +750,14 @@ os_fscan_dir(const char *path, bool recur, os_fscan_filter_t *filter, os_fscan_h
         }
         
         /*
-        * file handle
+        * file run
         */
-        if (handle) {
-            mv.v = (*handle)(path, d->d_name);
+        if (run) {
+            mv.v = (*run)(path, d->d_name);
             if (is_mv2_break(mv)) {
                 err = mv2_error(mv);
 
-                file_println("handle %s/%s error:%d", path, d->d_name, err);
+                file_println("run %s/%s error:%d", path, d->d_name, err);
                 
                 goto error;
             }
@@ -770,6 +771,53 @@ error:
     return err;
 }
 
+#ifndef os_array_search
+#define os_array_search(_array, _obj, _cmp, _begin, _end) ({ \
+    int i;              \
+    int idx = (_end);   \
+                        \
+    for (i=(_begin); i<(_end); i++) {   \
+        if (0==_cmp((_array)[i], _obj)) { \
+            idx = i;    \
+            break;      \
+        }               \
+    }                   \
+                        \
+    idx;                \
+})  /* end */
+#endif
+
+#define os_array_search_str(_array, _string, _begin, _end) \
+    os_array_search(_array, _string, strcmp, _begin, _end)
+
+
+static inline bool
+os_str_has_suffix(char *s, char *suffix)
+{
+    if (s && suffix) {
+        int len = strlen(s);
+        int len_suffix = strlen(suffix);
+
+        if (len > len_suffix) {
+            char *p = s + (len - len_suffix);
+
+            return 0==memcmp(p, suffix, len_suffix);
+        }
+    }
+
+    return false;
+}
+
+#define UXXCMP(_type, _a, _b)   (*(_type *)(_a) == *(_type *)(_b))
+#define U16CMP(_a, _b)          UXXCMP(uint16, _a, _b)
+#define U32CMP(_a, _b)          UXXCMP(uint32, _a, _b)
+#define U64CMP(_a, _b)          UXXCMP(uint64, _a, _b)
+
+static inline bool
+OS_HAS_SUFFIX(char *s, int len, char *suffix, int suffix_len)
+{
+    return (len > suffix_len)?U32CMP(s + len - suffix_len, suffix):false;
+}
 
 #ifndef OS_BKDR_NUMBER
 #define OS_BKDR_NUMBER      31
@@ -835,5 +883,59 @@ error:
 
     return err;
 }
+
+static inline int
+os_chex2int(int ch)
+{
+    switch(ch) {
+        case '0' ... '9':
+            return ch - '0';
+        case 'a' ... 'f':
+            return ch - 'a' + 10;
+        case 'A' ... 'F':
+            return ch - 'A' + 10;
+        default:
+            return os_assertV(0);
+    }
+}
+
+static inline int
+os_hex2bin(char *hex, byte *buf, int size)
+{
+    int i;
+    int len = strlen(hex);
+
+    if (len%2) {
+        return -EBADHEX;
+    }
+    else if ((size + size) < len) {
+        return -ENOSPACE;
+    }
+
+    int hexlen = len/2;
+    for (i=0; i<hexlen; i++) {
+        buf[i] = 16 * os_chex2int(hex[2*i]) + os_chex2int(hex[2*i+1]);
+    }
+
+    return hexlen;
+}
+
+static inline int
+os_bin2hex(char *hex, int space, byte *buf, int size)
+{
+    int i, len = size+size;
+    
+    if (len < space) {
+        return -ENOSPACE;
+    }
+
+    for (i=0; i<size; i++) {
+        os_sprintf(hex + 2*i, "%.2X", buf[i]);
+    }
+    hex[len] = 0;
+    
+    return len;
+}
+
 /******************************************************************************/
 #endif

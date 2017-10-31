@@ -9,18 +9,6 @@
 #define tlv_dprint(_fmt, _args...)     os_do_nothing()
 #endif
 
-enum {
-    e_tlv_header_length_not_match  = 1,
-    e_tlv_header_no_body           = 2,
-    e_tlv_invalid_id               = 3,
-    e_tlv_invalid_object_size      = 4,
-    e_tlv_invalid_short_size       = 5,
-    e_tlv_too_small                = 6,
-    e_tlv_too_big                  = 7,
-    e_tlv_not_support_multi        = 8,
-    e_tlv_max_multi                = 9,
-};
-
 typedef uint8  tlv_u8_t;
 typedef uint16 tlv_u16_t;
 typedef uint32 tlv_u32_t;
@@ -42,22 +30,22 @@ typedef struct {
 #define XDR_IP(_addr)   (_addr)->ip[0]
 
 #if 1
-#define TLV_T_MAPPER(_) \
-    _(TLV_T,    u8,     0), \
-    _(TLV_T,    u16,      1), \
-    _(TLV_T,    u32,      2), \
-    _(TLV_T,    u64,      3), \
-    _(TLV_T,    i8,       4), \
-    _(TLV_T,    i16,      5), \
-    _(TLV_T,    i32,      6), \
-    _(TLV_T,    i64,      7), \
-    _(TLV_T,    string,   8), \
-    _(TLV_T,    binary,   9), \
-    _(TLV_T,    object,   10),\
-    _(TLV_T,    time,     11),\
-    _(TLV_T,    duration, 12),\
-    _(TLV_T,    ip4,      13),\
-    _(TLV_T,    ip6,      14),\
+#define TLV_T_MAPPER(_)         \
+    _(TLV_T,    u8,         0), \
+    _(TLV_T,    u16,        1), \
+    _(TLV_T,    u32,        2), \
+    _(TLV_T,    u64,        3), \
+    _(TLV_T,    i8,         4), \
+    _(TLV_T,    i16,        5), \
+    _(TLV_T,    i32,        6), \
+    _(TLV_T,    i64,        7), \
+    _(TLV_T,    string,     8), \
+    _(TLV_T,    binary,     9), \
+    _(TLV_T,    object,     10),\
+    _(TLV_T,    time,       11),\
+    _(TLV_T,    duration,   12),\
+    _(TLV_T,    ip4,        13),\
+    _(TLV_T,    ip6,        14),\
     /* end */
 DECLARE_ENUM(TLV_T, tlv_type, TLV_T_MAPPER, TLV_T_END);
 
@@ -67,20 +55,12 @@ static inline int tlv_type_getidbyname(const char *name);
 
 #define TLV_T_u8        TLV_T_u8
 #define TLV_T_u16       TLV_T_u16
-#define TLV_T_u32       TLV_T_u32
-#define TLV_T_u64       TLV_T_u64
 #define TLV_T_i8        TLV_T_i8
 #define TLV_T_i16       TLV_T_i16
-#define TLV_T_i32       TLV_T_i32
-#define TLV_T_i64       TLV_T_i64
 #define TLV_T_string    TLV_T_string
-#define TLV_T_binary    TLV_T_binary
 #define TLV_T_object    TLV_T_object
-#define TLV_T_time      TLV_T_time
-#define TLV_T_duration  TLV_T_duration
-#define TLV_T_ip4       TLV_T_ip4
-#define TLV_T_ip6       TLV_T_ip6
 #define TLV_T_END       TLV_T_END
+#undef __ENUM_PREFIX__
 #endif
 
 enum {
@@ -101,9 +81,6 @@ static inline bool is_good_xdr_file(int id);
 static inline char *xdr_file_getnamebyid(int id);
 static inline int xdr_file_getidbyname(const char *name);
 
-#define XDR_FILE_file   XDR_FILE_file
-#define XDR_FILE_http   XDR_FILE_http
-#define XDR_FILE_cert   XDR_FILE_cert
 #define XDR_FILE_END    XDR_FILE_END
 #endif
 
@@ -398,58 +375,58 @@ struct tlv_st {
 
 static inline tlv_ops_t *tlv_ops(tlv_t *tlv) { return TLV_OPS(tlv->id); }
 
-#define tlv_extend(_tlv)       (_tlv)->h.e.e
+#define tlv_extend(_tlv)        (_tlv)->h.e.e
 
-#define tlv_data_n(_tlv)       (_tlv)->d.data
-#define tlv_data_e(_tlv)       (_tlv)->d.e.data
-#define tlv_data(_tlv)         (tlv_extend(_tlv)?tlv_data_e(_tlv):tlv_data_n(_tlv))
+#define tlv_data_n(_tlv)        (_tlv)->d.data
+#define tlv_data_e(_tlv)        (_tlv)->d.e.data
+#define tlv_data(_tlv)          (tlv_extend(_tlv)?tlv_data_e(_tlv):tlv_data_n(_tlv))
 
-#define tlv_len_n(_tlv)        (_tlv)->h.n.len
-#define tlv_len_e(_tlv)        (_tlv)->d.e.len
-#define tlv_len(_tlv)          (tlv_extend(_tlv)?tlv_len_e(_tlv):tlv_len_n(_tlv))
+#define tlv_len_n(_tlv)         (_tlv)->h.n.len
+#define tlv_len_e(_tlv)         (_tlv)->d.e.len
+#define tlv_len(_tlv)           (tlv_extend(_tlv)?tlv_len_e(_tlv):tlv_len_n(_tlv))
 
-#define tlv_hdrlen_e           sizeof(tlv_t)
-#define tlv_hdrlen_n           (sizeof(tlv_t)-sizeof(uint32))
-#define tlv_hdrlen(_tlv)       (tlv_extend(_tlv)?tlv_hdrlen_e:tlv_hdrlen_n)
+#define tlv_hdrlen_e            sizeof(tlv_t)
+#define tlv_hdrlen_n            (sizeof(tlv_t)-sizeof(uint32))
+#define tlv_hdrlen(_tlv)        (tlv_extend(_tlv)?tlv_hdrlen_e:tlv_hdrlen_n)
 
-#define tlv_datalen_e(_tlv)    (tlv_len_e(_tlv)-tlv_hdrlen_e)
-#define tlv_datalen_n(_tlv)    (tlv_len_n(_tlv)-tlv_hdrlen_n)
-#define tlv_datalen(_tlv)      (tlv_extend(_tlv)?tlv_datalen_e(_tlv):tlv_datalen_n(_tlv))
+#define tlv_datalen_e(_tlv)     (tlv_len_e(_tlv)-tlv_hdrlen_e)
+#define tlv_datalen_n(_tlv)     (tlv_len_n(_tlv)-tlv_hdrlen_n)
+#define tlv_datalen(_tlv)       (tlv_extend(_tlv)?tlv_datalen_e(_tlv):tlv_datalen_n(_tlv))
 
-#define tlv_strlen(_tlv)       (tlv_datalen(_tlv) - (_tlv)->pad)
-#define tlv_binlen(_tlv)       (tlv_datalen(_tlv) - (_tlv)->pad)
+#define tlv_strlen(_tlv)        (tlv_datalen(_tlv) - (_tlv)->pad)
+#define tlv_binlen(_tlv)        (tlv_datalen(_tlv) - (_tlv)->pad)
 
-#define tlv_first(_tlv_header) (tlv_t *)tlv_data(_tlv_header)
-#define tlv_next(_tlv)         (tlv_t *)((byte *)(_tlv) + tlv_len(_tlv))
+#define tlv_first(_tlv_header)  (tlv_t *)tlv_data(_tlv_header)
+#define tlv_next(_tlv)          (tlv_t *)((byte *)(_tlv) + tlv_len(_tlv))
 
-#define tlv_u8(_tlv)       (_tlv)->pad
-#define tlv_u16(_tlv)      (*(uint16 *)tlv_data(_tlv))
-#define tlv_u32(_tlv)      (*(uint32 *)tlv_data(_tlv))
-#define tlv_u64(_tlv)      (*(uint64 *)tlv_data(_tlv))
+#define tlv_u8(_tlv)        (_tlv)->pad
+#define tlv_u16(_tlv)       (*(uint16 *)tlv_data(_tlv))
+#define tlv_u32(_tlv)       (*(uint32 *)tlv_data(_tlv))
+#define tlv_u64(_tlv)       (*(uint64 *)tlv_data(_tlv))
 
-#define tlv_i8(_tlv)       (_tlv)->pad
-#define tlv_i16(_tlv)      (*(int16 *)tlv_data(_tlv))
-#define tlv_i32(_tlv)      (*(int32 *)tlv_data(_tlv))
-#define tlv_i64(_tlv)      (*(int64 *)tlv_data(_tlv))
+#define tlv_i8(_tlv)        (_tlv)->pad
+#define tlv_i16(_tlv)       (*(int16 *)tlv_data(_tlv))
+#define tlv_i32(_tlv)       (*(int32 *)tlv_data(_tlv))
+#define tlv_i64(_tlv)       (*(int64 *)tlv_data(_tlv))
 
-#define tlv_time(_tlv)     (*(tlv_time_t *)tlv_data(_tlv))
-#define tlv_duration(_tlv) (*(tlv_duration_t *)tlv_data(_tlv))
+#define tlv_time(_tlv)      (*(tlv_time_t *)tlv_data(_tlv))
+#define tlv_duration(_tlv)  (*(tlv_duration_t *)tlv_data(_tlv))
 
-#define tlv_ip4(_tlv)      (*(uint32 *)tlv_data(_tlv))
-#define tlv_ip6(_tlv)      ((xdr_ipaddr_t *)tlv_data(_tlv))
+#define tlv_ip4(_tlv)       (*(uint32 *)tlv_data(_tlv))
+#define tlv_ip6(_tlv)       ((xdr_ipaddr_t *)tlv_data(_tlv))
 
-#define tlv_string(_tlv)   ((char *)tlv_data(_tlv))
-#define tlv_binary(_tlv)   tlv_data(_tlv)
+#define tlv_string(_tlv)    ((char *)tlv_data(_tlv))
+#define tlv_binary(_tlv)    tlv_data(_tlv)
 
-#define tlv_session(_tlv)      (tlv_session_t *)tlv_data(_tlv)
-#define tlv_session_st(_tlv)   (tlv_session_st_t *)tlv_data(_tlv)
-#define tlv_session_time(_tlv) (tlv_session_time_t *)tlv_data(_tlv)
-#define tlv_service_st(_tlv)   (tlv_service_st_t *)tlv_data(_tlv)
-#define tlv_tcp(_tlv)          (tlv_tcp_t *)tlv_data(_tlv)
-#define tlv_L7(_tlv)           (tlv_L7_t *)tlv_data(_tlv)
-#define tlv_http(_tlv)         (tlv_http_t *)tlv_data(_tlv)
-#define tlv_sip(_tlv)          (tlv_sip_t *)tlv_data(_tlv)
-#define tlv_rtsp(_tlv)         (tlv_rtsp_t *)tlv_data(_tlv)
+#define tlv_session(_tlv)       (tlv_session_t *)tlv_data(_tlv)
+#define tlv_session_st(_tlv)    (tlv_session_st_t *)tlv_data(_tlv)
+#define tlv_session_time(_tlv)  (tlv_session_time_t *)tlv_data(_tlv)
+#define tlv_service_st(_tlv)    (tlv_service_st_t *)tlv_data(_tlv)
+#define tlv_tcp(_tlv)           (tlv_tcp_t *)tlv_data(_tlv)
+#define tlv_L7(_tlv)            (tlv_L7_t *)tlv_data(_tlv)
+#define tlv_http(_tlv)          (tlv_http_t *)tlv_data(_tlv)
+#define tlv_sip(_tlv)           (tlv_sip_t *)tlv_data(_tlv)
+#define tlv_rtsp(_tlv)          (tlv_rtsp_t *)tlv_data(_tlv)
 
 static inline int
 tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv))
@@ -458,10 +435,10 @@ tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv))
 
     while(left>0) {
         if (left < tlv_hdrlen(tlv)) {
-            return -e_tlv_too_small;
+            return -ETOOSMALL;
         }
         else if (left < tlv_len(tlv)) {
-            return -e_tlv_too_small;
+            return -ETOOSMALL;
         }
         
         err = (*walk)(tlv);
@@ -527,7 +504,7 @@ tlv_check_fixed(tlv_t *tlv)
         case TLV_T_i8:
             if (0 != dlen) {
                 return tlv_error(tlv, 
-                    -e_tlv_invalid_short_size,
+                    -EINVAL9,
                     "tlv check fixed i8");
             }
             
@@ -536,7 +513,7 @@ tlv_check_fixed(tlv_t *tlv)
         case TLV_T_i16:
             if (sizeof(uint32) != dlen) {
                 return tlv_error(tlv, 
-                    -e_tlv_invalid_short_size,
+                    -EINVAL8,
                     "tlv check fixed i16");
             }
 
@@ -544,7 +521,7 @@ tlv_check_fixed(tlv_t *tlv)
         default:
             if (dlen != ops->maxsize) {
                 return tlv_error(tlv, 
-                    -e_tlv_invalid_object_size,
+                    -EINVAL7,
                     "tlv check fixed other");
             }
 
@@ -562,12 +539,12 @@ tlv_check_dynamic(tlv_t *tlv)
     
     if (ops->minsize && dlen < ops->minsize) {
         return tlv_error(tlv, 
-            -e_tlv_too_small,
+            -ETOOSMALL,
             "tlv check dynamic too small");
     }
     else if (ops->maxsize && dlen > ops->maxsize) {
         return tlv_error(tlv, 
-            -e_tlv_too_big,
+            -ETOOBIG,
             "tlv check dynamic too big");
     }
 
@@ -580,13 +557,13 @@ tlv_check(tlv_t *tlv)
     tlv_ops_t *ops = tlv_ops(tlv);
     if (NULL==ops) {
         return tlv_error(tlv, 
-            -e_tlv_invalid_id,
+            -EBADIDX,
             "tlv check invalid id");
     }
 
     if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
         return tlv_error(tlv, 
-            -e_tlv_too_small,
+            -ETOOSMALL,
             "tlv check too small");
     }
 
@@ -979,12 +956,12 @@ tlv_cache_save(tlv_cache_t *cache, tlv_t *tlv)
                 
                 tlv_dprint("save record multi tlv id:%d", tlv->id);
             } else {
-                err = -e_tlv_not_support_multi;
+                err = -ENOSUPPORT;
             }
         }
     }
     else {
-        err = -e_tlv_max_multi;
+        err = -ENOSPACE;
     }
 
     return err;

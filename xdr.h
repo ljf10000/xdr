@@ -11,7 +11,8 @@
 #define XDR_EXPAND      (128*1024)
 #endif
 
-#define XDR_ALIGN(x)    OS_ALIGN(x, 4)
+#define XDR_ALIGN(x)        OS_ALIGN(x, 4)
+#define XDR_EXPAND_ALIGN(x) OS_ALIGN(x, XDR_EXPAND)
 
 typedef uint32 xdr_offset_t;
 typedef uint32 xdr_size_t;
@@ -480,12 +481,13 @@ static inline int
 xb_mmap(xdr_buffer_t *x, bool readonly)
 {
     int prot = readonly?PROT_READ:PROT_WRITE;
-
+    int flag = readonly?MAP_PRIVATE:MAP_SHARED;
+    
     if (!readonly) {
         ftruncate(x->fd, x->size);
     }
 
-    x->u.buffer = mmap(NULL, x->size, prot, MAP_PRIVATE, x->fd, 0);
+    x->u.buffer = mmap(NULL, x->size, prot, flag, x->fd, 0);
     if (NULL==x->u.buffer) {
         return -errno;
     }
@@ -572,7 +574,7 @@ static inline int
 xb_expand(xdr_buffer_t *x, xdr_size_t size)
 {
     if (false==xb_enought(x, size)) {
-        x->size += os_max(XDR_EXPAND, size);
+        x->size += XDR_EXPAND_ALIGN(size);
         
         int err = xb_reopen(x, false);
         if (err<0) {
@@ -604,11 +606,9 @@ xb_pre_obj(xdr_buffer_t *x, xdr_size_t size, xdr_offset_t *poffset)
     }
     
     void *p = xb_pre(x, size);
-    if (NULL==p) {
-        return NULL;
+    if (p) {
+        *poffset = xb_offset(x, p);
     }
-
-    *poffset = xb_offset(x, p);
 
     return p;
 }
@@ -674,13 +674,28 @@ xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, tlv_t *tlv)
 static inline int
 xb_pre_file_from_buffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 {
-    xdr_size_t size = tlv_datalen(tlv);
-    byte *buf = tlv_data(tlv);
+    char filename[1+OS_FILENAME_LEN] = {0};
+    char digest[1+2*XDR_DIGEST_SIZE] = {0};
     
-    file->offset = 0; // todo: save local file
+    xdr_size_t size = tlv_binlen(tlv);
+    byte *buf = tlv_data(tlv);
 
     file->size     = size;
     sha256(buf, size, file->digest);
+
+    file->offset = 0; // todo: save local file
+
+    os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
+    os_saprintf(filename, "%s/%s", x->path, digest);
+
+    void *mem = os_mmap(filename, size, 0, false);
+    if (NULL==mem) {
+        return -errno;
+    }
+
+    memcpy(mem, buf, size);
+    msync(mem, size, MS_ASYNC);
+    munmap(mem, size);
 
     return 0;
 }
@@ -1450,7 +1465,7 @@ xpair_open(xpair_t *pair)
         goto ERROR;
     }
 
-    xdr->size = 2*size;
+    xdr->size = XDR_EXPAND_ALIGN(size);
     err = xb_open(xdr, false);
     if (err<0) {
         goto ERROR;
