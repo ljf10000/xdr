@@ -538,14 +538,6 @@ xb_close(xdr_buffer_t *x)
     return xb_munmap(x);
 }
 
-static inline int
-xb_reopen(xdr_buffer_t *x, bool readonly)
-{
-    xb_munmap(x);
-
-    return xb_mmap(x, readonly);
-}
-
 static inline void *
 xb_current(xdr_buffer_t *x)
 {
@@ -584,9 +576,11 @@ static inline int
 xb_expand(xdr_buffer_t *x, xdr_size_t size)
 {
     if (false==xb_enought(x, size)) {
+        xb_munmap(x);
+
         x->size += XDR_EXPAND_ALIGN(size);
-        
-        int err = xb_reopen(x, false);
+
+        int err = xb_mmap(x, false);
         if (err<0) {
             return err;
         }
@@ -642,15 +636,19 @@ xb_pre_array(xdr_buffer_t *x, xdr_array_t *a, int type, xdr_size_t size, int cou
 static inline xdr_string_t *
 xb_pre_string(xdr_buffer_t *x, xdr_string_t *obj, void *buf, xdr_size_t size)
 {
+    xdr_dprint("xb_pre_string ...");
     xdr_string_t *p = (xdr_string_t *)xb_pre(x, XDR_ALIGN(1+size));
     if (NULL==p) {
         return NULL;
     }
+    xdr_dprint("xb_pre_string 1...");
     xdr_strcpy(p, buf, size);
+    xdr_dprint("xb_pre_string 2...");
     
     obj->size = size;
     obj->offset = xb_offset(x, p);
 
+    xdr_dprint("xb_pre_string ok.");
     return p;
 }
 
