@@ -478,13 +478,14 @@ struct xdr_buffer_st {
     } u;
 
     int             fd;
-    xdr_size_t      size;
-    xdr_offset_t    current;
+    xdr_size_t      size;       // include xdr_t header
+    xdr_offset_t    current;    // include xdr_t header
 };
 #define XBUFFER_INITER(_file, _path) { \
-    .file = _file,  \
-    .path = _path,  \
-    .fd   = -1,     \
+    .file = _file,              \
+    .path = _path,              \
+    .fd   = -1,                 \
+    .current = sizeof(xdr_t),   \
 } /* end */
 
 static inline int
