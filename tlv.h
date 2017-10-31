@@ -88,7 +88,7 @@ getdirbyflag(int flag)
         return "http";
     }
     else if(TLV_F_SSL & flag) {
-        return "ssl"
+        return "ssl";
     }
     else {
         return NULL;
