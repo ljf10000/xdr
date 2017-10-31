@@ -26,6 +26,18 @@ static char EVBUF[EVCOUNT * EVSIZE(NAME_MAX)];
 
 static char *self;
 
+static inline void
+ev_debug(inotify_ev_t *ev)
+{
+    if (ev->mask & IN_CLOSE_WRITE) {
+        xdr_dprint("event close write %s", ev->name);
+    }
+
+    if (ev->mask & IN_MOVED_TO) {
+        xdr_dprint("event move to %s", ev->name);
+    }
+}
+
 static struct {
     char *name;
     uint32 flag;
@@ -78,6 +90,7 @@ static int remove_handle(inotify_ev_t *ev, char *path[PATH_END])
 
 static int handle(inotify_ev_t *ev, char *path[PATH_END])
 {
+   
     if (ISXDR(ev)) {
         return xdr_handle(ev, path);
     } else {
@@ -110,6 +123,8 @@ static int run(char *path[PATH_END])
 
         for (; ev<end; ev=EVNEXT(ev)) {
             if (ev->mask & EVMASK) {
+                ev_debug(ev);
+                
                 err = handle(ev, path);
                 if (err<0) {
                     return err;
