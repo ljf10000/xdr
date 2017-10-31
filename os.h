@@ -758,11 +758,9 @@ inotify_ev_next(inotify_ev_t *ev)
 static inline int 
 inotify_ev_len(inotify_ev_t *ev)
 {
-    char *p = ev->name + ev->len - 1;
+    char *p = ev->name + ev->len;
 
-    while(0==*p--) {
-        ;
-    }
+    do{}while(0==*--p);
 
     return p - ev->name + 1;
 }
