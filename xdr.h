@@ -759,21 +759,17 @@ xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 static inline int
 xb_pre_file_ex(xdr_buffer_t *x, xdr_offset_t *poffset, tlv_t *tlv)
 {
-    xdr_dprint("xb_pre_file_ex ...");
     xdr_file_t *file = (xdr_file_t *)xb_pre(x, sizeof(xdr_file_t));
     if (NULL==file) {
         return -ENOMEM;
     }
-    xdr_dprint("xb_pre_file_ex 1...");
 
     int err = xb_pre_file(x, file, tlv);
     if (err<0) {
         return err;
     }
-    xdr_dprint("xb_pre_file_ex 2...");
 
     *poffset = xb_offset(x, file);
-    xdr_dprint("xb_pre_file_ex ok.");
 
     return 0;
 }
