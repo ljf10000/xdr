@@ -28,7 +28,7 @@ static inline void
 ev_debug(inotify_ev_t *ev)
 {
     if (ev->mask & IN_CLOSE_WRITE) {
-        xdr_dprint("event close write";
+        xdr_dprint("event close write");
     }
 
     if (ev->mask & IN_MOVED_TO) {
