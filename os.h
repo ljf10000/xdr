@@ -186,6 +186,14 @@
     } \
 }while(0)
 
+#ifndef os_memzero
+#define os_memzero(_obj, _size)         memset(_obj, 0, _size)
+#endif
+
+#ifndef os_objzero
+#define os_objzero(_obj)                os_memzero(_obj, sizeof(*(_obj)))
+#endif
+
 #ifndef os_count_of
 #define os_count_of(x)                  (sizeof(x)/sizeof((x)[0]))
 #endif

@@ -1495,7 +1495,8 @@ xpair_open(xpair_t *pair)
     if (err<0) {
         goto ERROR;
     }
-
+    os_objzero(xdr->u.xdr);
+    
     return 0;
 ERROR:
     xpair_close(pair);
