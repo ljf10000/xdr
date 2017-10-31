@@ -207,10 +207,7 @@
 #endif
 
 #ifndef os_objdcpy
-#define os_objdcpy(_dst, _src)          ({ \
-    os_println("os_objdcpy dst=0x%x, src=0x%x, size=%d", _dst, _src, sizeof(*(_dst))); \
-    memcpy(_dst, _src, sizeof(*(_dst))); \
-})
+#define os_objdcpy(_dst, _src)          memcpy(_dst, _src, sizeof(*(_dst)))
 #endif
 
 #ifndef os_objcpy

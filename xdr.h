@@ -498,12 +498,10 @@ xb_mmap(xdr_buffer_t *x, bool readonly)
         ftruncate(x->fd, x->size);
     }
 
-    xdr_dprint("xb_mmap ...");
     x->u.buffer = mmap(NULL, x->size, prot, flag, x->fd, 0);
     if (NULL==x->u.buffer) {
         return -errno;
     }
-    xdr_dprint("xb_mmap 0x%x ok.", x->u.buffer);
 
     return 0;
 }
@@ -512,9 +510,7 @@ static inline int
 xb_munmap(xdr_buffer_t *x)
 {
     if (x->u.buffer) {
-        xdr_dprint("xb_munmap 0x%x ...", x->u.buffer);
         munmap(x->u.buffer, x->size); x->u.buffer = NULL;
-        xdr_dprint("xb_munmap ok.", x->u.buffer);
     }
 
     return 0;
@@ -647,21 +643,15 @@ xb_pre_array(xdr_buffer_t *x, xdr_array_t *a, int type, xdr_size_t size, int cou
 static inline xdr_string_t *
 xb_pre_string(xdr_buffer_t *x, xdr_string_t *obj, void *buf, xdr_size_t size)
 {
-    xdr_dprint("xb_pre_string base=0x%x obj=0x%x ...", x->u.buffer, obj);
     void *p = xb_pre(x, XDR_ALIGN(1+size));
     if (NULL==p) {
         return NULL;
     }
-    xdr_dprint("xb_pre_string base=0x%x obj=0x%x 1...", x->u.buffer, obj);
     
     xdr_strcpy(p, buf, size);
-    xdr_dprint("xb_pre_string base=0x%x obj=0x%x 2...", x->u.buffer, obj);
     
     obj->size = size;
-    xdr_dprint("xb_pre_string base=0x%x obj=0x%x 3...", x->u.buffer, obj);
     obj->offset = xb_offset(x, p);
-
-    xdr_dprint("xb_pre_string base=0x%x obj=0x%x ok.", x->u.buffer, obj);
 
     return p;
 }
@@ -851,17 +841,11 @@ xb_pre_ssl(xdr_buffer_t *x)
 }
 
 #define tlv_to_xdr_by(_x, _tlv, _field, _nt)    ({(_x)->u.xdr->_field = tlv_##_nt(_tlv); 0; })
-#define tlv_to_xdr_obj(_x, _tlv, _obj)         ({ \
-    xdr_dprint("tlv_to_xdr_obj 1 ..."); \
-    tlv_##_obj##_t *__src = tlv_##_obj(_tlv);     \
-    xdr_dprint("tlv_to_xdr_obj 2 src=0x%x size=%d...", __src, sizeof(*__src)); \
+#define tlv_to_xdr_obj(_x, _tlv, _obj)          ({ \
+    tlv_##_obj##_t *__src = tlv_##_obj(_tlv);       \
     xdr_##_obj##_t *__dst = xb_pre_##_obj(_x);      \
-    xdr_dprint("tlv_to_xdr_obj 3 dst=0x%x size=%d...", __dst, sizeof(*__dst)); \
-    xdr_dprint("tlv_to_xdr_obj 4 base=0x%x size=%d current=0x%x left=%d...", \
-        (_x)->u.buffer, (_x)->size, xb_current(_x), xb_left(_x)); \
                                                     \
     os_objcpy(__dst, __src);                        \
-    xdr_dprint("tlv_to_xdr_obj 5 ..."); \
                                                     \
     0;                                              \
 })  /* end */
@@ -921,11 +905,7 @@ tlv_to_xdr_session_st(xdr_buffer_t *x, tlv_t *tlv)
 static inline int
 tlv_to_xdr_service_st(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xdr_dprint("tlv_to_xdr_service_st %d ...", tlv->id);
-    int err = tlv_to_xdr_obj(x, tlv, service_st);
-    xdr_dprint("tlv_to_xdr_service_st %d ok.", tlv->id);
-
-    return err;
+    return tlv_to_xdr_obj(x, tlv, service_st);
 }
 
 static inline int
@@ -943,11 +923,7 @@ tlv_to_xdr_session_time(xdr_buffer_t *x, tlv_t *tlv)
 static inline int
 tlv_to_xdr_tcp(xdr_buffer_t *x, tlv_t *tlv)
 {
-    xdr_dprint("tlv_to_xdr_tcp %d ...", tlv->id);
-    int err = tlv_to_xdr_obj(x, tlv, tcp);
-    xdr_dprint("tlv_to_xdr_tcp %d ok.", tlv->id);
-
-    return err;
+    return tlv_to_xdr_obj(x, tlv, tcp);
 }
 
 static inline int
