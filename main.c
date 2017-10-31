@@ -90,7 +90,6 @@ static int remove_handle(inotify_ev_t *ev, char *path[PATH_END])
 
 static int handle(inotify_ev_t *ev, char *path[PATH_END])
 {
-   
     if (ISXDR(ev)) {
         return xdr_handle(ev, path);
     } else {
