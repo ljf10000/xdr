@@ -1404,12 +1404,12 @@ tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
                 ops = tlv_ops(tlv);
 
                 if (ops->toxdr) {
-                    xdr_dprint("toxdr %d ...", i);
+                    xdr_dprint("toxdr %d:%d ...", i, tlv->id);
                     err = (*ops->toxdr)(x, tlv);
                     if (err<0) {
                         return err;
                     }
-                    xdr_dprint("toxdr %d ok.", i);
+                    xdr_dprint("toxdr %d:%d ok.", i, tlv->id);
                 }
             }
         }
