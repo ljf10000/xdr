@@ -703,6 +703,8 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
             tlv_len(tlv),
             tlv_hdrlen(tlv),
             tlv_datalen(tlv));
+
+        return 0;
     }
     
     sha256(buf, len, file->digest);
