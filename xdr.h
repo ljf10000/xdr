@@ -640,22 +640,22 @@ xb_pre_array(xdr_buffer_t *x, xdr_array_t *a, int type, xdr_size_t size, int cou
 static inline xdr_string_t *
 xb_pre_string(xdr_buffer_t *x, xdr_string_t *obj, void *buf, xdr_size_t size)
 {
-    xdr_dprint("xb_pre_string base=0x%x ...", x->u.buffer);
+    xdr_dprint("xb_pre_string base=0x%x obj=0x%x ...", x->u.buffer, obj);
     void *p = xb_pre(x, XDR_ALIGN(1+size));
     if (NULL==p) {
         return NULL;
     }
-    xdr_dprint("xb_pre_string base=0x%x ok.", x->u.buffer);
+    xdr_dprint("xb_pre_string base=0x%x obj=0x%x 1...", x->u.buffer, obj);
     
-    xdr_dprint("xb_pre_string 1...");
     xdr_strcpy(p, buf, size);
-    xdr_dprint("xb_pre_string 2...");
+    xdr_dprint("xb_pre_string base=0x%x obj=0x%x 2...", x->u.buffer, obj);
     
     obj->size = size;
-    xdr_dprint("xb_pre_string 3...");
+    xdr_dprint("xb_pre_string base=0x%x obj=0x%x 3...", x->u.buffer, obj);
     obj->offset = xb_offset(x, p);
 
-    xdr_dprint("xb_pre_string ok.");
+    xdr_dprint("xb_pre_string base=0x%x obj=0x%x ok.", x->u.buffer, obj);
+
     return p;
 }
 
