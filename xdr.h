@@ -1410,16 +1410,20 @@ tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
         }
         xdr_dprint("tlv ==> xdr %d ok.", i);
     }
-    
+
+    xdr_dprint("tlv ==> xdr ssl ...");
     err = tlv_record_to_xdr_ssl(r, x);
     if (err<0) {
         return err;
     }
+    xdr_dprint("tlv ==> xdr ssl ok.");
 
+    xdr_dprint("tlv ==> xdr dns ...");
     err = tlv_record_to_xdr_dns(r, x);
     if (err<0) {
         return err;
     }
+    xdr_dprint("tlv ==> xdr dns ok.");
 
     return 0;
 }
