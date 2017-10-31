@@ -695,6 +695,14 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
     char digest[1+2*XDR_DIGEST_SIZE] = {0};
     byte *buf   = tlv_data(tlv);
     int len     = tlv_binlen(tlv);
+    if (len<0) {
+        xdr_dprint("tlv extern %d, pad=%d, len=%d, hdrlen=%d, datalen=%d", 
+            tlv_extend(tlv), 
+            tlv->pad,
+            tlv_len(tlv),
+            tlv_hdrlen(tlv),
+            tlv_datalen(tlv))
+    }
     
     sha256(buf, len, file->digest);
     file->size = len;
