@@ -1474,7 +1474,7 @@ tlv_close(xdr_buffer_t *x)
 static inline int
 xdr_open(xdr_buffer_t *x, int size)
 {
-    x->size = XDR_EXPAND_ALIGN(size);
+    x->size = (xdr_size_t)XDR_EXPAND_ALIGN(size);
     
     int err = xb_open(x, false);
     if (0==err) {
@@ -1560,10 +1560,12 @@ tlv_to_xdr(xpair_t *pair)
         return 0;
     }
 
+    tlv_dprint("xpair_open ...");
     err = xpair_open(pair);
     if (err<0) {
         goto ERROR;
     }
+    tlv_dprint("xpair_open ok.");
 
     err = tlv_walk(pair->tlv.u.tlv, pair->tlv.size, walk);
     if (err<0) {
