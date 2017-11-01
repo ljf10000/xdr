@@ -244,7 +244,7 @@ typedef struct {
     tlv_mapper_duration(_, 34, ftp_response_delay, 0) \
     tlv_mapper_duration(_, 35, ftp_trans_duration, 0) \
     tlv_mapper_u16(_,      36, mail_msg_type, 0) \
-    tlv_mapper_i16(_,      37, mail_status_code, 0) \
+    tlv_mapper_u16(_,      37, mail_status_code, 0) \
     tlv_mapper_string(_,   38, mail_user, 0) \
     tlv_mapper_string(_,   39, mail_sender, 0) \
     tlv_mapper_u32(_,      40, mail_length, 0) \
