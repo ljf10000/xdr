@@ -613,10 +613,10 @@ xb_expand(xdr_buffer_t *x, xdr_size_t size)
 
         xdr_trace("xb_mmap ...");
         int err = xb_mmap(x, false);
+        xdr_trace("xb_mmap %s:%d.", ok_string(err), err);
         if (err<0) {
             return err;
         }
-        xdr_trace("xb_mmap ok.");
     }
 
     return 0;
@@ -1444,12 +1444,12 @@ tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
                     }
                     
                     err = (*ops->toxdr)(x, tlv);
-                    if (err<0) {
-                        return err;
+                    if (tlv->id>200) {
+                        xdr_trace("toxdr %d:%d %s:%d.", j, tlv->id, ok_string(err), err);
                     }
                     
-                    if (tlv->id>200) {
-                        xdr_trace("toxdr %d:%d ok.", j, tlv->id);
+                    if (err<0) {
+                        return err;
                     }
                 }
             }
@@ -1565,17 +1565,17 @@ tlv_to_xdr(xpair_t *pair)
 
         tlv_trace("tlv_record_parse ...");
         err = tlv_record_parse(&r);
+        tlv_trace("tlv_record_parse %s:%d.", ok_string(err), err);
         if (err<0) {
             return err;
         }
-        tlv_trace("tlv_record_parse ok.");
 
         tlv_trace("tlv_record_to_xdr ...");
         err = tlv_record_to_xdr(&r, &pair->xdr);
+        tlv_trace("tlv_record_to_xdr %s:%d.", ok_string(err), err);
         if (err<0) {
             return err;
         }
-        tlv_trace("tlv_record_to_xdr ok.");
         
         pair->count++;
 

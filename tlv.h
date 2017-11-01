@@ -963,17 +963,17 @@ tlv_record_parse(tlv_record_t *r)
 
         tlv_trace("tlv_check ...");
         err = tlv_check(tlv);
+        tlv_trace("tlv_check %s:%d.", ok_string(err), err);
         if (err<0) {
             return err;
         }
-        tlv_trace("tlv_check ok.");
 
         tlv_trace("tlv_record_save ...");
         err = tlv_record_save(r, tlv);
+        tlv_trace("tlv_record_save %s:%d.", ok_string(err), err);
         if (err<0) {
             return err;
         }
-        tlv_trace("tlv_record_save ok.");
 
         if (is_tlv_opt(TLV_OPT_DUMP)) {
             tlv_dump(tlv);

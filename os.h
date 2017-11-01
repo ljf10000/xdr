@@ -306,16 +306,28 @@
 #define __no            "no"
 #endif
 
+#ifndef __error
+#define __error         "error"
+#endif
+
+#ifndef __ok
+#define __ok            "ok"
+#endif
+
 #ifndef bool_string
 #define bool_string(_is_ture)                       ((_is_ture)?__true:__false)
 #endif
 
 #ifndef success_string
-#define success_string(_is_ture)                    ((_is_ture)?__success:__failed)
+#define success_string(_is_success)                 ((_is_success)?__success:__failed)
 #endif
 
 #ifndef yes_string
-#define yes_string(_is_ture)                        ((_is_ture)?__yes:__no)
+#define yes_string(_is_yes)                         ((_is_yes)?__yes:__no)
+#endif
+
+#ifndef ok_string
+#define ok_string(_err)                             (0==(_err)?__ok:__error)
 #endif
 
 #ifndef os_printf
