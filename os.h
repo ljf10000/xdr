@@ -548,13 +548,8 @@ os_fsize(const char *file)
 {
     struct stat st;
     int err;
-    
-    err = stat(file, &st);
-    if (err<0) {
-        return -errno;
-    } else {
-        return st.st_size;
-    }
+
+    return 0==stat(file, &st)?st.st_size:-errno;
 }
 
 static inline void *

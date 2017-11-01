@@ -1535,7 +1535,9 @@ xpair_open(xpair_t *pair)
     xdr_buffer_t *xdr = &pair->xdr;
     int err;
 
+    tlv_dprint("os_fsize ...");
     int size = os_fsize(tlv->file);
+    tlv_dprint("os_fsize %d", size);
     if (size<0) {
         err = size; goto ERROR;
     }
