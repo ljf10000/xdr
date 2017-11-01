@@ -180,6 +180,10 @@ int main(int argc, char *argv[])
         return usage();
     }
 
+    xdr_dprint("argv[0]=%s", argv[0]);
+    xdr_dprint("argv[1]=%s", argv[1]);
+    xdr_dprint("argv[2]=%s", argv[2]);
+    
     if (is_tlv_opt(TLV_OPT_CLI)) {
         return cli(argv);
     } else {

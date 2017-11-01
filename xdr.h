@@ -508,7 +508,7 @@ struct xdr_buffer_st {
 static inline int
 xb_mmap(xdr_buffer_t *x, bool readonly)
 {
-    int prot = readonly?PROT_READ:PROT_WRITE;
+    int prot = readonly?PROT_READ:PROT_WRITE|PROT_READ;
     int flag = readonly?MAP_PRIVATE:MAP_SHARED;
     int err;
     
@@ -1538,18 +1538,21 @@ xpair_open(xpair_t *pair)
     xdr_buffer_t *xdr = &pair->xdr;
     int size, err;
 
+    xdr_dprint("tlv file=%s", tlv->file);
+    xdr_dprint("xdr file=%s", xdr->file);
+    
     size = os_fsize(tlv->file);
     if (size<0) {
         return size;
     }
 
-    err = xdr_trace(tlv_open(tlv, size), "tlv_open %s:%d", tlv->file, size);
+    err = tlv_trace(tlv_open(tlv, size), "tlv_open %s:%d", tlv->file, size);
     if (err<0) {
         return err;
     }
 
     size = XDR_EXPAND_ALIGN(size);
-    err = xdr_trace(xdr_open(xdr, size), "xdr_open %s:%d", tlv->file, size);
+    err = xdr_trace(xdr_open(xdr, size), "xdr_open %s:%d", xdr->file, size);
     if (err<0) {
         return err;
     }
