@@ -230,6 +230,10 @@
 #define is_good_enum(_id, _end)         is_good_value(_id, 0, _end)
 #endif
 
+#ifndef is_good_fd
+#define is_good_fd(_fd)                 ((_fd)>=0)
+#endif
+
 #ifndef os_min
 #define os_min(_x, _y)  ((_x)<(_y)?(_x):(_y))
 #endif

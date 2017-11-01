@@ -564,7 +564,7 @@ xb_open(xdr_buffer_t *x, bool readonly)
 static inline int
 xb_close(xdr_buffer_t *x)
 {
-    if (x->fd > 0) {
+    if (is_good_fd(x->fd)) {
         close(x->fd); x->fd = -1;
     }
 
