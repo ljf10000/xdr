@@ -547,7 +547,7 @@ xb_munmap(xdr_buffer_t *x)
 }
 
 static inline int
-xb_open(xdr_buffer_t *x, bool readonly)
+xb_open(xdr_buffer_t *x, bool readonly, int size)
 {
     int flag = readonly?O_RDONLY:(O_CREAT|O_RDWR);
 
@@ -557,6 +557,8 @@ xb_open(xdr_buffer_t *x, bool readonly)
         
         return -errno;
     }
+
+    x->size = (xdr_size_t)size;
     
     return xb_mmap(x, readonly);
 }
@@ -1486,9 +1488,7 @@ typedef struct {
 static inline int
 tlv_open(xdr_buffer_t *x, int size)
 {
-    x->size = (xdr_size_t)size;
-
-    return xb_open(x, true);
+    return xb_open(x, true, size);
 }
 
 static inline int
@@ -1500,9 +1500,7 @@ tlv_close(xdr_buffer_t *x)
 static inline int
 xdr_open(xdr_buffer_t *x, int size)
 {
-    x->size = (xdr_size_t)XDR_EXPAND_ALIGN(size);
-    
-    int err = xb_open(x, false);
+    int err = xb_open(x, false, size);
     if (0==err) {
         xdr_init(x->u.xdr);
     }
@@ -1513,8 +1511,13 @@ xdr_open(xdr_buffer_t *x, int size)
 static inline int
 xdr_close(xdr_buffer_t *x)
 {
-    x->u.xdr->total = x->current;
-    ftruncate(x->fd, x->current);
+    if (x->u.xdr) {
+        x->u.xdr->total = x->current;
+    }
+
+    if (is_good_fd(x->fd)) {
+        ftruncate(x->fd, x->current);
+    }
 
     return xb_close(x);
 }
