@@ -503,15 +503,20 @@ xb_mmap(xdr_buffer_t *x, bool readonly)
 {
     int prot = readonly?PROT_READ:PROT_WRITE;
     int flag = readonly?MAP_PRIVATE:MAP_SHARED;
-    
+
+    xdr_dprint("xb_mmap 1...")
     if (!readonly) {
+        xdr_dprint("xb_mmap 1.1...")
         ftruncate(x->fd, x->size);
+        xdr_dprint("xb_mmap 1.2...")
     }
+    xdr_dprint("xb_mmap 2...")
 
     x->u.buffer = mmap(NULL, x->size, prot, flag, x->fd, 0);
     if (NULL==x->u.buffer) {
         return -errno;
     }
+    xdr_dprint("xb_mmap 3...")
 
     return 0;
 }
@@ -1483,6 +1488,8 @@ xdr_open(xdr_buffer_t *x, int size)
         tlv_dprint("xdr_open 2.1...");
         xdr_init(x->u.xdr);
         tlv_dprint("xdr_open 2.2...");
+    } else {
+        tlv_dprint("xdr_open error:%d ...", err);
     }
     tlv_dprint("xdr_open 3...");
 
