@@ -1585,15 +1585,19 @@ tlv_to_xdr(xpair_t *pair)
         return 0;
     }
 
+    tlv_dprint("xpair_open ...");
     err = xpair_open(pair);
     if (err<0) {
         goto ERROR;
     }
+    tlv_dprint("xpair_open ok.");
 
+    tlv_dprint("tlv_walk ...");
     err = tlv_walk(pair->tlv.u.tlv, pair->tlv.size, walk);
     if (err<0) {
         goto ERROR;
     }
+    tlv_dprint("tlv_walk ok.");
 
 ERROR:
     xpair_close(pair);
