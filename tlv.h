@@ -35,17 +35,13 @@ typedef struct {
     _(TLV_T,    u16,        1), \
     _(TLV_T,    u32,        2), \
     _(TLV_T,    u64,        3), \
-    _(TLV_T,    i8,         4), \
-    _(TLV_T,    i16,        5), \
-    _(TLV_T,    i32,        6), \
-    _(TLV_T,    i64,        7), \
-    _(TLV_T,    string,     8), \
-    _(TLV_T,    binary,     9), \
-    _(TLV_T,    object,     10),\
-    _(TLV_T,    time,       11),\
-    _(TLV_T,    duration,   12),\
-    _(TLV_T,    ip4,        13),\
-    _(TLV_T,    ip6,        14),\
+    _(TLV_T,    string,     4), \
+    _(TLV_T,    binary,     5), \
+    _(TLV_T,    object,     6), \
+    _(TLV_T,    time,       7), \
+    _(TLV_T,    duration,   8), \
+    _(TLV_T,    ip4,        9), \
+    _(TLV_T,    ip6,        10),\
     /* end */
 DECLARE_ENUM(TLV_T, tlv_type, TLV_T_MAPPER, TLV_T_END);
 
@@ -55,8 +51,6 @@ static inline int tlv_type_getidbyname(const char *name);
 
 #define TLV_T_u8        TLV_T_u8
 #define TLV_T_u16       TLV_T_u16
-#define TLV_T_i8        TLV_T_i8
-#define TLV_T_i16       TLV_T_i16
 #define TLV_T_string    TLV_T_string
 #define TLV_T_object    TLV_T_object
 #define TLV_T_END       TLV_T_END
@@ -102,11 +96,6 @@ static inline void tlv_dump_u8 (tlv_t *tlv);
 static inline void tlv_dump_u16(tlv_t *tlv);
 static inline void tlv_dump_u32(tlv_t *tlv);
 static inline void tlv_dump_u64(tlv_t *tlv);
-
-static inline void tlv_dump_i8 (tlv_t *tlv);
-static inline void tlv_dump_i16(tlv_t *tlv);
-static inline void tlv_dump_i32(tlv_t *tlv);
-static inline void tlv_dump_i64(tlv_t *tlv);
 
 static inline void tlv_dump_string(tlv_t *tlv);
 static inline void tlv_dump_binary(tlv_t *tlv);
@@ -512,14 +501,12 @@ tlv_check_fixed(tlv_t *tlv)
     
     switch (ops->type) {
         case TLV_T_u8:
-        case TLV_T_i8:
             if (0 != dlen) {
                 return tlv_error(tlv, -EINVAL9, "tlv check fixed i8");
             }
             
             break;
         case TLV_T_u16:
-        case TLV_T_i16:
             if (sizeof(uint32) != dlen) {
                 return tlv_error(tlv, -EINVAL8, "tlv check fixed i16");
             }
@@ -596,11 +583,6 @@ static inline void tlv_dump_u8 (tlv_t *tlv) { TLV_DUMP_BY(tlv, "%u", u8);  }
 static inline void tlv_dump_u16(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%u", u16); }
 static inline void tlv_dump_u32(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%u", u32); }
 static inline void tlv_dump_u64(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%llu", u64); }
-
-static inline void tlv_dump_i8 (tlv_t *tlv) { TLV_DUMP_BY(tlv, "%d", i8);  }
-static inline void tlv_dump_i16(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%d", i16); }
-static inline void tlv_dump_i32(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%d", i32); }
-static inline void tlv_dump_i64(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%lld", i64); }
 
 static inline void tlv_dump_string(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%s", string); }
 
