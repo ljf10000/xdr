@@ -1474,12 +1474,17 @@ tlv_close(xdr_buffer_t *x)
 static inline int
 xdr_open(xdr_buffer_t *x, int size)
 {
+    tlv_dprint("xdr_open 1...");
     x->size = (xdr_size_t)XDR_EXPAND_ALIGN(size);
     
+    tlv_dprint("xdr_open 2...");
     int err = xb_open(x, false);
     if (0==err) {
+        tlv_dprint("xdr_open 2.1...");
         xdr_init(x->u.xdr);
+        tlv_dprint("xdr_open 2.2...");
     }
+    tlv_dprint("xdr_open 3...");
 
     return err;
 }
@@ -1509,24 +1514,20 @@ xpair_open(xpair_t *pair)
     xdr_buffer_t *xdr = &pair->xdr;
     int err;
 
-    tlv_dprint("xpair_open 1...");
     int size = os_fsize(tlv->file);
     if (size<0) {
         err = size; goto ERROR;
     }
-    tlv_dprint("xpair_open 2...");
 
     err = tlv_open(tlv, size);
     if (err<0) {
         goto ERROR;
     }
-    tlv_dprint("xpair_open 3...");
 
     err = xdr_open(xdr, XDR_EXPAND_ALIGN(size));
     if (err<0) {
         goto ERROR;
     }
-    tlv_dprint("xpair_open 4...");
 
     return 0;
 ERROR:
