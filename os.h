@@ -350,6 +350,16 @@
 #define os_println(_fmt, _args...)                  printf(_fmt __crlf, ##_args)
 #endif
 
+#ifndef os_trace
+#define os_trace(_print, _call, _fmt, _args...) ({  \
+    int __err;                                  \
+    _print("try " _fmt " ...", ##_args);        \
+    __err = (_call);                            \
+    _print(__tab "%s:%d " _fmt, ok_string(__err), __err, ##_args); \
+    __err;                                      \
+})  /* end */
+#endif
+
 #ifndef os_sprintf
 #define os_sprintf(_buf, _fmt, _args...)            sprintf(_buf, _fmt, ##_args)
 #endif

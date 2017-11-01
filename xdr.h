@@ -20,12 +20,7 @@
 #define xdr_dprint(_fmt, _args...)      os_do_nothing()
 #endif
 
-#define xdr_trace(_call, _fmt, _args...)    ({  \
-    xdr_dprint("try " _fmt " ...", ##_args);    \
-    int __err = (_call);                        \
-    xdr_dprint(__tab "%s:%d " _fmt, ok_string(__err), __err, ##_args); \
-    __err;                                      \
-})  /* end */
+#define xdr_trace(_call, _fmt, _args...)    os_trace(xdr_dprint, _call, _fmt, ##_args)
 
 #if 1
 #define XDR_ARRAY_MAPPER(_) \
@@ -549,7 +544,7 @@ xb_munmap(xdr_buffer_t *x)
 static inline int
 xb_open(xdr_buffer_t *x, bool readonly, int size)
 {
-    int flag = readonly?O_RDONLY:(O_CREAT|O_RDWR);
+    int flag = readonly?O_RDONLY:(O_CREAT|O_TRUNC|O_RDWR);
 
     x->fd = open(x->file, flag|O_CLOEXEC, 0x644);
     if (x->fd<0) {

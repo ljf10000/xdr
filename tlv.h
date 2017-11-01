@@ -9,13 +9,7 @@
 #define tlv_dprint(_fmt, _args...)      os_do_nothing()
 #endif
 
-#define tlv_trace(_call, _fmt, _args...)    ({  \
-    int __err;                                  \
-    tlv_dprint("try " _fmt " ...", ##_args);    \
-    __err = (_call);                            \
-    tlv_dprint(__tab "%s:%d " _fmt, ok_string(__err), __err, ##_args); \
-    __err;                                      \
-})  /* end */
+#define tlv_trace(_call, _fmt, _args...)    os_trace(tlv_dprint, _call, _fmt, ##_args)
 
 typedef uint8  tlv_u8_t;
 typedef uint16 tlv_u16_t;
