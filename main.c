@@ -28,11 +28,11 @@ static inline void
 ev_debug(inotify_ev_t *ev)
 {
     if (ev->mask & IN_CLOSE_WRITE) {
-        xdr_trace("event close write file:%s", ev->name);
+        xdr_dprint("event close write file:%s", ev->name);
     }
 
     if (ev->mask & IN_MOVED_TO) {
-        xdr_trace("event move to file:%s", ev->name);
+        xdr_dprint("event move to file:%s", ev->name);
     }
 }
 
@@ -63,8 +63,8 @@ static int xdr_handle(inotify_ev_t *ev, char *path[PATH_END])
     os_saprintf(tlv, "%s/%s", path[PATH_TLV], ev->name);
     os_saprintf(xdr, "%s/%s", path[PATH_XDR], ev->name);
 
-    xdr_trace("handle tlv:%s", tlv);
-    xdr_trace("handle xdr:%s", xdr);
+    xdr_dprint("handle tlv:%s", tlv);
+    xdr_dprint("handle xdr:%s", xdr);
     
     int err = tlv_to_xdr(&pair);
     if (err<0) {
@@ -82,7 +82,7 @@ static int remove_handle(inotify_ev_t *ev, char *path[PATH_END])
 
     remove(filename);
     
-    xdr_trace("remove %s", filename);
+    xdr_dprint("remove %s", filename);
     
     return 0;
 }
