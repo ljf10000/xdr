@@ -516,7 +516,7 @@ xb_mmap(xdr_buffer_t *x, bool readonly)
         }
     }
 
-    x->u.buffer = mmap(NULL, x->size, prot, flag, x->fd, 0);
+    x->u.buffer = os_mmap(x->size, prot, flag, x->fd, 0);
     if (NULL==x->u.buffer) {
         os_println("mmap %s error:%d ...", x->file, -errno);
         
@@ -530,7 +530,7 @@ static inline int
 xb_munmap(xdr_buffer_t *x)
 {
     if (x->u.buffer) {
-        int err = munmap(x->u.buffer, x->size); x->u.buffer = NULL;
+        int err = os_munmap(x->u.buffer, x->size);
         if (err<0) {
             os_println("munmap %s error:%d ...", x->file, -errno);
             
@@ -742,9 +742,13 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
     os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
     os_saprintf(filename, "%s/%s/%s", x->path, dir, digest);
 
-    int err = os_mmap_w_async(filename, buf, len);
+#if 0
+    if (os_fexist(filename)) {
+        return 0;
+    }
+#endif
 
-    return err;
+    return os_mmap_w_async(filename, buf, len);
 }
 
 static inline int

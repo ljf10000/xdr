@@ -242,6 +242,18 @@
 #define is_good_fd(_fd)                 ((_fd)>=0)
 #endif
 
+#ifndef os_close
+#define os_close(_fd)       ({ \
+    int __err = 0;              \
+    if (is_good_fd(_fd)) {      \
+        __err = close(_fd);     \
+        _fd = -1;               \
+    }                           \
+                                \
+    __err;                      \
+})  /* end */
+#endif
+
 #ifndef os_min
 #define os_min(_x, _y)  ((_x)<(_y)?(_x):(_y))
 #endif
@@ -573,92 +585,105 @@ os_fsize(const char *file)
     return 0==stat(file, &st)?st.st_size:-errno;
 }
 
-static inline void *
-os_mmap(char *file, size_t length, off_t offset, bool readonly)
+#ifndef os_munmap
+#define os_munmap(_mem, _size)  ({ \
+    int __err = 0;                  \
+    if (_mem) {                     \
+        __err = munmap(_mem, _size);\
+        _mem = NULL;                \
+    }                               \
+                                    \
+    __err;                          \
+})  /* end */
+#endif
+
+#ifndef os_mmap
+#define os_mmap(_size, _prot, _flag, _fd, _offset) \
+    mmap(NULL,  _size, _prot, _flag, _fd, _offset)
+#endif
+
+static inline int
+os_mmap_w(const char *file, void *buf, int len, bool sync)
 {
-    int fflag = readonly?O_RDONLY:(O_CREAT|O_RDWR);
-    int mflag = readonly?MAP_PRIVATE:MAP_SHARED;
-    int prot  = readonly?PROT_READ:(PROT_READ|PROT_WRITE);
-    int err, fd;
-    void *buffer = NULL;
     char *action;
+    void *mem = NULL;
+    int fd = -1, err = 0;
     
-    fd = open(file, fflag|O_CLOEXEC, 0x664);
+    fd = open(file, O_CREAT|O_RDWR, 0x664);
     if (fd<0) {
-        action = "open"; goto ERROR;
+        err = -errno; action = "open"; goto ERROR;
+    }
+    
+    err = ftruncate(fd, len);
+    if (err<0) {
+        err = -errno; action = "ftruncate"; goto ERROR;
     }
 
-    if (0==length) {
-        length = os_fsize(file);
-        if (length<0) {
-            action = "fsize"; goto ERROR;
-        }
+    mem = os_mmap(len, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+    if (NULL==mem) {
+        err = -errno; action = "mmap"; goto ERROR;
     }
-
-    if (!readonly) {
-        err = ftruncate(fd, length);
-        if (err<0) {
-            action = "ftruncate"; goto ERROR;
-        }
-    }
-
-    buffer = mmap(NULL, length, prot, mflag, fd, offset);
-    if (NULL==buffer) {
-        action = "mmap"; goto ERROR;
-    }
-    close(fd);
+    
+    memcpy(mem, buf, len);
+    msync(mem, len, sync?MS_SYNC:MS_ASYNC);
 
 ERROR:
-    if (NULL==buffer) {
+    if (err<0) {
         os_println("%s %s error:%d", action, file, -errno);
     }
+
+    os_munmap(mem, len);
+    os_close(fd);
+
+    return err;
+}
+
+static inline int
+os_mmap_w_sync(const char *file, void *buf, int len)
+{
+    return os_mmap_w(file, buf, len, true);
+}
+
+static inline int
+os_mmap_w_async(const char *file, void *buf, int len)
+{
+    return os_mmap_w(file, buf, len, false);
+}
+
+static inline int
+os_mmap_r(const char *file, int (*handle)(void *buf, int len))
+{
+    char *action;
+    void *mem = NULL;
+    int fd = -1, err = 0, size;
     
-    return buffer;
-}
-
-static inline int
-os_mmap_w(char *file, void *buf, int len, int flag)
-{
-    void *mem = os_mmap(file, len, 0, false);
-    if (NULL==mem) {
-        return -errno;
-    }
-
-    memcpy(mem, buf, len);
-    msync(mem, len, flag);
-    munmap(mem, len);
-
-    return 0;
-}
-
-static inline int
-os_mmap_w_sync(char *file, void *buf, int len)
-{
-    return os_mmap_w(file, buf, len, MS_SYNC);
-}
-
-static inline int
-os_mmap_w_async(char *file, void *buf, int len)
-{
-    return os_mmap_w(file, buf, len, MS_ASYNC);
-}
-
-static inline int
-os_mmap_r(char *file, int (*handle)(void *buf, int len))
-{
-    int size = os_fsize(file);
+    size = os_fsize(file);
     if (size<0) {
-        return size;
+        err = size; action = "fsize"; goto ERROR;
+    }
+
+    fd = open(file, O_RDONLY);
+    if (fd<0) {
+        err = -errno; action = "open"; goto ERROR;
     }
     
-    void *mem = os_mmap(file, size, 0, true);
+    mem = os_mmap(size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (NULL==mem) {
-        return -errno;
+        err = -errno; action = "mmap"; goto ERROR;
     }
 
-    int err = (*handle)(mem, size);
+    err = (*handle)(mem, size);
+    if (err<0) {
+        action = "handle"; goto ERROR;
+    }
+    
+ERROR:
+    if (err<0) {
+        os_println("%s %s error:%d", action, file, -errno);
+    }
 
-    munmap(mem, size);
+    os_munmap(mem, size);
+    os_close(fd);
 
     return err;
 }
@@ -738,7 +763,7 @@ os_fdigest(const char *file, byte digest[])
         return 0;
     }
     
-    return os_mmap_r((char *)file, handle);
+    return os_mmap_r(file, handle);
 }
 
 static inline int
