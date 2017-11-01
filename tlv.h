@@ -484,31 +484,26 @@ tlv_dump(tlv_t *tlv)
 }
 
 static inline int
-tlv_error(tlv_t *tlv, int err, char *serr)
+tlv_error(tlv_t *tlv, int err, const char *fmt, ...)
 {
+    va_list args;
+    
     if (err<0) {
+        va_start(args, fmt);
+        err = vprintf(fmt, args);
+        va_end(args);
+        
         tlv_ops_t *ops = tlv_ops(tlv);
 
-        if (TLV_F_FIXED & ops->flag) {
-            os_println("%s tlv name:%s fixed:%d id:%d pad:%d alen:%u hlen:%u dlen:%u", 
-                serr?serr:"",
-                ops->name, 
-                ops->maxsize,
-                tlv->id, 
-                tlv->pad, 
-                tlv_len(tlv),
-                tlv_hdrlen(tlv),
-                tlv_datalen(tlv));
-        } else {
-            os_println("%s tlv name:%s id:%d pad:%d alen:%u hlen:%u dlen:%u", 
-                serr?serr:"",
-                ops->name, 
-                tlv->id, 
-                tlv->pad, 
-                tlv_len(tlv),
-                tlv_hdrlen(tlv),
-                tlv_datalen(tlv));
-        }
+        os_println(__crlf __tab 
+            "tlv name:%s fixed:%d id:%d pad:%d alen:%u hlen:%u dlen:%u", 
+            ops->name, 
+            ops->maxsize,
+            tlv->id, 
+            tlv->pad, 
+            tlv_len(tlv),
+            tlv_hdrlen(tlv),
+            tlv_datalen(tlv));
     }
 
     return err;
@@ -524,26 +519,20 @@ tlv_check_fixed(tlv_t *tlv)
         case TLV_T_u8:
         case TLV_T_i8:
             if (0 != dlen) {
-                return tlv_error(tlv, 
-                    -EINVAL9,
-                    "tlv check fixed i8");
+                return tlv_error(tlv, -EINVAL9, "tlv check fixed i8");
             }
             
             break;
         case TLV_T_u16:
         case TLV_T_i16:
             if (sizeof(uint32) != dlen) {
-                return tlv_error(tlv, 
-                    -EINVAL8,
-                    "tlv check fixed i16");
+                return tlv_error(tlv, -EINVAL8, "tlv check fixed i16");
             }
 
             break;
         default:
             if (dlen != ops->maxsize) {
-                return tlv_error(tlv, 
-                    -EINVAL7,
-                    "tlv check fixed other");
+                return tlv_error(tlv, -EINVAL7, "tlv check fixed other");
             }
 
             break;
@@ -559,9 +548,7 @@ tlv_check_dynamic(tlv_t *tlv)
     uint32 dlen = tlv_datalen(tlv);
     
     if (ops->minsize && dlen < ops->minsize) {
-        return tlv_error(tlv, 
-            -ETOOSMALL,
-            "tlv check dynamic too small");
+        return tlv_error(tlv, -ETOOSMALL, "tlv check dynamic too small");
     }
     else if (ops->maxsize && dlen > ops->maxsize) {
         return tlv_error(tlv, -ETOOBIG, "tlv check dynamic too big");
