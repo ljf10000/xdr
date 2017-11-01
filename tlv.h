@@ -384,7 +384,17 @@ struct tlv_st {
     } d;
 };
 
-static inline tlv_ops_t *tlv_ops(tlv_t *tlv) { return TLV_OPS(tlv->id); }
+static inline tlv_ops_t *
+tlv_ops(tlv_t *tlv) 
+{
+    return is_good_tlv_id(tlv->id)?TLV_OPS(tlv->id):NULL;
+}
+
+static inline int
+tlv_ops_check(tlv_ops_t *ops, tlv_t *tlv) 
+{
+    return ops->check?(*ops->check)(tlv):0;
+}
 
 #define tlv_extend(_tlv)        (_tlv)->h.e.e
 
@@ -567,25 +577,19 @@ tlv_check(tlv_t *tlv)
 {
     tlv_ops_t *ops = tlv_ops(tlv);
     if (NULL==ops) {
-        return tlv_error(tlv, 
-            -EBADIDX,
-            "tlv check invalid id");
+        return tlv_error(tlv, -EBADIDX, "tlv check invalid id");
+    }
+    else if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
+        return tlv_error(tlv, -ETOOSMALL, "tlv check too small");
     }
 
-    if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
-        return tlv_error(tlv, 
-            -ETOOSMALL,
-            "tlv check too small");
+    int err = tlv_ops_check(ops, tlv);
+    if (err<0) {
+        return tlv_error(tlv, err, "tlv check ops check");
     }
-
-    if (ops->check) {
-        return tlv_error(tlv, 
-            (*ops->check)(tlv),
-            "tlv check ops check");
-    }
-
-    // use default checker
+    
     if (TLV_F_FIXED & ops->flag) {
+        // use default checker
         return tlv_check_fixed(tlv);
     } else {
         return tlv_check_dynamic(tlv);

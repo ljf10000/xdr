@@ -8,11 +8,11 @@
 #endif
 
 #ifndef XDR_EXPAND
-#define XDR_EXPAND      (128*1024)
+#define XDR_EXPAND      (32*1024)
 #endif
 
 #define XDR_ALIGN(x)        OS_ALIGN(x, 4)
-#define XDR_EXPAND_ALIGN(x) OS_ALIGN(x, XDR_EXPAND)
+#define XDR_EXPAND_ALIGN(x) OS_ALIGN(x + XDR_EXPAND, XDR_EXPAND)
 
 #if 1
 #define xdr_dprint(_fmt, _args...)     os_println(_fmt, ##_args)
@@ -91,6 +91,8 @@ typedef struct {
     xdr_ip4_t sip;
     xdr_ip4_t dip;
 } xdr_session4_t;
+#define xdr_session_bkdr(_session) \
+    os_bkdr((byte *)(_session)+sizeof(uint32), sizeof(*(_session))-sizeof(uint32))
 
 typedef union {
     xdr_session4_t *session4;
@@ -352,7 +354,7 @@ typedef struct {
     xdr_time_t session_time_create;
     xdr_time_t session_time_start;
     xdr_time_t session_time_stop;
-    
+
     bkdr_t bkdr;
 
     xdr_size_t total;   // total size
@@ -376,6 +378,14 @@ typedef struct {
 xdr_t;
 
 #define XDR_OBJ(_proto, _offset)    ((_offset)?((byte *)(_proto) + (_offset)):NULL)
+
+static inline void
+xdr_init(xdr_t *xdr)
+{
+    os_objzero(xdr);
+
+    xdr->version = XDR_VERSION;
+}
 
 static inline xdr_session_t
 xdr_session(xdr_t *xdr)
@@ -520,7 +530,7 @@ static inline int
 xb_open(xdr_buffer_t *x, bool readonly)
 {
     int flag = readonly?O_RDONLY:(O_CREAT|O_RDWR);
-    
+
     x->fd = open(x->file, flag);
     if (x->fd<0) {
         return -errno;
@@ -567,7 +577,7 @@ static inline void *
 xb_put(xdr_buffer_t *x, xdr_size_t size)
 {
     void *current = xb_current(x);
-
+    
     //xdr_dprint("xb_put %d:%d ...", x->current, XDR_ALIGN(size));
     x->current += XDR_ALIGN(size);
     //xdr_dprint("xb_put %d:%d ok.", x->current, XDR_ALIGN(size));
@@ -892,7 +902,7 @@ tlv_to_xdr_session(xdr_buffer_t *x, tlv_t *tlv)
         dst->sip = XDR_IP(&src->sip);
         dst->dip = XDR_IP(&src->dip);
 
-        x->u.xdr->bkdr = os_bkdr(dst, sizeof(*dst));
+        x->u.xdr->bkdr = xdr_session_bkdr(dst);
     } else {
         xdr_session6_t *dst = xb_pre_session6(x);
         if (NULL==dst) {
@@ -901,7 +911,7 @@ tlv_to_xdr_session(xdr_buffer_t *x, tlv_t *tlv)
         
         os_objcpy(dst, src);
         
-        x->u.xdr->bkdr = os_bkdr(dst, sizeof(*dst));
+        x->u.xdr->bkdr = xdr_session_bkdr(dst);
     }
     
     x->u.xdr->ip_version = src->ver;
@@ -1448,10 +1458,46 @@ typedef struct {
 }   /* end */
 
 static inline int
+tlv_open(xdr_buffer_t *x, int size)
+{
+    x->size = (xdr_size_t)size;
+
+    return xb_open(x, true);
+}
+
+static inline int
+tlv_close(xdr_buffer_t *x)
+{
+    return xb_close(x);
+}
+
+static inline int
+xdr_open(xdr_buffer_t *x, int size)
+{
+    x->size = XDR_EXPAND_ALIGN(size);
+    
+    int err = xb_open(x, false);
+    if (0==err) {
+        xdr_init(x->u.xdr);
+    }
+
+    return err;
+}
+
+static inline int
+xdr_close(xdr_buffer_t *x)
+{
+    x->u.xdr->total = x->current;
+    ftruncate(x->fd, x->current);
+
+    return xb_close(x);
+}
+
+static inline int
 xpair_close(xpair_t *pair)
 {
-    xb_close(&pair->tlv);
-    xb_close(&pair->xdr);
+    tlv_close(&pair->tlv);
+    xdr_close(&pair->xdr);
 
     return 0;
 }
@@ -1467,24 +1513,21 @@ xpair_open(xpair_t *pair)
     if (size<0) {
         err = size; goto ERROR;
     }
-    
-    tlv->size = size;
-    err = xb_open(tlv, true);
+
+    err = tlv_open(tlv, size);
     if (err<0) {
         goto ERROR;
     }
 
-    xdr->size = XDR_EXPAND_ALIGN(size);
-    err = xb_open(xdr, false);
+    err = xdr_open(xdr, XDR_EXPAND_ALIGN(size));
     if (err<0) {
         goto ERROR;
     }
-    os_objzero(xdr->u.xdr);
-    
+
     return 0;
 ERROR:
     xpair_close(pair);
-    
+
     return err;
 }
 
