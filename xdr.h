@@ -503,20 +503,23 @@ xb_mmap(xdr_buffer_t *x, bool readonly)
 {
     int prot = readonly?PROT_READ:PROT_WRITE;
     int flag = readonly?MAP_PRIVATE:MAP_SHARED;
-
-    xdr_dprint("xb_mmap 1...");
+    int err;
+    
     if (!readonly) {
-        xdr_dprint("xb_mmap 1.1...");
-        ftruncate(x->fd, x->size);
-        xdr_dprint("xb_mmap 1.2...");
+        err = ftruncate(x->fd, x->size);
+        if (err<0) {
+            os_println("ftruncate %s size:%d error:%d ...", x->file, x->size, -errno);
+        
+            return -errno;
+        }
     }
-    xdr_dprint("xb_mmap 2...");
 
     x->u.buffer = mmap(NULL, x->size, prot, flag, x->fd, 0);
     if (NULL==x->u.buffer) {
+        os_println("mmap %s error:%d ...", x->file, -errno);
+        
         return -errno;
     }
-    xdr_dprint("xb_mmap 3...");
 
     return 0;
 }
@@ -525,7 +528,12 @@ static inline int
 xb_munmap(xdr_buffer_t *x)
 {
     if (x->u.buffer) {
-        munmap(x->u.buffer, x->size); x->u.buffer = NULL;
+        int err = munmap(x->u.buffer, x->size); x->u.buffer = NULL;
+        if (err<0) {
+            os_println("munmap %s error:%d ...", x->file, -errno);
+            
+            return -errno;
+        }
     }
 
     return 0;
@@ -538,6 +546,8 @@ xb_open(xdr_buffer_t *x, bool readonly)
 
     x->fd = open(x->file, flag);
     if (x->fd<0) {
+        os_println("open %s error:%d ...", x->file, -errno);
+        
         return -errno;
     }
     
@@ -1479,19 +1489,12 @@ tlv_close(xdr_buffer_t *x)
 static inline int
 xdr_open(xdr_buffer_t *x, int size)
 {
-    tlv_dprint("xdr_open 1...");
     x->size = (xdr_size_t)XDR_EXPAND_ALIGN(size);
     
-    tlv_dprint("xdr_open 2...");
     int err = xb_open(x, false);
     if (0==err) {
-        tlv_dprint("xdr_open 2.1...");
         xdr_init(x->u.xdr);
-        tlv_dprint("xdr_open 2.2...");
-    } else {
-        tlv_dprint("xdr_open error:%d ...", err);
     }
-    tlv_dprint("xdr_open 3...");
 
     return err;
 }
