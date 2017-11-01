@@ -11,7 +11,7 @@
 
 #define tlv_trace(_call, _fmt, _args...)    ({  \
     tlv_dprint("begin " _fmt " ...");           \
-    int __err = _call;                          \
+    int __err = (_call);                        \
     tlv_dprint("%s:%d " _fmt, ok_string(__err), __err, ##_args); \
     __err;                                      \
 })  /* end */

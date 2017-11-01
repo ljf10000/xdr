@@ -331,7 +331,7 @@
 #endif
 
 #ifndef ok_string
-#define ok_string(_err)                             (0==(_err)<0?__ok:__error)
+#define ok_string(_err)                             ((0==(_err))<0?__ok:__error)
 #endif
 
 #ifndef os_printf
@@ -551,7 +551,6 @@ static inline int
 os_fsize(const char *file)
 {
     struct stat st;
-    int err;
 
     return 0==stat(file, &st)?st.st_size:-errno;
 }
@@ -700,9 +699,11 @@ os_fdigest(const char *file, byte digest[])
     int handle(void *buf, int len)
     {
         sha256((const byte *)buf, len, digest);
+
+        return 0;
     }
     
-    return os_mmap_r(file, handle);
+    return os_mmap_r((char *)file, handle);
 }
 
 static inline int
