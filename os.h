@@ -579,23 +579,40 @@ os_mmap(char *file, size_t length, off_t offset, bool readonly)
     int fflag = readonly?O_RDONLY:(O_CREAT|O_RDWR);
     int mflag = readonly?MAP_PRIVATE:MAP_SHARED;
     int prot  = readonly?PROT_READ:(PROT_READ|PROT_WRITE);
-
-    int fd = open(file, fflag|O_CLOEXEC, 0x664);
+    int err, fd;
+    void *buffer = NULL;
+    char *action;
+    
+    fd = open(file, fflag|O_CLOEXEC, 0x664);
     if (fd<0) {
-        return NULL;
+        action = "open"; goto ERROR;
     }
 
     if (0==length) {
         length = os_fsize(file);
+        if (length<0) {
+            action = "fsize"; goto ERROR;
+        }
     }
 
     if (!readonly) {
-        ftruncate(fd, length);
+        err = ftruncate(fd, length);
+        if (err<0) {
+            action = "ftruncate"; goto ERROR;
+        }
     }
 
     void *buffer = mmap(NULL, length, prot, mflag, fd, offset);
+    if (NULL==buffer) {
+        action = "mmap"; goto ERROR;
+    }
     close(fd);
 
+ERROR:
+    if (NULL==buffer) {
+        os_println("%s %s error:%d", action, file, -errno);
+    }
+    
     return buffer;
 }
 
