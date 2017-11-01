@@ -713,7 +713,7 @@ xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, tlv_t *tlv)
 static inline int
 xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 {
-    const char *dir = getdirbyflag(tlv_ops_var(tlv, flag));
+    char *dir = getdirbyflag(tlv_ops_flag(tlv));
     if (NULL==dir) {
         return -ENOSUPPORT;
     }
@@ -782,7 +782,7 @@ xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
         return err;
     }
 
-    x->u.xdr->flag |= tlv_ops_var(tlv, flag) & TLV_F_FILE;
+    x->u.xdr->flag |= tlv_ops_flag(tlv) & TLV_F_FILE;
 
     return 0;
 }

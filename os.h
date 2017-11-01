@@ -838,5 +838,41 @@ inotify_ev_len(inotify_ev_t *ev)
 
     return p - ev->name + 1;
 }
+
+typedef struct {
+    const char *name;
+    int flag;
+} nameflag_t;
+
+static inline const char *
+__get_nameflag_byflag(nameflag_t opt[], int count, int flag)
+{
+    int i;
+
+    for (i=0; i<count; i++) {
+        if (opt[i].flag & flag) {
+            return opt[i].name;
+        }
+    }
+
+    return NULL;
+}
+
+static inline int
+__get_nameflag_byname(nameflag_t opt[], int count, char *name)
+{
+    int i;
+
+    for (i=0; i<count; i++) {
+        if (0==strcmp(opt[i].name, name)) {
+            return opt[i].flag;
+        }
+    }
+
+    return 0;
+}
+
+#define get_nameflag_byflag(_opt, _flag)    __get_nameflag_byflag(_opt, os_count_of(_opt), _flag)
+#define get_nameflag_byname(_opt, _flag)    __get_nameflag_byname(_opt, os_count_of(_opt), _flag)
 /******************************************************************************/
 #endif

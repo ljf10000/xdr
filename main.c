@@ -45,29 +45,20 @@ static int usage(void)
     return -1;
 }
 
-static struct {
-    char *name;
-    uint32 flag;
-    int (*handle)(char *args);
-} opt[] = {
-    { .name = "--cli",          .flag = TLV_OPT_CLI },
-    { .name = "--dump",         .flag = TLV_OPT_DUMP },
-    { .name = "--dump-simple",  .flag = TLV_OPT_DUMP_SIMPLE },
-    { .name = "--file-split",   .flag = TLV_OPT_SPLIT },
-};
 
 static void
 opt_analysis(char *args)
 {
-    int i;
-    
-    for (i=0; i<os_count_of(opt); i++) {
-        if (0==strcmp(opt[i].name, args)) {
-            tlv_opt_set(opt[i].flag);
+    static nameflag_t opt[] = {
+        { .name = "--cli",          .flag = TLV_OPT_CLI },
+        { .name = "--dump",         .flag = TLV_OPT_DUMP },
+        { .name = "--dump-simple",  .flag = TLV_OPT_DUMP_SIMPLE },
+        { .name = "--file-split",   .flag = TLV_OPT_SPLIT },
+    };
 
-            return;
-        }
-    }
+    int flag = get_nameflag_byname(opt, args);
+
+    tlv_opt_set(flag);
 }
 
 static int xdr_handle(inotify_ev_t *ev, char *path[PATH_END])

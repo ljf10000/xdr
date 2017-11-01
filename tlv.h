@@ -72,18 +72,13 @@ enum {
 static inline const char *
 getdirbyflag(int flag)
 {
-    if (TLV_F_FILE_CONTENT & flag) {
-        return "file";
-    }
-    else if(TLV_F_HTTP & flag) {
-        return "http";
-    }
-    else if(TLV_F_SSL & flag) {
-        return "ssl";
-    }
-    else {
-        return NULL;
-    }
+    static nameflag_t opt[] = {
+        { .flag = TLV_F_FILE_CONTENT,   .name = "file" },
+        { .flag = TLV_F_HTTP,           .name = "http" },
+        { .flag = TLV_F_SSL,            .name = "ssl" },
+    };
+
+    return get_nameflag_byflag(opt, flag);
 }
 
 typedef struct tlv_st tlv_t;
@@ -110,6 +105,8 @@ static inline void tlv_dump_L7(tlv_t *tlv);
 static inline void tlv_dump_http(tlv_t *tlv);
 static inline void tlv_dump_sip(tlv_t *tlv);
 static inline void tlv_dump_rtsp(tlv_t *tlv);
+
+static inline int tlv_check_session(tlv_t *tlv);
 
 static inline int tlv_to_xdr_session_state(xdr_buffer_t *x, tlv_t *tlv);
 static inline int tlv_to_xdr_appid(xdr_buffer_t *x, tlv_t *tlv);
@@ -174,7 +171,6 @@ static inline int tlv_to_xdr_ssl_client_cert(xdr_buffer_t *x, tlv_t *tlv);
 static inline int tlv_to_xdr_ssl_fail_reason(xdr_buffer_t *x, tlv_t *tlv);
 
 typedef struct {
-    int     id;
     int     type;
     uint32  flag;
     uint32  minsize;
@@ -186,91 +182,91 @@ typedef struct {
     int (*toxdr)(xdr_buffer_t * /*x*/, tlv_t * /*tlv*/);
 } tlv_ops_t;
 
-#define tlv_mapper_fixed(_mapper, _id, _name, _type, _flag) \
-    _mapper(_name, _id, TLV_T_##_type, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_type##_t), tlv_dump_##_type, NULL, tlv_to_xdr_##_name)
-#define tlv_mapper_dynamic(_mapper, _id, _name, _type, _flag) \
-    _mapper(_name, _id, TLV_T_##_type, _flag, 0, 0, tlv_dump_##_type, NULL, tlv_to_xdr_##_name)
+#define tlv_mapper_fixed(_mapper, _id, _name, _type, _check, _flag) \
+    _mapper(_name, _id, TLV_T_##_type, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_type##_t), tlv_dump_##_type, _check, tlv_to_xdr_##_name)
+#define tlv_mapper_dynamic(_mapper, _id, _name, _type, _check, _flag) \
+    _mapper(_name, _id, TLV_T_##_type, _flag, 0, 0, tlv_dump_##_type, _check, tlv_to_xdr_##_name)
 
-#define tlv_mapper_object(_mapper, _id, _name, _flag) \
-    _mapper(_name, _id, TLV_T_object, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_name##_t), tlv_dump_##_name, NULL, tlv_to_xdr_##_name)
-#define tlv_mapper_nothing(_mapper, _id, _name, _flag) \
-    _mapper(_name, _id, TLV_T_string, _flag, 0, 0, NULL, NULL, NULL)
+#define tlv_mapper_object(_mapper, _id, _name, _check, _flag) \
+    _mapper(_name, _id, TLV_T_object, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_name##_t), tlv_dump_##_name, _check, tlv_to_xdr_##_name)
+#define tlv_mapper_nothing(_mapper, _id, _name, _check, _flag) \
+    _mapper(_name, _id, TLV_T_string, _flag, 0, 0, NULL, _check, NULL)
 
-#define tlv_mapper_u8( _mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, u8, _flag)
-#define tlv_mapper_u16(_mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, u16, _flag)
-#define tlv_mapper_u32(_mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, u32, _flag)
-#define tlv_mapper_u64(_mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, u64, _flag)
-#define tlv_mapper_ip4(_mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, ip4, _flag)
-#define tlv_mapper_ip6(_mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, ip6, _flag)
-#define tlv_mapper_time(_mapper, _id, _name, _flag)        tlv_mapper_fixed(_mapper, _id, _name, time, _flag)
-#define tlv_mapper_duration(_mapper, _id, _name, _flag)    tlv_mapper_fixed(_mapper, _id, _name, duration, _flag)
-#define tlv_mapper_string(_mapper, _id, _name, _flag)      tlv_mapper_dynamic(_mapper, _id, _name, string, _flag)
-#define tlv_mapper_binary(_mapper, _id, _name, _flag)      tlv_mapper_dynamic(_mapper, _id, _name, binary, _flag)
+#define tlv_mapper_u8( _mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, u8, _check, _flag)
+#define tlv_mapper_u16(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, u16, _check, _flag)
+#define tlv_mapper_u32(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, u32, _check, _flag)
+#define tlv_mapper_u64(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, u64, _check, _flag)
+#define tlv_mapper_ip4(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, ip4, _check, _flag)
+#define tlv_mapper_ip6(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, ip6, _check, _flag)
+#define tlv_mapper_time(_mapper, _id, _name, _check, _flag)     tlv_mapper_fixed(_mapper, _id, _name, time, _check, _flag)
+#define tlv_mapper_duration(_mapper, _id, _name, _check, _flag) tlv_mapper_fixed(_mapper, _id, _name, duration, _check, _flag)
+#define tlv_mapper_string(_mapper, _id, _name, _check, _flag)   tlv_mapper_dynamic(_mapper, _id, _name, string, _check, _flag)
+#define tlv_mapper_binary(_mapper, _id, _name, _check, _flag)   tlv_mapper_dynamic(_mapper, _id, _name, binary, _check, _flag)
 
 #define TLV_MAPPER(_) \
-    tlv_mapper_nothing(_,   0,  header, 0) \
+    tlv_mapper_nothing(_,   0,  header,         NULL,   0) \
     \
-    tlv_mapper_u8(_,        1,  session_state,  0) \
-    tlv_mapper_u8(_,        2,  appid,          0) \
-    tlv_mapper_object(_,    3,  session,        0) \
-    tlv_mapper_object(_,    4,  session_st,     0) \
-    tlv_mapper_object(_,    5,  session_time,   0) \
-    tlv_mapper_object(_,    6,  service_st,     0) \
-    tlv_mapper_object(_,    7,  tcp,            0) \
-    tlv_mapper_u32(_,       8,  first_response_delay,   0) \
-    tlv_mapper_object(_,    9,  L7,             0) \
-    tlv_mapper_object(_,    10, http,           0) \
-    tlv_mapper_string(_,    11, http_host,      0) \
-    tlv_mapper_string(_,    12, http_url,       0) \
-    tlv_mapper_string(_,    13, http_host_xonline,      0) \
-    tlv_mapper_string(_,    14, http_user_agent,0) \
-    tlv_mapper_string(_,    15, http_content,   0) \
-    tlv_mapper_string(_,    16, http_refer,     0) \
-    tlv_mapper_string(_,    17, http_cookie,    0) \
-    tlv_mapper_string(_,    18, http_location,  0) \
-    tlv_mapper_object(_,    19, sip,            0) \
-    tlv_mapper_string(_,    20, sip_calling_number,     0) \
-    tlv_mapper_string(_,    21, sip_called_number,      0) \
-    tlv_mapper_string(_,    22, sip_session_id, 0) \
-    tlv_mapper_object(_,    23, rtsp,           0) \
-    tlv_mapper_string(_,    24, rtsp_url,       0) \
-    tlv_mapper_string(_,    25, rtsp_user_agent,0) \
-    tlv_mapper_string(_,    26, rtsp_server_ip, 0) \
-    tlv_mapper_u16(_,       27, ftp_status,     0) \
-    tlv_mapper_string(_,    28, ftp_user,       0) \
-    tlv_mapper_string(_,    29, ftp_pwd,        0) \
-    tlv_mapper_u8(_,        30, ftp_trans_mode, 0) \
-    tlv_mapper_u8(_,        31, ftp_trans_type, 0) \
-    tlv_mapper_string(_,    32, ftp_filename,   0) \
-    tlv_mapper_u32(_,       33, ftp_filesize,   0) \
-    tlv_mapper_duration(_,  34, ftp_response_delay,     0) \
-    tlv_mapper_duration(_,  35, ftp_trans_duration,     0) \
-    tlv_mapper_u16(_,       36, mail_msg_type,  0) \
-    tlv_mapper_u16(_,       37, mail_status_code,       0) \
-    tlv_mapper_string(_,    38, mail_user,      0) \
-    tlv_mapper_string(_,    39, mail_sender,    0) \
-    tlv_mapper_u32(_,       40, mail_length,    0) \
-    tlv_mapper_string(_,    41, mail_domain,    0) \
-    tlv_mapper_string(_,    42, mail_recver,    0) \
-    tlv_mapper_string(_,    43, mail_hdr,       0) \
-    tlv_mapper_u8(_,        44, mail_acs_type,  0) \
-    tlv_mapper_string(_,    45, dns_domain,     0) \
-    tlv_mapper_u8(_,        46, dns_ip_count,   0) \
-    tlv_mapper_ip4(_,       47, dns_ip4, TLV_F_MULTI) \
-    tlv_mapper_ip6(_,       48, dns_ip6, TLV_F_MULTI) \
-    tlv_mapper_u8(_,        49, dns_response_code,  0) \
-    tlv_mapper_u8(_,        50, dns_count_request,  0) \
-    tlv_mapper_u8(_,        51, dns_count_response_record,  0) \
-    tlv_mapper_u8(_,        52, dns_count_response_auth,    0) \
-    tlv_mapper_u8(_,        53, dns_count_response_extra,   0) \
-    tlv_mapper_u32(_,       54, dns_delay,      0) \
+    tlv_mapper_u8(_,        1,  session_state,  NULL,   0) \
+    tlv_mapper_u8(_,        2,  appid,          NULL,   0) \
+    tlv_mapper_object(_,    3,  session,        tlv_check_session,  0) \
+    tlv_mapper_object(_,    4,  session_st,     NULL,   0) \
+    tlv_mapper_object(_,    5,  session_time,   NULL,   0) \
+    tlv_mapper_object(_,    6,  service_st,     NULL,   0) \
+    tlv_mapper_object(_,    7,  tcp,            NULL,   0) \
+    tlv_mapper_u32(_,       8,  first_response_delay,   NULL,   0) \
+    tlv_mapper_object(_,    9,  L7,             NULL,   0) \
+    tlv_mapper_object(_,    10, http,           NULL,   0) \
+    tlv_mapper_string(_,    11, http_host,      NULL,   0) \
+    tlv_mapper_string(_,    12, http_url,       NULL,   0) \
+    tlv_mapper_string(_,    13, http_host_xonline,      NULL,   0) \
+    tlv_mapper_string(_,    14, http_user_agent,NULL,   0) \
+    tlv_mapper_string(_,    15, http_content,   NULL,   0) \
+    tlv_mapper_string(_,    16, http_refer,     NULL,   0) \
+    tlv_mapper_string(_,    17, http_cookie,    NULL,   0) \
+    tlv_mapper_string(_,    18, http_location,  NULL,   0) \
+    tlv_mapper_object(_,    19, sip,            NULL,   0) \
+    tlv_mapper_string(_,    20, sip_calling_number,     NULL,   0) \
+    tlv_mapper_string(_,    21, sip_called_number,      NULL,   0) \
+    tlv_mapper_string(_,    22, sip_session_id, NULL,   0) \
+    tlv_mapper_object(_,    23, rtsp,           NULL,   0) \
+    tlv_mapper_string(_,    24, rtsp_url,       NULL,   0) \
+    tlv_mapper_string(_,    25, rtsp_user_agent,NULL,   0) \
+    tlv_mapper_string(_,    26, rtsp_server_ip, NULL,   0) \
+    tlv_mapper_u16(_,       27, ftp_status,     NULL,   0) \
+    tlv_mapper_string(_,    28, ftp_user,       NULL,   0) \
+    tlv_mapper_string(_,    29, ftp_pwd,        NULL,   0) \
+    tlv_mapper_u8(_,        30, ftp_trans_mode, NULL,   0) \
+    tlv_mapper_u8(_,        31, ftp_trans_type, NULL,   0) \
+    tlv_mapper_string(_,    32, ftp_filename,   NULL,   0) \
+    tlv_mapper_u32(_,       33, ftp_filesize,   NULL,   0) \
+    tlv_mapper_duration(_,  34, ftp_response_delay,     NULL,   0) \
+    tlv_mapper_duration(_,  35, ftp_trans_duration,     NULL,   0) \
+    tlv_mapper_u16(_,       36, mail_msg_type,  NULL,   0) \
+    tlv_mapper_u16(_,       37, mail_status_code,       NULL,   0) \
+    tlv_mapper_string(_,    38, mail_user,      NULL,   0) \
+    tlv_mapper_string(_,    39, mail_sender,    NULL,   0) \
+    tlv_mapper_u32(_,       40, mail_length,    NULL,   0) \
+    tlv_mapper_string(_,    41, mail_domain,    NULL,   0) \
+    tlv_mapper_string(_,    42, mail_recver,    NULL,   0) \
+    tlv_mapper_string(_,    43, mail_hdr,       NULL,   0) \
+    tlv_mapper_u8(_,        44, mail_acs_type,  NULL,   0) \
+    tlv_mapper_string(_,    45, dns_domain,     NULL,   0) \
+    tlv_mapper_u8(_,        46, dns_ip_count,   NULL,   0) \
+    tlv_mapper_ip4(_,       47, dns_ip4,        NULL,   TLV_F_MULTI) \
+    tlv_mapper_ip6(_,       48, dns_ip6,        NULL,   TLV_F_MULTI) \
+    tlv_mapper_u8(_,        49, dns_response_code,      NULL,   0) \
+    tlv_mapper_u8(_,        50, dns_count_request,      NULL,   0) \
+    tlv_mapper_u8(_,        51, dns_count_response_record,  NULL,   0) \
+    tlv_mapper_u8(_,        52, dns_count_response_auth,    NULL,   0) \
+    tlv_mapper_u8(_,        53, dns_count_response_extra,   NULL,   0) \
+    tlv_mapper_u32(_,       54, dns_delay,      NULL,   0) \
     \
-    tlv_mapper_binary(_,    201,http_request,   TLV_F_HTTP_REQUEST) \
-    tlv_mapper_binary(_,    202,http_response,  TLV_F_HTTP_RESPONSE) \
-    tlv_mapper_binary(_,    203,file_content,   TLV_F_FILE_CONTENT) \
-    tlv_mapper_binary(_,    204,ssl_server_cert,TLV_F_MULTI|TLV_F_SSL_SERVER_CERT) \
-    tlv_mapper_binary(_,    205,ssl_client_cert,TLV_F_MULTI|TLV_F_SSL_CLIENT_CERT) \
-    tlv_mapper_u8(_,        206,ssl_fail_reason,0) \
+    tlv_mapper_binary(_,    201,http_request,   NULL,   TLV_F_HTTP_REQUEST) \
+    tlv_mapper_binary(_,    202,http_response,  NULL,   TLV_F_HTTP_RESPONSE) \
+    tlv_mapper_binary(_,    203,file_content,   NULL,   TLV_F_FILE_CONTENT) \
+    tlv_mapper_binary(_,    204,ssl_server_cert,NULL,   TLV_F_MULTI|TLV_F_SSL_SERVER_CERT) \
+    tlv_mapper_binary(_,    205,ssl_client_cert,NULL,   TLV_F_MULTI|TLV_F_SSL_CLIENT_CERT) \
+    tlv_mapper_u8(_,        206,ssl_fail_reason,NULL,   0) \
     /* end */
 
 #define __TLV_ENUM(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr)  tlv_id_##_name = _id,
@@ -289,7 +285,6 @@ enum { TLV_MAPPER(__TLV_ENUM) tlv_id_end };
 #define tlv_id_end             tlv_id_end
 
 #define __TLV_STRUCT(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr) [_id] = { \
-    .id     = _id,      \
     .type   = _type,    \
     .flag   = _flag,    \
     .name   = #_name,   \
@@ -368,18 +363,16 @@ tlv_ops(tlv_t *tlv)
     return is_good_tlv_id(tlv->id)?TLV_OPS(tlv->id):NULL;
 }
 
-#define tlv_ops_var(_tlv, _var)     ({  \
+#define tlv_ops_field(_tlv, _field, _deft)  ({  \
     tlv_ops_t *__ops = tlv_ops(_tlv);   \
                                         \
-    __ops?__ops->_var:0;                \
+    __ops?__ops->_field:_deft;          \
 })
 
-#define tlv_ops_string(_tlv, _var)     ({  \
-    tlv_ops_t *__ops = tlv_ops(_tlv);   \
-                                        \
-    __ops?__ops->_var:"invalid-tlv-id"; \
-})
+#define tlv_ops_var(_tlv, _field)       tlv_ops_field(_tlv, _field, 0)
+#define tlv_ops_string(_tlv, _field)    tlv_ops_field(_tlv, _field, "invalid-tlv-id")
 
+#define tlv_ops_flag(_tlv)      tlv_ops_var(_tlv, flag)
 #define tlv_ops_name(_tlv)      tlv_ops_string(_tlv, name)
 
 #define tlv_extend(_tlv)        (_tlv)->h.e.e
@@ -912,6 +905,20 @@ tlv_dump_rtsp(tlv_t *tlv)
     TLV_DUMP2("describe_delay      : %u", obj->describe_delay);
 }
 
+static inline int
+tlv_check_session(tlv_t *tlv)
+{
+    tlv_session_t *obj = tlv_session(tlv);
+
+    switch (obj->proto) {
+        case IPPROTO_TCP:
+        case IPPROTO_UDP:
+            return 0;
+        default:
+            return -ENOSUPPORT;
+    }
+}
+
 #ifndef TLV_CACHE_MULTI
 #define TLV_CACHE_MULTI    7
 #endif
@@ -930,12 +937,12 @@ tlv_cache_save(tlv_cache_t *cache, tlv_t *tlv)
     if (cache->count < TLV_CACHE_MULTI) {
         if (0==cache->count) {
             cache->multi[cache->count++] = tlv;
-        } else {
-            if (TLV_F_MULTI & tlv_ops_var(tlv, flag)) {
-                cache->multi[cache->count++] = tlv;
-            } else {
-                err = -ENOSUPPORT;
-            }
+        }
+        else if (TLV_F_MULTI & tlv_ops_flag(tlv)) {
+            cache->multi[cache->count++] = tlv;
+        }
+        else {
+            err = -ENOSUPPORT;
         }
     }
     else {
