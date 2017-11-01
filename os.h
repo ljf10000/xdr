@@ -176,6 +176,14 @@
 #define OS_FILENAME_LEN         OS_LINE_LEN
 #endif
 
+#ifndef lanmbda
+#define lanmbda(_type, _body)   ({ _type _lanmbda _body _lanmbda; })
+#endif
+
+#ifndef ilanmbda
+#define ilanmbda(_type, _body)  lanmbda(int, _body)
+#endif
+
 #define os_malloc(_size)            malloc(_size)
 #define os_calloc(_count, _size)    calloc(_count, _size)
 #define os_realloc(_ptr, _size)     realloc(_ptr, _size)

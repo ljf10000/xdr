@@ -21,9 +21,9 @@
 #endif
 
 #define xdr_trace(_call, _fmt, _args...)    ({  \
-    xdr_dprint("begin " _fmt " ...");           \
-    int __err = _call;                          \
-    xdr_dprint("%s:%d " _fmt, ok_string(__err), __err, ##_args); \
+    xdr_dprint("try " _fmt " ...");             \
+    int __err = (_call);                        \
+    xdr_dprint(__tab "%s:%d " _fmt, ok_string(__err), __err, ##_args); \
     __err;                                      \
 })  /* end */
 
