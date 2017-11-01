@@ -993,15 +993,19 @@ tlv_record_parse(tlv_record_t *r)
     {
         int err;
 
+        tlv_dprint("tlv_check ...");
         err = tlv_check(tlv);
         if (err<0) {
             return err;
         }
+        tlv_dprint("tlv_check ok.");
 
+        tlv_dprint("tlv_record_save ...");
         err = tlv_record_save(r, tlv);
         if (err<0) {
             return err;
         }
+        tlv_dprint("tlv_record_save ok.");
 
         if (is_tlv_opt_dump()) {
             tlv_dump(tlv);

@@ -1541,15 +1541,19 @@ tlv_to_xdr(xpair_t *pair)
         tlv_record_t r = TLV_RECORD_INITER(header);
         int err;
 
+        tlv_dprint("tlv_record_parse ...");
         err = tlv_record_parse(&r);
         if (err<0) {
             return err;
         }
+        tlv_dprint("tlv_record_parse ok.");
 
+        tlv_dprint("tlv_record_to_xdr ...");
         err = tlv_record_to_xdr(&r, &pair->xdr);
         if (err<0) {
             return err;
         }
+        tlv_dprint("tlv_record_to_xdr ok.");
         
         pair->count++;
 

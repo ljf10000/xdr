@@ -62,8 +62,8 @@ static int xdr_handle(inotify_ev_t *ev, char *path[PATH_END])
     os_saprintf(tlv, "%s/%s", path[PATH_TLV], ev->name);
     os_saprintf(xdr, "%s/%s", path[PATH_XDR], ev->name);
 
-    //xdr_dprint("handle tlv:%s", tlv);
-    //xdr_dprint("handle xdr:%s", xdr);
+    xdr_dprint("handle tlv:%s", tlv);
+    xdr_dprint("handle xdr:%s", xdr);
     
     int err = tlv_to_xdr(&pair);
     if (err<0) {
