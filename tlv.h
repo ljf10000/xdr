@@ -564,10 +564,13 @@ tlv_check_dynamic(tlv_t *tlv)
             "tlv check dynamic too small");
     }
     else if (ops->maxsize && dlen > ops->maxsize) {
-        return tlv_error(tlv, 
-            -ETOOBIG,
-            "tlv check dynamic too big");
+        return tlv_error(tlv, -ETOOBIG, "tlv check dynamic too big");
     }
+#if 0
+    else if (tlv_datalen(tlv) < tlv->pad) {
+        return tlv_error(tlv, -ETOOBIG, "tlv check dynamic too big pad");
+    }
+#endif
 
     return 0;
 }
