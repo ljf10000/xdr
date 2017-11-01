@@ -602,7 +602,7 @@ os_mmap(char *file, size_t length, off_t offset, bool readonly)
         }
     }
 
-    void *buffer = mmap(NULL, length, prot, mflag, fd, offset);
+    buffer = mmap(NULL, length, prot, mflag, fd, offset);
     if (NULL==buffer) {
         action = "mmap"; goto ERROR;
     }
