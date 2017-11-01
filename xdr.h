@@ -15,10 +15,17 @@
 #define XDR_EXPAND_ALIGN(x) OS_ALIGN(x + XDR_EXPAND, XDR_EXPAND)
 
 #if 1
-#define xdr_trace(_fmt, _args...)       os_println(_fmt, ##_args)
+#define xdr_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
 #else
-#define xdr_trace(_fmt, _args...)       os_do_nothing()
+#define xdr_dprint(_fmt, _args...)      os_do_nothing()
 #endif
+
+#define xdr_trace(_call, _fmt, _args...)    ({  \
+    xdr_dprint("begin " _fmt " ...");           \
+    int __err = _call;                          \
+    xdr_dprint("%s:%d " _fmt, ok_string(__err), __err, ##_args); \
+    __err;
+})  /* end */
 
 #if 1
 #define XDR_ARRAY_MAPPER(_) \
@@ -594,9 +601,9 @@ xb_put(xdr_buffer_t *x, xdr_size_t size)
 {
     void *current = xb_current(x);
     
-    //xdr_trace("xb_put %d:%d ...", x->current, XDR_ALIGN(size));
+    //xdr_dprint("xb_put %d:%d ...", x->current, XDR_ALIGN(size));
     x->current += XDR_ALIGN(size);
-    //xdr_trace("xb_put %d:%d ok.", x->current, XDR_ALIGN(size));
+    //xdr_dprint("xb_put %d:%d ok.", x->current, XDR_ALIGN(size));
 
     return current;
 }
@@ -605,15 +612,13 @@ static inline int
 xb_expand(xdr_buffer_t *x, xdr_size_t size)
 {
     if (false==xb_enought(x, size)) {
-        xdr_trace("xb_munmap ...");
-        xb_munmap(x);
-        xdr_trace("xb_munmap ok.");
+        int err;
 
+        err = xdr_trace(xb_munmap(x), "xb_munmap");
+        
         x->size += XDR_EXPAND_ALIGN(size);
-
-        xdr_trace("xb_mmap ...");
-        int err = xb_mmap(x, false);
-        xdr_trace("xb_mmap %s:%d.", ok_string(err), err);
+        
+        err = xdr_trace(xb_mmap(x, false), "xb_mmap");
         if (err<0) {
             return err;
         }
@@ -712,7 +717,7 @@ xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, tlv_t *tlv)
 static inline int
 xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 {
-    const char *dir = getdirbyflag(tlv_ops(tlv)->flag);
+    const char *dir = getdirbyflag(tlv_ops_var(tlv, flag));
     if (NULL==dir) {
         return -ENOSUPPORT;
     }
@@ -722,7 +727,7 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
     byte *buf   = tlv_data(tlv);
     int len     = tlv_binlen(tlv);
     if (len<0) {
-        xdr_trace("tlv id:%d, extern %d, pad=%d, len=%d, hdrlen=%d, datalen=%d", 
+        xdr_dprint("tlv id:%d, extern %d, pad=%d, len=%d, hdrlen=%d, datalen=%d", 
             tlv->id,
             tlv_extend(tlv), 
             tlv->pad,
@@ -777,7 +782,7 @@ xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
         return err;
     }
 
-    x->u.xdr->flag |= tlv_ops(tlv)->flag & TLV_F_FILE;
+    x->u.xdr->flag |= tlv_ops_var(tlv, flag) & TLV_F_FILE;
 
     return 0;
 }
@@ -1438,14 +1443,14 @@ tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
                 tlv = cache->multi[j];
                 ops = tlv_ops(tlv);
 
-                if (ops->toxdr) {
+                if (ops && ops->toxdr) {
                     if (tlv->id>200) {
-                        xdr_trace("toxdr %d:%d ...", j, tlv->id);
+                        xdr_dprint("toxdr %d:%d ...", j, tlv->id);
                     }
                     
                     err = (*ops->toxdr)(x, tlv);
                     if (tlv->id>200) {
-                        xdr_trace("toxdr %d:%d %s:%d.", j, tlv->id, ok_string(err), err);
+                        xdr_dprint("toxdr %d:%d %s:%d.", j, tlv->id, ok_string(err), err);
                     }
                     
                     if (err<0) {
@@ -1563,16 +1568,16 @@ tlv_to_xdr(xpair_t *pair)
         tlv_record_t r = TLV_RECORD_INITER(header);
         int err;
 
-        tlv_trace("tlv_record_parse ...");
+        tlv_dprint("tlv_record_parse ...");
         err = tlv_record_parse(&r);
-        tlv_trace("tlv_record_parse %s:%d.", ok_string(err), err);
+        tlv_dprint("tlv_record_parse %s:%d.", ok_string(err), err);
         if (err<0) {
             return err;
         }
 
-        tlv_trace("tlv_record_to_xdr ...");
+        tlv_dprint("tlv_record_to_xdr ...");
         err = tlv_record_to_xdr(&r, &pair->xdr);
-        tlv_trace("tlv_record_to_xdr %s:%d.", ok_string(err), err);
+        tlv_dprint("tlv_record_to_xdr %s:%d.", ok_string(err), err);
         if (err<0) {
             return err;
         }

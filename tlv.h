@@ -4,9 +4,9 @@
 #include "os.h"
 /******************************************************************************/
 #if 0
-#define tlv_trace(_fmt, _args...)       os_println(_fmt, ##_args)
+#define tlv_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
 #else
-#define tlv_trace(_fmt, _args...)       os_do_nothing()
+#define tlv_dprint(_fmt, _args...)      os_do_nothing()
 #endif
 
 typedef uint8  tlv_u8_t;
@@ -320,9 +320,9 @@ tlv_opt_set(uint32 flag)
 }
 
 static inline bool
-is_tlv_opt(int flag)
+is_tlv_opt(int opt)
 {
-    return flag==(flag & __tlv_opt);
+    return opt==(opt & __tlv_opt);
 }
 
 static inline bool
@@ -365,11 +365,19 @@ tlv_ops(tlv_t *tlv)
     return is_good_tlv_id(tlv->id)?TLV_OPS(tlv->id):NULL;
 }
 
-static inline int
-tlv_ops_check(tlv_ops_t *ops, tlv_t *tlv) 
-{
-    return ops->check?(*ops->check)(tlv):0;
-}
+#define tlv_ops_var(_tlv, _var)     ({  \
+    tlv_ops_t *__ops = tlv_ops(_tlv);   \
+                                        \
+    __ops?__ops->_var:0;                \
+})
+
+#define tlv_ops_string(_tlv, _var)     ({  \
+    tlv_ops_t *__ops = tlv_ops(_tlv);   \
+                                        \
+    __ops?__ops->_var:"invalid-tlv-id"; \
+})
+
+#define tlv_ops_name(_tlv)      tlv_ops_string(_tlv, name)
 
 #define tlv_extend(_tlv)        (_tlv)->h.e.e
 
@@ -451,10 +459,12 @@ tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv))
 static inline void
 tlv_dump(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv);
+    if (is_tlv_opt(TLV_OPT_DUMP)) {
+        tlv_ops_t *ops = tlv_ops(tlv);
 
-    if (ops->dump) {
-        (*ops->dump)(tlv);
+        if (ops && ops->dump) {
+            (*ops->dump)(tlv);
+        }
     }
 }
 
@@ -468,12 +478,10 @@ tlv_error(tlv_t *tlv, int err, const char *fmt, ...)
         err = vprintf(fmt, args);
         va_end(args);
         
-        tlv_ops_t *ops = tlv_ops(tlv);
-
         os_println(__crlf __tab 
             "tlv name:%s fixed:%d id:%d pad:%d alen:%u hlen:%u dlen:%u", 
-            ops->name, 
-            ops->maxsize,
+            tlv_ops_name(tlv), 
+            tlv_ops_var(tlv, maxsize),
             tlv->id, 
             tlv->pad, 
             tlv_len(tlv),
@@ -487,7 +495,7 @@ tlv_error(tlv_t *tlv, int err, const char *fmt, ...)
 static inline int
 tlv_check_fixed(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv);
+    tlv_ops_t *ops = tlv_ops(tlv); // not NULL
     uint32 dlen = tlv_datalen(tlv);
     
     switch (ops->type) {
@@ -517,7 +525,7 @@ tlv_check_fixed(tlv_t *tlv)
 static inline int
 tlv_check_dynamic(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv);
+    tlv_ops_t *ops = tlv_ops(tlv); // not NULL
     uint32 dlen = tlv_datalen(tlv);
     
     if (ops->minsize && dlen < ops->minsize) {
@@ -546,11 +554,13 @@ tlv_check(tlv_t *tlv)
         return tlv_error(tlv, -ETOOSMALL, "tlv check too small");
     }
 
-    int err = tlv_ops_check(ops, tlv);
-    if (err<0) {
-        return tlv_error(tlv, err, "tlv check ops check");
+    if (ops->check) {
+        int err = (*ops->check)(tlv);
+        if (err<0) {
+            return tlv_error(tlv, err, "tlv check ops check");
+        }
     }
-    
+
     if (TLV_F_FIXED & ops->flag) {
         // use default checker
         return tlv_check_fixed(tlv);
@@ -564,11 +574,8 @@ tlv_check(tlv_t *tlv)
 #define TLV_DUMP3(_fmt, _args...)      os_println(__tab3 _fmt, ##_args)
 #define TLV_DUMP4(_fmt, _args...)      os_println(__tab4 _fmt, ##_args)
 
-#define TLV_DUMP_BY(_tlv, _format, _type)  do{ \
-    tlv_ops_t *ops = tlv_ops(_tlv);         \
-                                            \
-    TLV_DUMP("id: %d, %s: " _format, (_tlv)->id, ops->name, tlv_##_type(_tlv)); \
-}while(0)
+#define TLV_DUMP_BY(_tlv, _format, _type) \
+    TLV_DUMP("id: %d, %s: " _format, (_tlv)->id, tlv_ops_name(_tlv), tlv_##_type(_tlv))
 
 static inline void tlv_dump_u8 (tlv_t *tlv) { TLV_DUMP_BY(tlv, "%u", u8);  }
 static inline void tlv_dump_u16(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%u", u16); }
@@ -580,48 +587,39 @@ static inline void tlv_dump_string(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%s", string);
 static inline void 
 tlv_dump_time(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv);
-
-    TLV_DUMP("id:%d, %s: %s", tlv->id, ops->name, os_time_string(XDR_SECOND(tlv_time(tlv))));
+    TLV_DUMP("id:%d, %s: %s", tlv->id, tlv_ops_name(tlv), os_time_string(XDR_SECOND(tlv_time(tlv))));
 }
 
 static inline void tlv_dump_duration(tlv_t *tlv) 
 {
-    tlv_ops_t *ops = tlv_ops(tlv);
     tlv_duration_t d = tlv_duration(tlv);
     uint32 s = (uint32)(d>>32);
     uint32 us= (uint32)(d & 0xffffffff);
     
-    TLV_DUMP("id:%d, %s %ds:%dus", tlv->id, ops->name, s, us); 
+    TLV_DUMP("id:%d, %s %ds:%dus", tlv->id, tlv_ops_name(tlv), s, us); 
 }
 
 static inline void 
 tlv_dump_ip4(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv);
-
     uint32 ip = tlv_ip4(tlv); // ip = htonl(ip);
     
-    TLV_DUMP("id:%d, %s: %s", tlv->id, ops->name, os_ipstring(ip));
+    TLV_DUMP("id:%d, %s: %s", tlv->id, tlv_ops_name(tlv), os_ipstring(ip));
 }
 
 static inline void 
 tlv_dump_ip6(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv);
-
-    TLV_DUMP("id: %d, %s: ipv6 address", tlv->id, ops->name);
+    TLV_DUMP("id: %d, %s: ipv6 address", tlv->id, tlv_ops_name(tlv));
 }
 
 static inline void 
 tlv_dump_binary(tlv_t *tlv)
 {
-    tlv_ops_t *ops = tlv_ops(tlv);
-
     if (is_tlv_opt(TLV_OPT_SPLIT)) {
-        TLV_DUMP("id: %d, %s: %s", tlv->id, ops->name, tlv_string(tlv));
+        TLV_DUMP("id: %d, %s: %s", tlv->id, tlv_ops_name(tlv), tlv_string(tlv));
     } else {
-        TLV_DUMP("id: %d, %s:", tlv->id, ops->name);
+        TLV_DUMP("id: %d, %s:", tlv->id, tlv_ops_name(tlv));
 
         os_dump_buffer(tlv_binary(tlv), tlv_datalen(tlv));
     }
@@ -687,7 +685,7 @@ tlv_dump_session_st(tlv_t *tlv)
     tlv_session_st_t *obj = tlv_session_st(tlv);
     int i;
     
-    TLV_DUMP("id: %d, %s:", tlv->id, tlv_ops(tlv)->name);
+    TLV_DUMP("id: %d, %s:", tlv->id, tlv_ops_name(tlv));
 
     for (i=0; i<2; i++) {
         char c = (0==i)?'u':'d';
@@ -921,8 +919,7 @@ tlv_cache_save(tlv_cache_t *cache, tlv_t *tlv)
         if (0==cache->count) {
             cache->multi[cache->count++] = tlv;
         } else {
-            tlv_ops_t *ops = tlv_ops(tlv);
-            if (TLV_F_MULTI & ops->flag) {
+            if (TLV_F_MULTI & tlv_ops_var(tlv, flag)) {
                 cache->multi[cache->count++] = tlv;
             } else {
                 err = -ENOSUPPORT;
@@ -961,16 +958,16 @@ tlv_record_parse(tlv_record_t *r)
     {
         int err;
 
-        tlv_trace("tlv_check ...");
+        tlv_dprint("tlv_check ...");
         err = tlv_check(tlv);
-        tlv_trace("tlv_check %s:%d.", ok_string(err), err);
+        tlv_dprint("tlv_check %s:%d.", ok_string(err), err);
         if (err<0) {
             return err;
         }
 
-        tlv_trace("tlv_record_save ...");
+        tlv_dprint("tlv_record_save ...");
         err = tlv_record_save(r, tlv);
-        tlv_trace("tlv_record_save %s:%d.", ok_string(err), err);
+        tlv_dprint("tlv_record_save %s:%d.", ok_string(err), err);
         if (err<0) {
             return err;
         }
