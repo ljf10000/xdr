@@ -1600,7 +1600,9 @@ tlv_to_xdr(xpair_t *pair)
     tlv_dprint("tlv_walk ok.");
 
 ERROR:
+    tlv_dprint("xpair_close ...");
     xpair_close(pair);
+    tlv_dprint("xpair_close ok.");
 
     return err;
 }
