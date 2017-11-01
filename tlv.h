@@ -3,11 +3,18 @@
 /******************************************************************************/
 #include "os.h"
 /******************************************************************************/
-#if 0
+#if 1
 #define tlv_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
 #else
 #define tlv_dprint(_fmt, _args...)      os_do_nothing()
 #endif
+
+#define tlv_trace(_call, _fmt, _args...)    ({  \
+    tlv_dprint("begin " _fmt " ...");           \
+    int __err = _call;                          \
+    tlv_dprint("%s:%d " _fmt, ok_string(__err), __err, ##_args); \
+    __err;                                      \
+})  /* end */
 
 typedef uint8  tlv_u8_t;
 typedef uint16 tlv_u16_t;
@@ -968,16 +975,12 @@ tlv_record_parse(tlv_record_t *r)
     {
         int err;
 
-        tlv_dprint("tlv_check ...");
-        err = tlv_check(tlv);
-        tlv_dprint("tlv_check %s:%d.", ok_string(err), err);
+        err = tlv_trace(tlv_check(tlv), "tlv_check");
         if (err<0) {
             return err;
         }
 
-        tlv_dprint("tlv_record_save ...");
-        err = tlv_record_save(r, tlv);
-        tlv_dprint("tlv_record_save %s:%d.", ok_string(err), err);
+        err = tlv_trace(tlv_record_save(r, tlv), "tlv_record_save");
         if (err<0) {
             return err;
         }

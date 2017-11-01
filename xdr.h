@@ -726,7 +726,7 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
     byte *buf   = tlv_data(tlv);
     int len     = tlv_binlen(tlv);
     if (len<0) {
-        xdr_dprint("tlv id:%d, extern %d, pad=%d, len=%d, hdrlen=%d, datalen=%d", 
+        os_println("tlv id:%d, extern %d, pad=%d, len=%d, hdrlen=%d, datalen=%d", 
             tlv->id,
             tlv_extend(tlv), 
             tlv->pad,
@@ -1540,12 +1540,13 @@ xpair_open(xpair_t *pair)
         err = size; goto ERROR;
     }
 
-    err = tlv_open(tlv, size);
+    err = tlv_trace(tlv_open(tlv, size), "tlv_open %s:%d", tlv->file, size);
     if (err<0) {
         goto ERROR;
     }
 
-    err = xdr_open(xdr, XDR_EXPAND_ALIGN(size));
+    size = XDR_EXPAND_ALIGN(size);
+    err = xdr_trace(xdr_open(xdr, size), "xdr_open %s:%d", tlv->file, size);
     if (err<0) {
         goto ERROR;
     }
@@ -1567,16 +1568,12 @@ tlv_to_xdr(xpair_t *pair)
         tlv_record_t r = TLV_RECORD_INITER(header);
         int err;
 
-        tlv_dprint("tlv_record_parse ...");
-        err = tlv_record_parse(&r);
-        tlv_dprint("tlv_record_parse %s:%d.", ok_string(err), err);
+        err = tlv_trace(tlv_record_parse(&r), "tlv_record_parse");
         if (err<0) {
             return err;
         }
 
-        tlv_dprint("tlv_record_to_xdr ...");
-        err = tlv_record_to_xdr(&r, &pair->xdr);
-        tlv_dprint("tlv_record_to_xdr %s:%d.", ok_string(err), err);
+        err = tlv_trace(tlv_record_to_xdr(&r, &pair->xdr), "tlv_record_to_xdr");
         if (err<0) {
             return err;
         }
