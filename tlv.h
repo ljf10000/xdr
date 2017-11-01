@@ -311,7 +311,7 @@ enum {
     TLV_OPT_CLI             = 0x01,
     TLV_OPT_SPLIT           = 0x02,
     TLV_OPT_DUMP            = 0x10,
-    TLV_OPT_DUMP_SIMPLE     = 0x20,
+    TLV_OPT_DUMP_SIMPLE     = 0x20 | TLV_OPT_DUMP,
 };
 
 static inline void
