@@ -1522,8 +1522,8 @@ xdr_close(xdr_buffer_t *x)
 static inline int
 xpair_close(xpair_t *pair)
 {
-    tlv_close(&pair->tlv);
-    xdr_close(&pair->xdr);
+    tlv_trace(tlv_close(&pair->tlv), "tlv_close");
+    xdr_trace(xdr_close(&pair->xdr), "xdr_close");
 
     return 0;
 }
@@ -1533,31 +1533,25 @@ xpair_open(xpair_t *pair)
 {
     xdr_buffer_t *tlv = &pair->tlv;
     xdr_buffer_t *xdr = &pair->xdr;
-    int err;
+    int size, err;
 
-    tlv_dprint("os_fsize ...");
-    int size = os_fsize(tlv->file);
-    tlv_dprint("os_fsize %d", size);
+    size = os_fsize(tlv->file);
     if (size<0) {
-        err = size; goto ERROR;
+        return size;
     }
 
-    err = tlv_trace(tlv_open(tlv, size), "tlv_open %s:%d", tlv->file, size);
+    err = xdr_trace(tlv_open(tlv, size), "tlv_open %s:%d", tlv->file, size);
     if (err<0) {
-        goto ERROR;
+        return err;
     }
 
     size = XDR_EXPAND_ALIGN(size);
     err = xdr_trace(xdr_open(xdr, size), "xdr_open %s:%d", tlv->file, size);
     if (err<0) {
-        goto ERROR;
+        return err;
     }
 
     return 0;
-ERROR:
-    xpair_close(pair);
-
-    return err;
 }
 
 static inline int
@@ -1585,24 +1579,18 @@ tlv_to_xdr(xpair_t *pair)
         return 0;
     }
 
-    tlv_dprint("xpair_open ...");
     err = xpair_open(pair);
     if (err<0) {
         goto ERROR;
     }
-    tlv_dprint("xpair_open ok.");
 
-    tlv_dprint("tlv_walk ...");
     err = tlv_walk(pair->tlv.u.tlv, pair->tlv.size, walk);
     if (err<0) {
         goto ERROR;
     }
-    tlv_dprint("tlv_walk ok.");
 
 ERROR:
-    tlv_dprint("xpair_close ...");
     xpair_close(pair);
-    tlv_dprint("xpair_close ok.");
 
     return err;
 }
