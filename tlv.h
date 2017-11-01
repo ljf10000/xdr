@@ -4,9 +4,9 @@
 #include "os.h"
 /******************************************************************************/
 #if 0
-#define tlv_dprint(_fmt, _args...)     os_println(_fmt, ##_args)
+#define tlv_trace(_fmt, _args...)       os_println(_fmt, ##_args)
 #else
-#define tlv_dprint(_fmt, _args...)     os_do_nothing()
+#define tlv_trace(_fmt, _args...)       os_do_nothing()
 #endif
 
 typedef uint8  tlv_u8_t;
@@ -568,7 +568,7 @@ tlv_check(tlv_t *tlv)
     }
 }
 
-#define TLV_DUMP(_fmt, _args...)       os_println(__tab _fmt, ##_args)
+#define TLV_DUMP(_fmt, _args...)       os_println(__tab  _fmt, ##_args)
 #define TLV_DUMP2(_fmt, _args...)      os_println(__tab2 _fmt, ##_args)
 #define TLV_DUMP3(_fmt, _args...)      os_println(__tab3 _fmt, ##_args)
 #define TLV_DUMP4(_fmt, _args...)      os_println(__tab4 _fmt, ##_args)
@@ -970,19 +970,19 @@ tlv_record_parse(tlv_record_t *r)
     {
         int err;
 
-        tlv_dprint("tlv_check ...");
+        tlv_trace("tlv_check ...");
         err = tlv_check(tlv);
         if (err<0) {
             return err;
         }
-        tlv_dprint("tlv_check ok.");
+        tlv_trace("tlv_check ok.");
 
-        tlv_dprint("tlv_record_save ...");
+        tlv_trace("tlv_record_save ...");
         err = tlv_record_save(r, tlv);
         if (err<0) {
             return err;
         }
-        tlv_dprint("tlv_record_save ok.");
+        tlv_trace("tlv_record_save ok.");
 
         if (is_tlv_opt(TLV_OPT_DUMP)) {
             tlv_dump(tlv);
