@@ -14,11 +14,6 @@ typedef uint16 tlv_u16_t;
 typedef uint32 tlv_u32_t;
 typedef uint64 tlv_u64_t;
 
-typedef int8   tlv_i8_t;
-typedef int16  tlv_i16_t;
-typedef int32  tlv_i32_t;
-typedef int64  tlv_i64_t;
-
 typedef uint64 xdr_duration_t,  tlv_duration_t;
 typedef uint64 xdr_time_t,      tlv_time_t;
 #define XDR_SECOND(_us)     ((time_t)((_us)/1000000))
@@ -203,10 +198,6 @@ typedef struct {
 #define tlv_mapper_u16(_mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, u16, _flag)
 #define tlv_mapper_u32(_mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, u32, _flag)
 #define tlv_mapper_u64(_mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, u64, _flag)
-#define tlv_mapper_i8( _mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, i8, _flag)
-#define tlv_mapper_i16(_mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, i16, _flag)
-#define tlv_mapper_i32(_mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, i32, _flag)
-#define tlv_mapper_i64(_mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, i64, _flag)
 #define tlv_mapper_ip4(_mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, ip4, _flag)
 #define tlv_mapper_ip6(_mapper, _id, _name, _flag)     tlv_mapper_fixed(_mapper, _id, _name, ip6, _flag)
 #define tlv_mapper_time(_mapper, _id, _name, _flag)        tlv_mapper_fixed(_mapper, _id, _name, time, _flag)
