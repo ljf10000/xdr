@@ -24,7 +24,7 @@
     xdr_dprint("begin " _fmt " ...");           \
     int __err = _call;                          \
     xdr_dprint("%s:%d " _fmt, ok_string(__err), __err, ##_args); \
-    __err;
+    __err;                                      \
 })  /* end */
 
 #if 1
