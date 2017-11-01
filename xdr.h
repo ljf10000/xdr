@@ -1439,12 +1439,18 @@ tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
                 ops = tlv_ops(tlv);
 
                 if (ops->toxdr) {
-                    xdr_trace("toxdr %d:%d ...", j, tlv->id);
+                    if (tlv->id>200) {
+                        xdr_trace("toxdr %d:%d ...", j, tlv->id);
+                    }
+                    
                     err = (*ops->toxdr)(x, tlv);
                     if (err<0) {
                         return err;
                     }
-                    xdr_trace("toxdr %d:%d ok.", j, tlv->id);
+                    
+                    if (tlv->id>200) {
+                        xdr_trace("toxdr %d:%d ok.", j, tlv->id);
+                    }
                 }
             }
         }
