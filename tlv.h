@@ -11,7 +11,7 @@
 
 #define tlv_trace(_call, _fmt, _args...)    ({  \
     int __err;                                  \
-    tlv_dprint("try " _fmt " ...");             \
+    tlv_dprint("try " _fmt " ...", ##_args);    \
     __err = (_call);                            \
     tlv_dprint(__tab "%s:%d " _fmt, ok_string(__err), __err, ##_args); \
     __err;                                      \
