@@ -36,16 +36,6 @@ ev_debug(inotify_ev_t *ev)
     }
 }
 
-static struct {
-    char *name;
-    uint32 flag;
-} opt[] = {
-    { .name = "--cli",          .flag = TLV_OPT_CLI },
-    { .name = "--dump",         .flag = TLV_OPT_DUMP },
-    { .name = "--dump-simple",  .flag = TLV_OPT_DUMP_SIMPLE },
-    { .name = "--file-split",   .flag = TLV_OPT_SPLIT },
-};
-
 static int usage(void)
 {
     os_println("%s [OPTION] tlv-path xdr-path sha-path", self);
@@ -53,6 +43,31 @@ static int usage(void)
     os_println(__tab "--dump: dump all");
 
     return -1;
+}
+
+static struct {
+    char *name;
+    uint32 flag;
+    int (*handle)(char *args);
+} opt[] = {
+    { .name = "--cli",          .flag = TLV_OPT_CLI },
+    { .name = "--dump",         .flag = TLV_OPT_DUMP },
+    { .name = "--dump-simple",  .flag = TLV_OPT_DUMP_SIMPLE },
+    { .name = "--file-split",   .flag = TLV_OPT_SPLIT },
+};
+
+static void
+opt_analysis(char *args)
+{
+    int i;
+    
+    for (i=0; i<os_count_of(opt); i++) {
+        if (0==strcmp(opt[i].name, args)) {
+            tlv_opt_set(opt[i].flag);
+
+            return;
+        }
+    }
 }
 
 static int xdr_handle(inotify_ev_t *ev, char *path[PATH_END])
@@ -154,15 +169,10 @@ int main(int argc, char *argv[])
         
         if (0==strcmp("--help", args)) {
             return usage();
+        } else {
+            opt_analysis(args);
         }
-        
-        int i;
-        for (i=0; i<os_count_of(opt); i++) {
-            if (0==strcmp(opt[i].name, args)) {
-                tlv_opt_set(opt[i].flag);
-            }
-        }
-        
+
         argc--; argv++;
     }
 
