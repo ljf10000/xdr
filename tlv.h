@@ -328,8 +328,9 @@ extern uint32 __tlv_opt;
 extern uint32 xdr_seq;
 
 enum {
-    TLV_OPT_DUMP        = 0x01,
-    TLV_OPT_FILE_SPLIT  = 0x02,
+    TLV_OPT_CLI     = 0x01,
+    TLV_OPT_DUMP    = 0x02,
+    TLV_OPT_SPLIT   = 0x04,
 };
 
 static inline void
@@ -339,15 +340,9 @@ tlv_opt_set(uint32 flag)
 }
 
 static inline bool
-is_tlv_opt_dump(void)
+is_tlv_opt(int flag)
 {
-    return TLV_OPT_DUMP==(TLV_OPT_DUMP & __tlv_opt);
-}
-
-static inline bool
-is_tlv_opt_file_split(void)
-{
-    return TLV_OPT_FILE_SPLIT==(TLV_OPT_FILE_SPLIT & __tlv_opt);
+    return flag==(flag & __tlv_opt);
 }
 
 static inline bool
@@ -650,7 +645,7 @@ tlv_dump_binary(tlv_t *tlv)
 {
     tlv_ops_t *ops = tlv_ops(tlv);
 
-    if (is_tlv_opt_file_split()) {
+    if (is_tlv_opt(TLV_OPT_SPLIT)) {
         TLV_DUMP("id: %d, %s: %s", tlv->id, ops->name, tlv_string(tlv));
     } else {
         TLV_DUMP("id: %d, %s:", tlv->id, ops->name);
@@ -1007,7 +1002,7 @@ tlv_record_parse(tlv_record_t *r)
         }
         tlv_dprint("tlv_record_save ok.");
 
-        if (is_tlv_opt_dump()) {
+        if (is_tlv_opt(TLV_OPT_DUMP)) {
             tlv_dump(tlv);
         }
 

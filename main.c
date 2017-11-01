@@ -40,8 +40,9 @@ static struct {
     char *name;
     uint32 flag;
 } opt[] = {
+    { .name = "--cli",          .flag = TLV_OPT_CLI },
     { .name = "--dump",         .flag = TLV_OPT_DUMP },
-    { .name = "--file-split",   .flag = TLV_OPT_FILE_SPLIT },
+    { .name = "--file-split",   .flag = TLV_OPT_SPLIT },
 };
 
 static int usage(void)
@@ -95,7 +96,7 @@ static int handle(inotify_ev_t *ev, char *path[PATH_END])
     }
 }
 
-static int run(char *path[PATH_END])
+static int monitor(char *path[PATH_END])
 {
     int fd, err;
 
@@ -131,6 +132,13 @@ static int run(char *path[PATH_END])
     }
 }
 
+static int cli(char *path[PATH_END])
+{
+    xpair_t pair = XPAIR_INITER(path[PATH_TLV], path[PATH_XDR], path[PATH_SHA]);
+
+    return tlv_to_xdr(&pair);
+}
+
 int main(int argc, char *argv[])
 {
     self = argv[0];
@@ -161,7 +169,11 @@ int main(int argc, char *argv[])
         return usage();
     }
 
-    return run(argv);
+    if (is_tlv_opt(TLV_OPT_CLI)) {
+        return cli(argv);
+    } else {
+        return monitor(argv);
+    }
 }
 
 /******************************************************************************/

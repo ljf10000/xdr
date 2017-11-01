@@ -751,7 +751,7 @@ xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 {
     int err;
     
-    if (is_tlv_opt_file_split()) {
+    if (is_tlv_opt(TLV_OPT_SPLIT)) {
         err = xb_pre_file_bypath(x, file, tlv);
     } else {
         err = xb_pre_file_bybuffer(x, file, tlv);
