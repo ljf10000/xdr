@@ -535,14 +535,6 @@ is_option_args(char *args)
         && args[2];
 }
 
-#ifndef S_IRALL
-#define S_IRALL     (S_IRUSR|S_IRWXG|S_IROTH)
-#endif
-
-#ifndef S_IWALL
-#define S_IWALL     (S_IWUSR|S_IWGRP)
-#endif
-
 static inline bool
 os_fexist(const char *file)
 {

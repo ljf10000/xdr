@@ -550,9 +550,8 @@ static inline int
 xb_open(xdr_buffer_t *x, bool readonly)
 {
     int flag = readonly?O_RDONLY:(O_CREAT|O_RDWR);
-    int mode = readonly?0:S_IWALL;
 
-    x->fd = open(x->file, flag|O_CLOEXEC, mode|S_IRALL);
+    x->fd = open(x->file, flag|O_CLOEXEC, 0x644);
     if (x->fd<0) {
         os_println("open %s error:%d ...", x->file, -errno);
         
