@@ -42,6 +42,7 @@ static struct {
 } opt[] = {
     { .name = "--cli",          .flag = TLV_OPT_CLI },
     { .name = "--dump",         .flag = TLV_OPT_DUMP },
+    { .name = "--dump-simple",  .flag = TLV_OPT_DUMP_SIMPLE },
     { .name = "--file-split",   .flag = TLV_OPT_SPLIT },
 };
 
