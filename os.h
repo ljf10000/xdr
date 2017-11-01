@@ -580,7 +580,7 @@ os_mmap(char *file, size_t length, off_t offset, bool readonly)
     int mflag = readonly?MAP_PRIVATE:MAP_SHARED;
     int prot  = readonly?PROT_READ:(PROT_READ|PROT_WRITE);
 
-    int fd = open(file, fflag);
+    int fd = open(file, fflag, 0x644);
     if (fd<0) {
         return NULL;
     }

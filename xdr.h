@@ -503,7 +503,7 @@ struct xdr_buffer_st {
 static inline int
 xb_mmap(xdr_buffer_t *x, bool readonly)
 {
-    int prot = readonly?PROT_READ:PROT_WRITE|PROT_READ;
+    int prot = readonly?PROT_READ:(PROT_READ|PROT_WRITE);
     int flag = readonly?MAP_PRIVATE:MAP_SHARED;
     int err;
     
@@ -544,7 +544,7 @@ xb_munmap(xdr_buffer_t *x)
 static inline int
 xb_open(xdr_buffer_t *x, bool readonly, int size)
 {
-    int flag = readonly?O_RDONLY:(O_CREAT|O_TRUNC|O_RDWR);
+    int flag = readonly?O_RDONLY:(O_CREAT|O_RDWR);
 
     x->fd = open(x->file, flag|O_CLOEXEC, 0x644);
     if (x->fd<0) {
