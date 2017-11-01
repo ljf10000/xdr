@@ -339,7 +339,7 @@
 #endif
 
 #ifndef ok_string
-#define ok_string(_err)                             ((0==(_err))<0?__ok:__error)
+#define ok_string(_err)                             (0==(_err)?__ok:__error)
 #endif
 
 #ifndef os_printf
