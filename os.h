@@ -874,5 +874,21 @@ __get_nameflag_byname(nameflag_t opt[], int count, char *name)
 
 #define get_nameflag_byflag(_opt, _flag)    __get_nameflag_byflag(_opt, os_count_of(_opt), _flag)
 #define get_nameflag_byname(_opt, _flag)    __get_nameflag_byname(_opt, os_count_of(_opt), _flag)
+
+#define DECLARE_OPTION  int __os_option
+extern int __os_option;
+
+static inline void
+set_option(int flag)
+{
+    __os_option |= flag;
+}
+
+static inline bool
+is_option(int flag)
+{
+    return flag==(flag & __os_option);
+}
+
 /******************************************************************************/
 #endif

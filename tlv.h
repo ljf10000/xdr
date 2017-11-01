@@ -295,13 +295,11 @@ enum { TLV_MAPPER(__TLV_ENUM) tlv_id_end };
     .toxdr  = _toxdr,   \
 },  /* end */
 #define DECLARE_TLV_VARS \
-    uint32 __tlv_opt; \
     uint32 xdr_seq; \
     tlv_ops_t __tlv_ops[tlv_id_end] = { TLV_MAPPER(__TLV_STRUCT) }; \
     os_fake_declare /* end */
 
 extern tlv_ops_t __tlv_ops[];
-extern uint32 __tlv_opt;
 extern uint32 xdr_seq;
 
 enum {
@@ -310,18 +308,6 @@ enum {
     TLV_OPT_DUMP            = 0x10,
     TLV_OPT_DUMP_SIMPLE     = 0x20 | TLV_OPT_DUMP,
 };
-
-static inline void
-tlv_opt_set(uint32 flag)
-{
-    __tlv_opt |= flag;
-}
-
-static inline bool
-is_tlv_opt(int opt)
-{
-    return opt==(opt & __tlv_opt);
-}
 
 static inline bool
 is_good_tlv_id(int id)
@@ -455,7 +441,7 @@ tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv))
 static inline void
 tlv_dump(tlv_t *tlv)
 {
-    if (is_tlv_opt(TLV_OPT_DUMP)) {
+    if (is_option(TLV_OPT_DUMP)) {
         tlv_ops_t *ops = tlv_ops(tlv);
 
         if (ops && ops->dump) {
@@ -616,13 +602,13 @@ tlv_dump_ip6(tlv_t *tlv)
 static inline void 
 tlv_dump_binary(tlv_t *tlv)
 {
-    if (is_tlv_opt(TLV_OPT_SPLIT)) {
+    if (is_option(TLV_OPT_SPLIT)) {
         TLV_DUMP("id: %d, %s: %s", tlv->id, tlv_ops_name(tlv), tlv_string(tlv));
     } else {
         TLV_DUMP("id: %d, %s:", tlv->id, tlv_ops_name(tlv));
 
         int size = tlv_datalen(tlv);
-        if (is_tlv_opt(TLV_OPT_DUMP_SIMPLE)) {
+        if (is_option(TLV_OPT_DUMP_SIMPLE)) {
             size = os_min(size, XDR_DUMP_SIMPLE);
         }
 
@@ -987,7 +973,7 @@ tlv_record_parse(tlv_record_t *r)
             return err;
         }
 
-        if (is_tlv_opt(TLV_OPT_DUMP)) {
+        if (is_option(TLV_OPT_DUMP)) {
             tlv_dump(tlv);
         }
 

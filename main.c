@@ -1,5 +1,6 @@
 #include "xdr.h"
 
+DECLARE_OPTION;
 DECLARE_TLV_VARS;
 /******************************************************************************/
 #ifndef XDR_SUFFIX
@@ -58,7 +59,7 @@ opt_analysis(char *args)
 
     int flag = get_nameflag_byname(opt, args);
 
-    tlv_opt_set(flag);
+    set_option(flag);
 }
 
 static int xdr_handle(inotify_ev_t *ev, char *path[PATH_END])
@@ -175,7 +176,7 @@ int main(int argc, char *argv[])
     xdr_dprint("argv[1]=%s", argv[1]);
     xdr_dprint("argv[2]=%s", argv[2]);
     
-    if (is_tlv_opt(TLV_OPT_CLI)) {
+    if (is_option(TLV_OPT_CLI)) {
         return cli(argv);
     } else {
         return monitor(argv);

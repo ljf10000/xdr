@@ -120,14 +120,12 @@ enum {
     
     XDR_FILE_PAD_SIZE       = (XDR_FILE_HEADER_SIZE     //(60
                                 - sizeof(xdr_size_t)    // -4
-                                - sizeof(time_t)        // -4
                                 - sizeof(bkdr_t)        // -4
-                                - XDR_DIGEST_SIZE),     // -32) = 12
+                                - XDR_DIGEST_SIZE),     // -32) = 20
 };
 
 typedef struct {
     xdr_size_t  size;
-    time_t      time;
     bkdr_t      bkdr;
     byte digest[XDR_DIGEST_SIZE];
     byte _[XDR_FILE_PAD_SIZE];
@@ -358,6 +356,8 @@ typedef struct {
     xdr_time_t session_time_stop;
 
     bkdr_t bkdr;
+    time_t time;
+    uint32 seq;
 
     xdr_size_t total;   // total size
     xdr_flag_t flag;    // XDR_F_XXX
@@ -386,7 +386,9 @@ xdr_init(xdr_t *xdr)
 {
     os_objzero(xdr);
 
-    xdr->version = XDR_VERSION;
+    xdr->version= XDR_VERSION;
+    xdr->time   = time(NULL);
+    xdr->seq    = xdr_seq++;
 }
 
 static inline xdr_session_t
@@ -713,7 +715,7 @@ xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, tlv_t *tlv)
 static inline int
 xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 {
-    char *dir = getdirbyflag(tlv_ops_flag(tlv));
+    const char *dir = getdirbyflag(tlv_ops_flag(tlv));
     if (NULL==dir) {
         return -ENOSUPPORT;
     }
@@ -735,9 +737,8 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
     }
     
     sha256(buf, len, file->digest);
-    file->size = len;
-    file->time = time(NULL);
     file->bkdr = os_bkdr(file->digest, sizeof(file->digest));
+    file->size = len;
     
     os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
     os_saprintf(filename, "%s/%s/%s", x->path, dir, digest);
@@ -772,7 +773,7 @@ xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 {
     int err;
     
-    if (is_tlv_opt(TLV_OPT_SPLIT)) {
+    if (is_option(TLV_OPT_SPLIT)) {
         err = xb_pre_file_bypath(x, file, tlv);
     } else {
         err = xb_pre_file_bybuffer(x, file, tlv);
