@@ -316,8 +316,9 @@ extern tlv_ops_t __tlv_ops[];
 
 enum {
     TLV_OPT_CLI             = 0x01,
-    TLV_OPT_SPLIT           = 0x02,
-    TLV_OPT_STRICT          = 0x04,
+    TLV_OPT_IP6             = 0x02,
+    TLV_OPT_SPLIT           = 0x04,
+    TLV_OPT_STRICT          = 0x08,
     TLV_OPT_DUMP            = 0x10,
     TLV_OPT_DUMP_SIMPLE     = 0x20 | TLV_OPT_DUMP,
 };
@@ -982,6 +983,8 @@ tlv_check_session(tlv_t *tlv)
         case IPPROTO_IGMP:
         case IPPROTO_IPIP:
         case IPPROTO_GRE:
+        case IPPROTO_ESP:
+        case IPPROTO_AH:
             if (!is_option(TLV_OPT_STRICT)) {
                 return 0;
             }

@@ -39,6 +39,7 @@ ev_debug(inotify_ev_t *ev)
 
 static nameflag_t opt[] = {
     { .flag = TLV_OPT_CLI,          .name = "--cli",        .help = "cli mode"},
+    { .flag = TLV_OPT_IP6,          .name = "--ip6",        .help = "ipv6[not support now]"},
     { .flag = TLV_OPT_DUMP,         .name = "--dump",       .help = "dump all"},
     { .flag = TLV_OPT_STRICT,       .name = "--strict",     .help = "strict check"},
     { .flag = TLV_OPT_DUMP_SIMPLE,  .name = "--dump-simple",.help = "dump with simple format"},
