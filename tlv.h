@@ -1055,6 +1055,52 @@ tlv_record_parse(tlv_record_t *r)
 #define TLV_CHECK_OBJ(_name)    BUILD_BUG_ON(sizeof(tlv_##_name##_t) != SIZEOF_##_name)
 #endif
 
+typedef struct {
+    xdr_time_t time_request;
+    xdr_time_t time_first_response;
+    xdr_time_t time_last_content;
+    xdr_duration_t service_delay;
+    
+    uint32 content_length;
+}
+tlv_a_t;
+
+typedef struct {
+    xdr_time_t time_request;
+    xdr_time_t time_first_response;
+    xdr_time_t time_last_content;
+    xdr_duration_t service_delay;
+    
+    uint32 content_length;
+    
+    uint16 status_code;
+    byte method;
+    byte version;
+}
+tlv_b_t;
+
+typedef struct {
+    xdr_time_t time_request;
+    xdr_time_t time_first_response;
+    xdr_time_t time_last_content;
+    xdr_duration_t service_delay;
+    
+    uint32 content_length;
+    
+    uint16 status_code;
+    byte method;
+    byte version;
+
+    byte _0:2;
+    byte head:1;
+    byte flag:3;
+    byte first:2;
+    byte ie;
+    byte portal;
+    byte _1;
+}
+tlv_c_t;
+
 static inline void
 tlv_check_obj(void) 
 {
@@ -1065,7 +1111,11 @@ tlv_check_obj(void)
     TLV_CHECK_OBJ(tcp);
     TLV_CHECK_OBJ(L7);
     //TLV_CHECK_OBJ(http);
-    os_println("sizeof(http)=%d", sizeof(tlv_http_t));
+    os_println("sizeof(http)=%d, sizeof(a)=%d, sizeof(b)=%d, sizeof(c)=%d", 
+        sizeof(tlv_http_t),
+        sizeof(tlv_a_t),
+        sizeof(tlv_b_t),
+        sizeof(tlv_c_t));
     TLV_CHECK_OBJ(sip);
     TLV_CHECK_OBJ(rtsp);
 }
