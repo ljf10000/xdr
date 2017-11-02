@@ -372,6 +372,7 @@ tlv_ops(tlv_t *tlv)
 #define tlv_ops_string(_tlv, _field)    tlv_ops_field(_tlv, _field, "invalid-tlv-id")
 
 #define tlv_ops_flag(_tlv)      tlv_ops_var(_tlv, flag)
+#define tlv_ops_fixed(_tlv)     tlv_ops_var(_tlv, maxsize)
 #define tlv_ops_name(_tlv)      tlv_ops_string(_tlv, name)
 
 #define tlv_extend(_tlv)        (_tlv)->h.e.e
@@ -474,10 +475,11 @@ tlv_error(tlv_t *tlv, int err, const char *fmt, ...)
         va_end(args);
         
         os_println(__crlf __tab 
-            "tlv name:%s fixed:%d id:%d pad:%d alen:%u hlen:%u dlen:%u", 
+            "tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u", 
             tlv_ops_name(tlv), 
-            tlv_ops_var(tlv, maxsize),
             tlv->id, 
+            tlv_extend(tlv),
+            tlv_ops_fixed(tlv),
             tlv->pad, 
             tlv_len(tlv),
             tlv_hdrlen(tlv),
@@ -543,7 +545,7 @@ tlv_check(tlv_t *tlv)
 {
     tlv_ops_t *ops = tlv_ops(tlv);
     if (NULL==ops) {
-        return tlv_error(tlv, -EBADIDX, "tlv check invalid id:%d", tlv->id);
+        return tlv_error(tlv, -EBADIDX, "not support tlv id:%d", tlv->id);
     }
     else if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
         return tlv_error(tlv, -ETOOSMALL, "tlv check too small");
