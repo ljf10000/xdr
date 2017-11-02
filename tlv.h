@@ -374,8 +374,8 @@ tlv_ops(tlv_t *tlv)
 #define tlv_hdrlen_e            (sizeof(tlv_t)+sizeof(uint32))
 #define tlv_hdrlen(_tlv)        (tlv_extend(_tlv)?tlv_hdrlen_e:tlv_hdrlen_n)
 
-#define tlv_datalen_e(_tlv)     (tlv_len_e(_tlv)-tlv_hdrlen_e)
 #define tlv_datalen_n(_tlv)     (tlv_len_n(_tlv)-tlv_hdrlen_n)
+#define tlv_datalen_e(_tlv)     (tlv_len_e(_tlv)-tlv_hdrlen_e)
 #define tlv_datalen(_tlv)       (tlv_extend(_tlv)?tlv_datalen_e(_tlv):tlv_datalen_n(_tlv))
 
 #define tlv_strlen(_tlv)        (tlv_datalen(_tlv) - (_tlv)->pad)
@@ -958,7 +958,7 @@ tlv_check_session(tlv_t *tlv)
         case IPPROTO_UDP:
             return 0;
         default:
-            return -ENOSUPPORT;
+            return tlv_error(tlv, -ENOSUPPORT, "no support ip proto:%d", obj->proto);
     }
 }
 
