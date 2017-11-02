@@ -145,7 +145,7 @@
    e.g. in a structure initializer (or where-ever else comma expressions
    aren't permitted). */
 #ifndef BUILD_BUG_ON
-#define BUILD_BUG_ON(_condition)            sizeof(struct { int:-!!(_condition); })
+#define BUILD_BUG_ON(_condition)            (void)sizeof(struct { int:-!!(_condition); })
 #endif
 
 #ifndef BUILD_BUG_NOT_ARRAY
