@@ -993,6 +993,10 @@ tlv_check_session(tlv_t *tlv)
     int err = -ENOSUPPORT;
     tlv_error(tlv, err, "no support ip proto:%d", obj->proto);
     tlv_dump_session(tlv);
+    os_println("IPPROTO_ESP=%d, option=0x%x, is_option(TLV_OPT_STRICT)=%s", 
+        IPPROTO_ESP, 
+        OS_VAR(option),
+        bool_string(is_option(TLV_OPT_STRICT)));
     
     return err;
 }
