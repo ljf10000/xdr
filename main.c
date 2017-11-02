@@ -20,7 +20,7 @@ enum {
 #define EVCOUNT             128
 #define EVSIZE              INOTIFY_EVSIZE
 #define EVNEXT(_ev)         inotify_ev_next(_ev)
-#define ISXDR(_ev)          OS_HAS_SUFFIX((_ev)->name, inotify_ev_len(_ev), XDR_SUFFIX, sizeof(XDR_SUFFIX)-1)
+#define ISXDR(_ev, _len)    OS_HAS_SUFFIX((_ev)->name, _len, XDR_SUFFIX, sizeof(XDR_SUFFIX)-1)
 
 static char EVBUF[EVCOUNT * INOTIFY_EVSIZE];
 
@@ -69,14 +69,13 @@ opt_analysis(char *args)
     set_option(flag);
 }
 
-static int xdr_handle(char *file, char *path[PATH_END])
+static int xdr_handle(char *file, int len, char *path[PATH_END])
 {
     static int tlv_path_len;
     static int xdr_path_len;
     static char tlv[1+OS_FILENAME_LEN]; 
     static char xdr[1+OS_FILENAME_LEN]; 
     xpair_t pair = XPAIR_INITER(file, tlv, xdr, path[PATH_SHA], path[PATH_BAD]);
-    int len = strlen(file);
 
     if (0==tlv_path_len) {
         tlv_path_len = strlen(path[PATH_TLV]);
@@ -85,7 +84,7 @@ static int xdr_handle(char *file, char *path[PATH_END])
     }
 
     if (0==xdr_path_len) {
-        xdr_path_len = 1+strlen(path[PATH_XDR]);
+        xdr_path_len = strlen(path[PATH_XDR]);
         memcpy(xdr, path[PATH_XDR], xdr_path_len);
         xdr[xdr_path_len++] = '/';
     }
@@ -119,8 +118,10 @@ static int remove_handle(char *file, char *path[PATH_END])
 
 static int handle(inotify_ev_t *ev, char *path[PATH_END])
 {
-    if (ISXDR(ev)) {
-        return xdr_handle(ev->name, path);
+    int len = inotify_ev_len(ev);
+    
+    if (ISXDR(ev, len)) {
+        return xdr_handle(ev->name, len, path);
     } else {
         return remove_handle(ev->name, path);
     }
@@ -174,7 +175,7 @@ static int cli(char *path[PATH_END])
         os_println("not found env ENV_TLV_FILE");
     }
     
-    return xdr_handle(file, path);
+    return xdr_handle(file, strlen(file), path);
 }
 
 int main(int argc, char *argv[])
@@ -200,7 +201,7 @@ int main(int argc, char *argv[])
         argc--; argv++;
     }
 
-    if (4 != argc) {
+    if (PATH_END != argc) {
         return usage();
     }
 
