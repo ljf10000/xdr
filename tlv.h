@@ -331,29 +331,14 @@ is_good_tlv_id(int id)
 #define TLV_OPS(_id)    (is_good_tlv_id(_id)?&__tlv_ops[_id]:NULL)
 
 struct tlv_st {
-    byte    id;
-    byte    pad;
+    byte id;
+    byte pad;
+    
+    uint16 e:1;
+    uint16 _:3;
+    uint16 len:12;
 
-    union {
-        struct {
-            uint16  _:4;
-            uint16  len:12;
-        } n;    // normal
-
-        struct {
-            uint16  e:1;
-            uint16  _:15;
-        } e;    // extend
-    } h;
-
-    union {
-        byte data[0];
-
-        struct {
-            uint32  len;
-            byte    data[0];
-        } e;
-    } d;
+    byte body[0];
 };
 
 static inline tlv_ops_t *
@@ -375,18 +360,18 @@ tlv_ops(tlv_t *tlv)
 #define tlv_ops_fixed(_tlv)     tlv_ops_var(_tlv, maxsize)
 #define tlv_ops_name(_tlv)      tlv_ops_string(_tlv, name)
 
-#define tlv_extend(_tlv)        (_tlv)->h.e.e
+#define tlv_extend(_tlv)        (_tlv)->e
 
-#define tlv_data_n(_tlv)        (_tlv)->d.data
-#define tlv_data_e(_tlv)        (_tlv)->d.e.data
+#define tlv_data_n(_tlv)        (_tlv)->body
+#define tlv_data_e(_tlv)        ((_tlv)->body + sizeof(uint32))
 #define tlv_data(_tlv)          (tlv_extend(_tlv)?tlv_data_e(_tlv):tlv_data_n(_tlv))
 
-#define tlv_len_n(_tlv)         (_tlv)->h.n.len
-#define tlv_len_e(_tlv)         (_tlv)->d.e.len
+#define tlv_len_n(_tlv)         (_tlv)->len
+#define tlv_len_e(_tlv)         (*(uint32 *)(_tlv)->body)
 #define tlv_len(_tlv)           (tlv_extend(_tlv)?tlv_len_e(_tlv):tlv_len_n(_tlv))
 
-#define tlv_hdrlen_e            sizeof(tlv_t)
-#define tlv_hdrlen_n            (sizeof(tlv_t)-sizeof(uint32))
+#define tlv_hdrlen_n            sizeof(tlv_t)
+#define tlv_hdrlen_e            (sizeof(tlv_t)+sizeof(uint32))
 #define tlv_hdrlen(_tlv)        (tlv_extend(_tlv)?tlv_hdrlen_e:tlv_hdrlen_n)
 
 #define tlv_datalen_e(_tlv)     (tlv_len_e(_tlv)-tlv_hdrlen_e)
