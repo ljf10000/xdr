@@ -850,19 +850,19 @@ H: head
 static inline int
 tlv_http_first(tlv_http_t *obj)
 {
-    return (obj->v & TLV_MASK_HTTP_FIRST) >> 6
+    return (obj->v & TLV_MASK_HTTP_FIRST) >> 6;
 }
 
 static inline int
 tlv_http_flag(tlv_http_t *obj)
 {
-    return (obj->v & TLV_MASK_HTTP_FLAG) >> 3
+    return (obj->v & TLV_MASK_HTTP_FLAG) >> 3;
 }
 
 static inline int
 tlv_http_head(tlv_http_t *obj)
 {
-    return (obj->v & TLV_MASK_HTTP_HEAD) >> 2
+    return (obj->v & TLV_MASK_HTTP_HEAD) >> 2;
 }
 
 static inline void 
