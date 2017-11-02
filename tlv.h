@@ -1111,11 +1111,10 @@ tlv_check_obj(void)
     TLV_CHECK_OBJ(tcp);
     TLV_CHECK_OBJ(L7);
     //TLV_CHECK_OBJ(http);
-    os_println("sizeof(http)=%d, sizeof(a)=%d, sizeof(b)=%d, sizeof(c)=%d", 
-        sizeof(tlv_http_t),
-        sizeof(tlv_a_t),
-        sizeof(tlv_b_t),
-        sizeof(tlv_c_t));
+    os_println("sizeof(http)=%d", sizeof(tlv_http_t));
+    os_println("sizeof(a)=%d", sizeof(tlv_a_t));
+    os_println("sizeof(b)=%d", sizeof(tlv_b_t));
+    os_println("sizeof(c)=%d", sizeof(tlv_c_t));
     TLV_CHECK_OBJ(sip);
     TLV_CHECK_OBJ(rtsp);
 }
