@@ -325,7 +325,7 @@ static inline bool
 is_good_tlv_id(int id)
 {
     return is_good_value(id, 0, tlv_id_low_end) 
-        && is_good_value(id, tlv_id_high_begin, tlv_id_end);
+        || is_good_value(id, tlv_id_high_begin, tlv_id_end);
 }
 
 #define TLV_OPS(_id)    (is_good_tlv_id(_id)?&__tlv_ops[_id]:NULL)
@@ -543,7 +543,7 @@ tlv_check(tlv_t *tlv)
 {
     tlv_ops_t *ops = tlv_ops(tlv);
     if (NULL==ops) {
-        return tlv_error(tlv, -EBADIDX, "tlv check invalid id");
+        return tlv_error(tlv, -EBADIDX, "tlv check invalid id:%d", tlv->id);
     }
     else if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
         return tlv_error(tlv, -ETOOSMALL, "tlv check too small");
