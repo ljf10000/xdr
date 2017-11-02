@@ -826,11 +826,14 @@ typedef struct {
     uint16 status_code;
     byte method;
     byte version;
-    
-    byte v;
+
+    byte _0:2;
+    byte head:1;
+    byte flag:3;
+    byte first:2;
     byte ie;
     byte portal;
-    byte _;
+    byte _1;
 }
 tlv_http_t;
 
@@ -841,7 +844,6 @@ tlv_http_t;
 +--+--+--+--+--+--+--+--+
 R: resv
 H: head
-#endif
 
 #define TLV_MASK_HTTP_FIRST     0xc0
 #define TLV_MASK_HTTP_FLAG      0x38
@@ -864,6 +866,7 @@ tlv_http_head(tlv_http_t *obj)
 {
     return (obj->v & TLV_MASK_HTTP_HEAD) >> 2;
 }
+#endif
 
 static inline void 
 tlv_dump_http(tlv_t *tlv)
@@ -881,9 +884,9 @@ tlv_dump_http(tlv_t *tlv)
     TLV_DUMP2("method              : %u", obj->method);
     TLV_DUMP2("version             : %u", obj->version);
 
-    TLV_DUMP2("first               : %s", bool_string(tlv_http_first(obj)));
-    TLV_DUMP2("flag                : %u", tlv_http_flag(obj));
-    TLV_DUMP2("head                : %s", yes_string(tlv_http_head(obj)));
+    TLV_DUMP2("first               : %s", bool_string(obj->first));
+    TLV_DUMP2("flag                : %u", obj->flag);
+    TLV_DUMP2("head                : %s", obj->head));
     TLV_DUMP2("ie                  : %u", obj->ie);
     TLV_DUMP2("portal              : %u", obj->portal);
 }
@@ -902,16 +905,10 @@ typedef struct {
     byte signal_type;
     
     uint16 dataflow_count;
-    union {
-        struct {
-            uint16 invite:1;
-            uint16 bye:1;
-            uint16 malloc:1;
-            uint16 _:13;
-        } st;
-
-        uint16 v;
-    } u;
+    uint16 _:13;
+    uint16 malloc:1;
+    uint16 bye:1;
+    uint16 invite:1;
 } tlv_sip_t;
 
 static inline void 
@@ -926,9 +923,9 @@ tlv_dump_sip(tlv_t *tlv)
     TLV_DUMP2("hangup_reason   : %u", obj->hangup_reason);
     TLV_DUMP2("signal_type     : %u", obj->signal_type);
     TLV_DUMP2("dataflow_count  : %u", obj->dataflow_count);
-    TLV_DUMP2("invite          : %s", bool_string(XDR_SIP_INVITE==obj->u.st.invite));
-    TLV_DUMP2("bye             : %s", bool_string(XDR_SIP_BYE==obj->u.st.bye));
-    TLV_DUMP2("malloc          : %s", bool_string(obj->u.st.malloc));
+    TLV_DUMP2("invite          : %s", bool_string(XDR_SIP_INVITE==obj->invite));
+    TLV_DUMP2("bye             : %s", bool_string(XDR_SIP_BYE==obj->bye));
+    TLV_DUMP2("malloc          : %s", bool_string(obj->malloc));
 }
 
 #ifndef SIZEOF_rtsp

@@ -229,10 +229,13 @@ typedef struct {
     byte method;
     byte version;
     
-    byte v;
+    byte _0:2;
+    byte head:1;
+    byte flag:3;
+    byte first:2;
     byte ie;
     byte portal;
-    byte _;
+    byte _1;
     // end, same as tlv_http_t
 
     xdr_offset_t offsetof_request;    // xdr_file_t
@@ -257,16 +260,10 @@ typedef struct {
     byte signal_type;
     
     uint16 dataflow_count;
-    union {
-        struct {
-            uint16 invite:1;
-            uint16 bye:1;
-            uint16 malloc:1;
-            uint16 _:13;
-        } st;
-
-        uint16 v;
-    } u;
+    uint16 _:13;
+    uint16 malloc:1;
+    uint16 bye:1;
+    uint16 invite:1;
     // end, same as tlv_sip_t
     
     xdr_string_t calling_number;
