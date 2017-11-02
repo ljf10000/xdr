@@ -1677,8 +1677,9 @@ xpair_log(xpair_t *pair)
     if (os_fexist(tlv->file)) {
         char filename[1+OS_FILENAME_LEN] = {0};
 
-        os_saprintf(filename, "%s/%s", pair->bad, );
-        rename(tlv->file);
+        os_saprintf(filename, "%s/%s", pair->bad, pair->file);
+
+        rename(tlv->file, filename);
     }
 }
 
