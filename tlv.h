@@ -555,17 +555,19 @@ tlv_check_dynamic(tlv_t *tlv)
 static inline int
 tlv_check(tlv_t *tlv)
 {
+    int err = 0;
+    
     tlv_ops_t *ops = tlv_ops(tlv);
     if (NULL==ops) {
-        return tlv_error(tlv, -EBADIDX, "not support tlv id:%d", tlv->id);
+        err = tlv_error(tlv, -EBADIDX, "not support tlv id:%d", tlv->id); goto ERROR;
     }
     else if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
-        return tlv_error(tlv, -ETOOSMALL, "tlv check too small");
+        err = tlv_error(tlv, -ETOOSMALL, "tlv check too small"); goto ERROR;
     }
     
     if (tlv_extend(tlv)) {
         if (tlv_len(tlv) < 4096 && is_option(TLV_OPT_STRICT)) {
-            return tlv_error(tlv, -EPROTOCOL, "tlv[extend] too small len:%d", tlv_len(tlv));
+            err = tlv_error(tlv, -EPROTOCOL, "tlv[extend] too small len:%d", tlv_len(tlv)); goto ERROR;
         }
     }
 
@@ -573,23 +575,27 @@ tlv_check(tlv_t *tlv)
         case TLV_T_string:
         case TLV_T_binary:
             if (tlv_datalen(tlv) < tlv->pad) {
-                return tlv_error(tlv, -EPROTOCOL, "tlv[extend] datalen:%d < pad:%d", tlv_datalen(tlv), tlv->pad);
+                err = tlv_error(tlv, -EPROTOCOL, "tlv[extend] datalen:%d < pad:%d", tlv_datalen(tlv), tlv->pad); goto ERROR;
             }
     }
 
     if (ops->check) {
         int err = (*ops->check)(tlv);
         if (err<0) {
-            return err;
+            goto ERROR;
         }
     }
 
     if (TLV_F_FIXED & ops->flag) {
         // use default checker
-        return tlv_check_fixed(tlv);
+        err = tlv_check_fixed(tlv);
     } else {
-        return tlv_check_dynamic(tlv);
+        err = tlv_check_dynamic(tlv);
     }
+
+ERROR:
+    os_println("tlv_check error:%d", err);
+    return err;
 }
 
 #define TLV_DUMP(_fmt, _args...)       os_println(__tab  _fmt, ##_args)
