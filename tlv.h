@@ -3,7 +3,7 @@
 /******************************************************************************/
 #include "os.h"
 /******************************************************************************/
-#if 1
+#if 0
 #define tlv_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
 #else
 #define tlv_dprint(_fmt, _args...)      os_do_nothing()
@@ -317,6 +317,7 @@ extern tlv_ops_t __tlv_ops[];
 enum {
     TLV_OPT_CLI             = 0x01,
     TLV_OPT_SPLIT           = 0x02,
+    TLV_OPT_STRICT          = 0x04,
     TLV_OPT_DUMP            = 0x10,
     TLV_OPT_DUMP_SIMPLE     = 0x20 | TLV_OPT_DUMP,
 };
@@ -366,7 +367,20 @@ tlv_ops(tlv_t *tlv)
 #define tlv_data_e(_tlv)        ((_tlv)->body + sizeof(uint32))
 #define tlv_data(_tlv)          (tlv_extend(_tlv)?tlv_data_e(_tlv):tlv_data_n(_tlv))
 
+#if 0
+static inline uint32
+tlv_len_n(tlv_t *tlv)
+{
+    if (is_option(TLV_OPT_STRICT)) {
+        
+    } else {
+        return tlv->len;
+    }
+}
+#else
 #define tlv_len_n(_tlv)         (_tlv)->len
+#endif
+
 #define tlv_len_e(_tlv)         (*(uint32 *)(_tlv)->body)
 #define tlv_len(_tlv)           (tlv_extend(_tlv)?tlv_len_e(_tlv):tlv_len_n(_tlv))
 

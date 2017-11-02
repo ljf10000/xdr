@@ -14,7 +14,7 @@
 #define XDR_ALIGN(x)        OS_ALIGN(x, 4)
 #define XDR_EXPAND_ALIGN(x) OS_ALIGN(x + XDR_EXPAND, XDR_EXPAND)
 
-#if 1
+#if 0
 #define xdr_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
 #else
 #define xdr_dprint(_fmt, _args...)      os_do_nothing()
