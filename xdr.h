@@ -229,16 +229,7 @@ typedef struct {
     byte method;
     byte version;
     
-    union {
-        struct {
-            byte first:2;
-            byte flag:3;
-            byte head:1;
-            byte _:2;
-        } st;
-
-        byte v;
-    } u;
+    byte v;
     byte ie;
     byte portal;
     byte _;
