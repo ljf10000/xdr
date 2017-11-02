@@ -472,6 +472,7 @@ tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv))
         
         err = (*walk)(tlv);
         if (err<0) {
+            os_println("break walk!!!");
             return err;
         }
 
