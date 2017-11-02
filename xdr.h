@@ -1671,6 +1671,8 @@ xpair_log(xpair_t *pair)
     xpair_close(pair);
 
     if (os_fexist(xdr->file)) {
+        os_println("remove bad file: %s", xdr->file);
+        
         remove(xdr->file);
     }
 
@@ -1680,6 +1682,8 @@ xpair_log(xpair_t *pair)
         os_saprintf(filename, "%s/%s", pair->bad, pair->file);
 
         rename(tlv->file, filename);
+        
+        os_println("move bad file: %s==>%s", tlv->file, filename);
     }
 }
 
