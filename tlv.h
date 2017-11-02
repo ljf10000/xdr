@@ -886,7 +886,7 @@ tlv_dump_http(tlv_t *tlv)
 
     TLV_DUMP2("first               : %s", bool_string(obj->first));
     TLV_DUMP2("flag                : %u", obj->flag);
-    TLV_DUMP2("head                : %s", obj->head));
+    TLV_DUMP2("head                : %s", obj->head);
     TLV_DUMP2("ie                  : %u", obj->ie);
     TLV_DUMP2("portal              : %u", obj->portal);
 }
@@ -915,9 +915,9 @@ static inline void
 tlv_dump_sip(tlv_t *tlv)
 {
     tlv_sip_t *obj = tlv_sip(tlv);
-    
+
     TLV_DUMP("id: %d, http:", tlv->id);
-    
+
     TLV_DUMP2("call_direction  : %u", obj->call_direction);
     TLV_DUMP2("call_type       : %u", obj->call_type);
     TLV_DUMP2("hangup_reason   : %u", obj->hangup_reason);
