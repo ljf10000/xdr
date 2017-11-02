@@ -875,7 +875,7 @@ tlv_dump_http(tlv_t *tlv)
 
     TLV_DUMP2("first               : %s", bool_string(obj->first));
     TLV_DUMP2("flag                : %u", obj->flag);
-    TLV_DUMP2("head                : %s", obj->head);
+    TLV_DUMP2("head                : %s", bool_string(obj->head));
     TLV_DUMP2("ie                  : %u", obj->ie);
     TLV_DUMP2("portal              : %u", obj->portal);
 }
