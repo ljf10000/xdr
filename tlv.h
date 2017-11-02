@@ -268,6 +268,18 @@ typedef struct {
     tlv_mapper_binary(_,    205,ssl_client_cert,NULL,   TLV_F_MULTI|TLV_F_SSL_CLIENT_CERT) \
     tlv_mapper_u8(_,        206,ssl_fail_reason,NULL,   0) \
     /* end */
+
+#if 0
+    tlv_mapper_u8(_,        55, vpn_type,       NULL,   0) \
+    tlv_mapper_u8(_,        56, proxy_type,     NULL,   0) \
+    tlv_mapper_u32(_,       57, app_proto,      NULL,   0) \
+    tlv_mapper_u64(_,       58, vpn,            NULL,   0) \
+    tlv_mapper_u8(_,        59, dns_pkt_valid,  NULL,   0) \
+    tlv_mapper_string(_,    60, qq_number,      NULL,   0) \
+    tlv_mapper_u8(_,        61, pkt_dir,        NULL,   0) \
+    /* end */
+#endif
+
 #define tlv_id_low_end      55
 #define tlv_id_high_begin   201
 
@@ -619,6 +631,10 @@ tlv_dump_binary(tlv_t *tlv)
 
 enum { XDR_IPV4 = 0, XDR_IPV6 = 1 };
 
+#ifndef SIZEOF_session
+#define SIZEOF_session  40
+#endif
+
 typedef struct {
     byte ver;
     byte dir;
@@ -661,6 +677,14 @@ tlv_dump_session(tlv_t *tlv)
     }
 }
 
+#ifndef SIZEOF_session_st
+#define SIZEOF_session_st   44
+#endif
+
+#ifndef SIZEOF_service_st
+#define SIZEOF_service_st   SIZEOF_session_st
+#endif
+
 typedef struct {
     uint32 flow[2];
     uint32 ip_packet[2];
@@ -691,6 +715,10 @@ tlv_dump_session_st(tlv_t *tlv)
     }
 }
 
+#ifndef SIZEOF_session_time
+#define SIZEOF_session_time 24
+#endif
+
 typedef struct {
     tlv_time_t create;
     tlv_time_t start;
@@ -709,6 +737,10 @@ tlv_dump_session_time(tlv_t *tlv)
     TLV_DUMP2("stop  : %s", os_time_string(XDR_SECOND(obj->stop)));
 }
 
+#ifndef SIZEOF_tcp
+#define SIZEOF_tcp      28
+#endif
+
 typedef struct {
     uint16 synack_to_syn_time;
     uint16 ack_to_syn_time;
@@ -716,11 +748,11 @@ typedef struct {
     byte complete;
     byte close_reason;
     byte _[2];
-    
+
     uint32 first_request_delay;
     uint32 first_response_delay;
     uint32 window;
-    
+
     uint16 mss;
     byte count_retry;
     byte count_retry_ack;
@@ -757,6 +789,10 @@ tlv_dump_tcp(tlv_t *tlv)
     TLV_DUMP2("handshake23         : %s", success_string(0==obj->handshake23));
 }
 
+#ifndef SIZEOF_L7
+#define SIZEOF_L7   4
+#endif
+
 typedef struct {
     byte status;
     byte class;
@@ -774,6 +810,10 @@ tlv_dump_L7(tlv_t *tlv)
     TLV_DUMP2("class   : %u", obj->class);
     TLV_DUMP2("protocol: %u", obj->protocol);
 }
+
+#ifndef SIZEOF_http
+#define SIZEOF_http     44
+#endif
 
 typedef struct {
     xdr_time_t time_request;
@@ -829,6 +869,10 @@ tlv_dump_http(tlv_t *tlv)
 enum { XDR_SIP_INVITE = 1 };
 enum { XDR_SIP_BYE = 1 };
 
+#ifndef SIZEOF_sip
+#define SIZEOF_sip      8
+#endif
+
 typedef struct {
     byte call_direction;
     byte call_type;
@@ -864,6 +908,10 @@ tlv_dump_sip(tlv_t *tlv)
     TLV_DUMP2("bye             : %s", bool_string(XDR_SIP_BYE==obj->u.st.bye));
     TLV_DUMP2("malloc          : %s", bool_string(obj->u.st.malloc));
 }
+
+#ifndef SIZEOF_rtsp
+#define SIZEOF_rtsp     16
+#endif
 
 typedef struct {
     uint16 port_client_start;
@@ -937,8 +985,6 @@ tlv_cache_save(tlv_cache_t *cache, tlv_t *tlv)
     }
 
     return err;
-
-    
 }
 
 typedef struct {
@@ -984,6 +1030,24 @@ tlv_record_parse(tlv_record_t *r)
     }
     
     return tlv_walk(tlv_first(r->header), tlv_datalen(r->header), walk);
+}
+
+#ifndef TLV_CHECK_OBJ
+#define TLV_CHECK_OBJ(_name)    BUILD_BUG_ON(sizeof(tlv_##_name##_t) != SIZEOF_##_name)
+#endif
+
+static inline void
+tlv_check_obj(void) 
+{
+    TLV_CHECK_OBJ(session);
+    TLV_CHECK_OBJ(session_st);
+    TLV_CHECK_OBJ(session_time);
+    TLV_CHECK_OBJ(service_st);
+    TLV_CHECK_OBJ(tcp);
+    TLV_CHECK_OBJ(L7);
+    TLV_CHECK_OBJ(http);
+    TLV_CHECK_OBJ(sip);
+    TLV_CHECK_OBJ(rtsp);
 }
 /******************************************************************************/
 #endif /* __TLV_H_d203748a8a974e6282d89ddcde27123a__ */

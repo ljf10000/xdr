@@ -152,6 +152,8 @@ int main(int argc, char *argv[])
 {
     self = argv[0];
 
+    tlv_check_obj();
+    
     argc--; argv++;
     while(1) {
         char *args = argv[0];

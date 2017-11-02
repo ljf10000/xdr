@@ -1550,7 +1550,7 @@ tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
     tlv_t *tlv;
     int i, err;
 
-    for (i=0; i<tlv_id_low_end; i++) {
+    for (i=tlv_id_header; i<tlv_id_low_end; i++) {
         err = tlv_record_to_xdr_helper(&r->cache[i], x);
         if (err<0) {
             return err;

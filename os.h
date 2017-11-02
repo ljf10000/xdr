@@ -140,6 +140,22 @@
 #include <net/if.h>
 #include <linux/netlink.h>
 /******************************************************************************/
+/* Force a compilation error if condition is true, but also produce a
+   result (of value 0 and type size_t), so the expression can be used
+   e.g. in a structure initializer (or where-ever else comma expressions
+   aren't permitted). */
+#ifndef BUILD_BUG_ON
+#define BUILD_BUG_ON(_condition)            sizeof(struct { int:-!!(_condition); })
+#endif
+
+#ifndef BUILD_BUG_NOT_ARRAY
+#define BUILD_BUG_NOT_ARRAY(_array)         BUILD_BUG_ON(sizeof(_array)==sizeof(void *))
+#endif
+
+#ifndef BUILD_BUG_NOT_OBJECT
+#define BUILD_BUG_NOT_OBJECT(_obj)          BUILD_BUG_ON(sizeof(_obj)==sizeof(void *))
+#endif
+
 #ifndef OS_IFNAME_LEN
 #define OS_IFNAME_LEN           (16 - 1)
 #endif
