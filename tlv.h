@@ -973,13 +973,19 @@ static inline int
 tlv_check_session(tlv_t *tlv)
 {
     tlv_session_t *obj = tlv_session(tlv);
-
+    int err;
+    
     switch (obj->proto) {
         case IPPROTO_TCP:
         case IPPROTO_UDP:
             return 0;
         default:
-            return tlv_error(tlv, -ENOSUPPORT, "no support ip proto:%d", obj->proto);
+            err = -ENOSUPPORT;
+            
+            tlv_error(tlv, err, "no support ip proto:%d", obj->proto);
+            tlv_dump_session(tlv);
+
+            return err;
     }
 }
 
