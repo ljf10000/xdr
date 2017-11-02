@@ -780,7 +780,7 @@ xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, tlv_t *tlv)
     return xb_pre_binnary(x, obj, tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
 }
 
-static inline xpair_t *get_pair_byxdr(xdr_buffer_t *x);
+static inline char *get_pair_sha(xdr_buffer_t *x);
 
 static inline int
 xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
@@ -813,7 +813,7 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
     file->size = len;
     
     os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
-    os_saprintf(filename, "%s/%s/%s", get_pair_byxdr(x)->sha, dir, digest);
+    os_saprintf(filename, "%s/%s/%s", get_pair_sha(x), dir, digest);
 
 #if 0
     if (os_fexist(filename)) {
@@ -1568,7 +1568,8 @@ typedef struct {
     char *file  // filename, not include path
     char *sha;  // sha path
     char *bad;  // bad path
-    xdr_buffer_t tlv, xdr;
+    xdr_buffer_t tlv;
+    xdr_buffer_t xdr;
 
     int count;
 } xpair_t;
@@ -1580,10 +1581,10 @@ typedef struct {
     .xdr = XBUFFER_INITER(_xdr_file),   \
 }   /* end */
 
-static inline xpair_t *
-get_pair_byxdr(xdr_buffer_t *x)
+static inline char *
+get_pair_sha(xdr_buffer_t *x)
 {
-    return container_of(x, xpair_t, xdr);
+    return container_of(x, xpair_t, xdr)->sha;
 }
 
 static inline int
