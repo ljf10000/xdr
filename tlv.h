@@ -979,14 +979,20 @@ tlv_check_session(tlv_t *tlv)
         case IPPROTO_TCP:
         case IPPROTO_UDP:
             return 0;
-        default:
-            err = -ENOSUPPORT;
-            
-            tlv_error(tlv, err, "no support ip proto:%d", obj->proto);
-            tlv_dump_session(tlv);
-
-            return err;
+        case IPPROTO_ICMP:
+        case IPPROTO_IGMP:
+        case IPPROTO_IPIP:
+        case IPPROTO_GRE:
+            if (!is_option(TLV_OPT_STRICT)) {
+                return 0;
+            }
     }
+
+    err = -ENOSUPPORT;
+    tlv_error(tlv, err, "no support ip proto:%d", obj->proto);
+    tlv_dump_session(tlv);
+    
+    return err;
 }
 
 #ifndef TLV_CACHE_MULTI
