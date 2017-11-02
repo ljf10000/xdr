@@ -609,7 +609,7 @@ os_mmap_w(const char *file, void *buf, int len, bool sync)
     void *mem = NULL;
     int fd = -1, err = 0;
     
-    fd = open(file, O_CREAT|O_RDWR, 0x664);
+    fd = open(file, O_CREAT|O_RDWR, 0664);
     if (fd<0) {
         err = -errno; action = "open"; goto ERROR;
     }

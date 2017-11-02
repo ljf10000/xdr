@@ -548,7 +548,7 @@ xb_open(xdr_buffer_t *x, bool readonly, int size)
 {
     int flag = readonly?O_RDONLY:(O_CREAT|O_RDWR);
 
-    x->fd = open(x->file, flag|O_CLOEXEC, 0x664);
+    x->fd = open(x->file, flag|O_CLOEXEC, 0664);
     if (x->fd<0) {
         os_println("open %s error:%d ...", x->file, -errno);
         
