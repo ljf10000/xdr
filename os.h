@@ -859,8 +859,15 @@ inotify_ev_len(inotify_ev_t *ev)
 
 typedef struct {
     const char *name;
+    const char *help;
     int flag;
 } nameflag_t;
+
+#define NAMEFLAG_INITER(_flag, _name, _help) { \
+    .flag = _flag; \
+    .name = _name; \
+    .help = _help; \
+}   /* end */
 
 static inline const char *
 __get_nameflag_byflag(nameflag_t opt[], int count, int flag)

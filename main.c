@@ -37,30 +37,31 @@ ev_debug(inotify_ev_t *ev)
     }
 }
 
+static nameflag_t opt[] = {
+    { .flag = TLV_OPT_CLI,          .name = "--cli",        .help = "cli mode"},
+    { .flag = TLV_OPT_DUMP,         .name = "--dump",       .help = "dump all"},
+    { .flag = TLV_OPT_STRICT,       .name = "--strict",     .help = "strict check"},
+    { .flag = TLV_OPT_DUMP_SIMPLE,  .name = "--dump-simple",.help = "dump with simple format"},
+    { .flag = TLV_OPT_SPLIT,        .name = "--file-split", .help = "dpi file split from xdr"},
+};
+
 static int usage(void)
 {
     os_println("%s [OPTION] tlv-path xdr-path sha-path", self);
     os_println(__tab "OPTION:");
-    os_println(__tab "--cli: cli mode");
-    os_println(__tab "--dump: dump all");
-    os_println(__tab "--dump-simple: dump with simple format");
-    os_println(__tab "--strict: strict check");
+
+    int i;
+
+    for (i=0; i<os_count_of(opt); i++) {
+        os_println(__tab "%s: %s", opt[i].name, opt[i].help);
+    }
 
     return -1;
 }
 
-
 static void
 opt_analysis(char *args)
 {
-    static nameflag_t opt[] = {
-        { .name = "--cli",          .flag = TLV_OPT_CLI },
-        { .name = "--dump",         .flag = TLV_OPT_DUMP },
-        { .name = "--strict",       .flag = TLV_OPT_STRICT },
-        { .name = "--dump-simple",  .flag = TLV_OPT_DUMP_SIMPLE },
-        { .name = "--file-split",   .flag = TLV_OPT_SPLIT },
-    };
-
     int flag = get_nameflag_byname(opt, args);
 
     set_option(flag);
