@@ -41,7 +41,10 @@ static int usage(void)
 {
     os_println("%s [OPTION] tlv-path xdr-path sha-path", self);
     os_println(__tab "OPTION:");
+    os_println(__tab "--cli: cli mode");
     os_println(__tab "--dump: dump all");
+    os_println(__tab "--dump-simple: dump with simple format");
+    os_println(__tab "--strict: strict check");
 
     return -1;
 }
@@ -176,10 +179,6 @@ int main(int argc, char *argv[])
         return usage();
     }
 
-    xdr_dprint("argv[0]=%s", argv[0]);
-    xdr_dprint("argv[1]=%s", argv[1]);
-    xdr_dprint("argv[2]=%s", argv[2]);
-    
     if (is_option(TLV_OPT_CLI)) {
         return cli(argv);
     } else {

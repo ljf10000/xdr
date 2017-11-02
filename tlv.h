@@ -510,9 +510,16 @@ tlv_check_fixed(tlv_t *tlv)
 
             break;
         default:
-            if (dlen != ops->maxsize) {
-                return tlv_error(tlv, -EINVAL7, "tlv check fixed other");
+            if (is_option(TLV_OPT_STRICT)) {
+                if (dlen != ops->maxsize) {
+                    return tlv_error(tlv, -EINVAL7, "tlv check fixed[strict] other");
+                }
+            } else {
+                if (dlen < ops->maxsize) {
+                    return tlv_error(tlv, -EINVAL7, "tlv check fixed[loose] other");
+                }
             }
+            
 
             break;
     }
