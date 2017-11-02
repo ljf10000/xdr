@@ -156,6 +156,9 @@
 #define BUILD_BUG_NOT_OBJECT(_obj)          BUILD_BUG_ON(sizeof(_obj)==sizeof(void *))
 #endif
 
+#define NO_ALIGN                __attribute__ ((aligned (1)))
+
+
 #ifndef OS_IFNAME_LEN
 #define OS_IFNAME_LEN           (16 - 1)
 #endif

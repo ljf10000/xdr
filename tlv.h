@@ -833,7 +833,7 @@ typedef struct {
             byte flag:3;
             byte head:1;
             byte _:2;
-        } st;
+        } NO_ALIGN st ;
 
         byte v;
     } u;
