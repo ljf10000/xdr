@@ -827,21 +827,43 @@ typedef struct {
     byte method;
     byte version;
     
-    union {
-        struct {
-            byte first:2;
-            byte flag:3;
-            byte head:1;
-            byte _:2;
-        } NO_ALIGN st ;
-
-        byte v;
-    } u;
+    byte v;
     byte ie;
     byte portal;
     byte _;
 }
 tlv_http_t;
+
+#if 0 // little endian
+ 00 01 02 03 04 05 06 07
++--+--+--+--+--+--+--+--+
+|  R  |H |  flag  |first|
++--+--+--+--+--+--+--+--+
+R: resv
+H: head
+#endif
+
+#define TLV_MASK_HTTP_FIRST     0xc0
+#define TLV_MASK_HTTP_FLAG      0x38
+#define TLV_MASK_HTTP_HEAD      0x04
+
+static inline int
+tlv_http_first(tlv_http_t *obj)
+{
+    return (obj->v & TLV_MASK_HTTP_FIRST) >> 6
+}
+
+static inline int
+tlv_http_flag(tlv_http_t *obj)
+{
+    return (obj->v & TLV_MASK_HTTP_FLAG) >> 3
+}
+
+static inline int
+tlv_http_head(tlv_http_t *obj)
+{
+    return (obj->v & TLV_MASK_HTTP_HEAD) >> 2
+}
 
 static inline void 
 tlv_dump_http(tlv_t *tlv)
@@ -859,9 +881,9 @@ tlv_dump_http(tlv_t *tlv)
     TLV_DUMP2("method              : %u", obj->method);
     TLV_DUMP2("version             : %u", obj->version);
 
-    TLV_DUMP2("first               : %s", bool_string(obj->u.st.first));
-    TLV_DUMP2("flag                : %u", obj->u.st.flag);
-    TLV_DUMP2("head                : %s", yes_string(obj->u.st.head));
+    TLV_DUMP2("first               : %s", bool_string(tlv_http_first(obj)));
+    TLV_DUMP2("flag                : %u", tlv_http_flag(obj));
+    TLV_DUMP2("head                : %s", yes_string(tlv_http_head(obj)));
     TLV_DUMP2("ie                  : %u", obj->ie);
     TLV_DUMP2("portal              : %u", obj->portal);
 }
