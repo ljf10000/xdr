@@ -1565,7 +1565,7 @@ tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
 }
 
 typedef struct {
-    char *file  // filename, not include path
+    char *file; // filename, not include path
     char *sha;  // sha path
     char *bad;  // bad path
     xdr_buffer_t tlv;
