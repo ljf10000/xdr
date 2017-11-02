@@ -1064,7 +1064,8 @@ tlv_check_obj(void)
     TLV_CHECK_OBJ(service_st);
     TLV_CHECK_OBJ(tcp);
     TLV_CHECK_OBJ(L7);
-    TLV_CHECK_OBJ(http);
+    //TLV_CHECK_OBJ(http);
+    os_println("sizeof(http)=%d", sizeof(tlv_http_t));
     TLV_CHECK_OBJ(sip);
     TLV_CHECK_OBJ(rtsp);
 }
