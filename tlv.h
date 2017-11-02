@@ -429,16 +429,44 @@ tlv_len_n(tlv_t *tlv)
 #define tlv_rtsp(_tlv)          (tlv_rtsp_t *)tlv_data(_tlv)
 
 static inline int
+tlv_error(tlv_t *tlv, int err, const char *fmt, ...)
+{
+    va_list args;
+    
+    if (err<0) {
+        va_start(args, fmt);
+        err = vprintf(fmt, args);
+        va_end(args);
+        
+        os_println(__crlf __tab 
+            "ERROR:%d tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u", 
+            err,
+            tlv_ops_name(tlv), 
+            tlv->id, 
+            tlv_extend(tlv),
+            tlv_ops_fixed(tlv),
+            tlv->pad, 
+            tlv_len(tlv),
+            tlv_hdrlen(tlv),
+            tlv_datalen(tlv));
+
+        os_dump_buffer(tlv, tlv_len(tlv));
+    }
+
+    return err;
+}
+
+static inline int
 tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv))
 {
     int err;
 
     while(left>0) {
         if (left < tlv_hdrlen(tlv)) {
-            return -ETOOSMALL;
+            return tlv_error(tlv, -ETOOSMALL, "left:%d < tlv hdrlen:%d", left, tlv_hdrlen(tlv));
         }
         else if (left < tlv_len(tlv)) {
-            return -ETOOSMALL;
+            return tlv_error(tlv, -ETOOSMALL, "left:%d < tlv len:%d", left, tlv_len(tlv));
         }
         
         err = (*walk)(tlv);
@@ -462,33 +490,6 @@ tlv_dump(tlv_t *tlv)
             (*ops->dump)(tlv);
         }
     }
-}
-
-static inline int
-tlv_error(tlv_t *tlv, int err, const char *fmt, ...)
-{
-    va_list args;
-    
-    if (err<0) {
-        va_start(args, fmt);
-        err = vprintf(fmt, args);
-        va_end(args);
-        
-        os_println(__crlf __tab 
-            "tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u", 
-            tlv_ops_name(tlv), 
-            tlv->id, 
-            tlv_extend(tlv),
-            tlv_ops_fixed(tlv),
-            tlv->pad, 
-            tlv_len(tlv),
-            tlv_hdrlen(tlv),
-            tlv_datalen(tlv));
-
-        os_dump_buffer(tlv, tlv_len(tlv));
-    }
-
-    return err;
 }
 
 static inline int
