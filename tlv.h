@@ -973,7 +973,6 @@ static inline int
 tlv_check_session(tlv_t *tlv)
 {
     tlv_session_t *obj = tlv_session(tlv);
-    int err;
     
     switch (obj->proto) {
         case IPPROTO_TCP:
@@ -988,7 +987,7 @@ tlv_check_session(tlv_t *tlv)
             }
     }
 
-    err = -ENOSUPPORT;
+    int err = -ENOSUPPORT;
     tlv_error(tlv, err, "no support ip proto:%d", obj->proto);
     tlv_dump_session(tlv);
     
