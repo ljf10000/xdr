@@ -541,7 +541,7 @@ tlv_check(tlv_t *tlv)
     if (ops->check) {
         int err = (*ops->check)(tlv);
         if (err<0) {
-            return tlv_error(tlv, err, "tlv check ops check");
+            return err;
         }
     }
 
