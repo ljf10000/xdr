@@ -169,7 +169,7 @@ static int monitor(char *path[PATH_END])
 
 static int cli(char *path[PATH_END])
 {
-    char *file = env_gets(ENV_TLV_FILE);
+    char *file = env_gets(ENV_TLV_FILE, NULL);
     if (NULL==file) {
         os_println("not found env ENV_TLV_FILE");
     }
