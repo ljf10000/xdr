@@ -560,14 +560,14 @@ tlv_check(tlv_t *tlv)
     else if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
         return tlv_error(tlv, -ETOOSMALL, "tlv check too small");
     }
-
-    if (tlv_datalen(tlv) < tlv->pad) {
-        return tlv_error(tlv, -EPROTOCOL, "tlv[extend] datalen:%d < pad:%d", tlv_datalen(tlv), tlv->pad);
-    }
     
     if (tlv_extend(tlv)) {
         if (tlv_len(tlv) < 4096 && is_option(TLV_OPT_STRICT)) {
             return tlv_error(tlv, -EPROTOCOL, "tlv[extend] too small len:%d", tlv_len(tlv));
+        }
+
+        if (tlv_datalen(tlv) < tlv->pad) {
+            return tlv_error(tlv, -EPROTOCOL, "tlv[extend] datalen:%d < pad:%d", tlv_datalen(tlv), tlv->pad);
         }
     }
 
