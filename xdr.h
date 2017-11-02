@@ -426,17 +426,13 @@ enum {
 };
 
 typedef struct {
-    byte version;   // xdr version
+    byte version;   // xdr version, must first
+    byte _0[3];
+    
     byte appid;
     byte ip_proto;
     byte session_state;
-
     byte ip_version;
-    byte _[3];
-    
-    xdr_time_t session_time_create;
-    xdr_time_t session_time_start;
-    xdr_time_t session_time_stop;
 
     bkdr_t bkdr;        // session bkdr
     time_t time;        // time of analysis xdr
@@ -444,6 +440,10 @@ typedef struct {
     uint32 flag;        // XDR_F_XXX
     xdr_size_t  total;  // total size
     xdr_delay_t first_response_delay;
+
+    xdr_time_t session_time_create;
+    xdr_time_t session_time_start;
+    xdr_time_t session_time_stop;
 
     xdr_offset_t offsetof_session;
     xdr_offset_t offsetof_session_st;
@@ -1511,39 +1511,59 @@ tlv_record_to_xdr_ssl(tlv_record_t *r, xdr_buffer_t *x)
 }
 
 static inline int
-tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
+tlv_record_to_xdr_helper(tlv_cache_t *cache, xdr_buffer_t *x)
 {
-    tlv_cache_t *cache;
     tlv_ops_t *ops;
     tlv_t *tlv;
-    int i, j, err;
+    int i, err;
 
-    for (i=0; i<tlv_id_end; i++) {
-        cache = &r->cache[i];
+    if (cache->count>0) {
+        for (i=0; i<cache->count; i++) {
+            tlv = cache->multi[i];
+            ops = tlv_ops(tlv);
 
-        if (cache->count>0) {
-            for (j=0; j<cache->count; j++) {
-                tlv = cache->multi[j];
-                ops = tlv_ops(tlv);
-
-                if (ops && ops->toxdr) {
-                    if (tlv->id>200) {
-                        xdr_dprint("toxdr %d:%d ...", j, tlv->id);
-                    }
-                    
-                    err = (*ops->toxdr)(x, tlv);
-                    if (tlv->id>200) {
-                        xdr_dprint("toxdr %d:%d %s:%d.", j, tlv->id, ok_string(err), err);
-                    }
-                    
-                    if (err<0) {
-                        return err;
-                    }
+            if (ops && ops->toxdr) {
+                if (tlv->id>200) {
+                    xdr_dprint("toxdr %d:%d ...", i, tlv->id);
+                }
+                
+                err = (*ops->toxdr)(x, tlv);
+                if (tlv->id>200) {
+                    xdr_dprint("toxdr %d:%d %s:%d.", i, tlv->id, ok_string(err), err);
+                }
+                
+                if (err<0) {
+                    return err;
                 }
             }
         }
     }
 
+    return 0;
+}
+
+static inline int
+tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
+{
+    tlv_cache_t *cache;
+    tlv_ops_t *ops;
+    tlv_t *tlv;
+    int i, err;
+
+    for (i=0; i<tlv_id_low_end; i++) {
+        err = tlv_record_to_xdr_helper(&r->cache[i], x);
+        if (err<0) {
+            return err;
+        }
+    }
+
+    for (i=tlv_id_high_begin; i<tlv_id_end; i++) {
+        err = tlv_record_to_xdr_helper(&r->cache[i], x);
+        if (err<0) {
+            return err;
+        }
+    }
+    
     err = tlv_record_to_xdr_ssl(r, x);
     if (err<0) {
         return err;

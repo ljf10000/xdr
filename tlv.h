@@ -268,6 +268,8 @@ typedef struct {
     tlv_mapper_binary(_,    205,ssl_client_cert,NULL,   TLV_F_MULTI|TLV_F_SSL_CLIENT_CERT) \
     tlv_mapper_u8(_,        206,ssl_fail_reason,NULL,   0) \
     /* end */
+#define tlv_id_low_end      55
+#define tlv_id_high_begin   201
 
 #define __TLV_ENUM(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr)  tlv_id_##_name = _id,
 enum { TLV_MAPPER(__TLV_ENUM) tlv_id_end };
@@ -310,7 +312,8 @@ enum {
 static inline bool
 is_good_tlv_id(int id)
 {
-    return is_good_enum(id, tlv_id_end);
+    return is_good_value(id, 0, tlv_id_low_end) 
+        && is_good_value(id, tlv_id_high_begin, tlv_id_end);
 }
 
 #define TLV_OPS(_id)    (is_good_tlv_id(_id)?&__tlv_ops[_id]:NULL)
