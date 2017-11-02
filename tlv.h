@@ -49,6 +49,7 @@ static inline int tlv_type_getidbyname(const char *name);
 #define TLV_T_u8        TLV_T_u8
 #define TLV_T_u16       TLV_T_u16
 #define TLV_T_string    TLV_T_string
+#define TLV_T_binary    TLV_T_binary
 #define TLV_T_object    TLV_T_object
 #define TLV_T_END       TLV_T_END
 #undef __ENUM_PREFIX__
@@ -565,10 +566,14 @@ tlv_check(tlv_t *tlv)
         if (tlv_len(tlv) < 4096 && is_option(TLV_OPT_STRICT)) {
             return tlv_error(tlv, -EPROTOCOL, "tlv[extend] too small len:%d", tlv_len(tlv));
         }
+    }
 
-        if (tlv_datalen(tlv) < tlv->pad) {
-            return tlv_error(tlv, -EPROTOCOL, "tlv[extend] datalen:%d < pad:%d", tlv_datalen(tlv), tlv->pad);
-        }
+    switch(ops->type) {
+        case TLV_T_string:
+        case TLV_T_binary:
+            if (tlv_datalen(tlv) < tlv->pad) {
+                return tlv_error(tlv, -EPROTOCOL, "tlv[extend] datalen:%d < pad:%d", tlv_datalen(tlv), tlv->pad);
+            }
     }
 
     if (ops->check) {
