@@ -411,10 +411,10 @@
 * ENUM: c enum macro
 *
 */
-#define XXX_ENUM_MAPPER(_) \
-    _(NAME_A, VALUE_A), \
-    _(NAME_A, VALUE_B), \
-    _(NAME_A, VALUE_C), \
+#define XXX_ENUM_MAPPER(_)  \
+    _(MOD, NAME_A, VALUE_A) \
+    _(MOD, NAME_A, VALUE_B) \
+    _(MOD, NAME_A, VALUE_C) \
     /* end */
 DECLARE_ENUM(MOD, mod, MOD_ENUM_MAPPER, MOD_END);
 
@@ -429,8 +429,8 @@ static inline int mod_getidbyname(const char *name);
 #define MOD_END         MOD_END
 #endif
 
-#define __ENUM_MAP_VALUE(_MOD, _name, _value)   _MOD##_##_name = _value
-#define __ENUM_MAP_NAME(_MOD, _name, _value)    [_MOD##_##_name] = #_name
+#define __ENUM_MAP_VALUE(_MOD, _name, _value)   _MOD##_##_name = _value,
+#define __ENUM_MAP_NAME(_MOD, _name, _value)    [_MOD##_##_name] = #_name,
 
 #define DECLARE_ENUM(_MOD, _mod, _mapper, _end) \
     enum {                          \
@@ -875,19 +875,31 @@ __get_nameflag_byname(nameflag_t opt[], int count, char *name)
 #define get_nameflag_byflag(_opt, _flag)    __get_nameflag_byflag(_opt, os_count_of(_opt), _flag)
 #define get_nameflag_byname(_opt, _flag)    __get_nameflag_byname(_opt, os_count_of(_opt), _flag)
 
-#define DECLARE_OPTION  int __os_option
-extern int __os_option;
+#define OS_VAR(_name)       __os_##_name##_var
+#define OS_VAR_MAPPER(_)    \
+    _(int,      option)     \
+    _(time_t,   time)       \
+    _(uint32,   seq)        \
+    /* end */
+
+#define __DECLARE_VARS(_type, _name)    _type OS_VAR(_name);
+#define __EXTERN_VARS(_type, _name)     extern __DECLARE_VARS(_type, _name)
+
+#define DECLARE_OS_VARS                 OS_VAR_MAPPER(__DECLARE_VARS)   os_fake_declare
+#define  EXTERN_OS_VARS                 OS_VAR_MAPPER(__EXTERN_VARS)    os_fake_declare
+
+EXTERN_OS_VARS;
 
 static inline void
 set_option(int flag)
 {
-    __os_option |= flag;
+    OS_VAR(option) |= flag;
 }
 
 static inline bool
 is_option(int flag)
 {
-    return flag==(flag & __os_option);
+    return flag==(flag & OS_VAR(option));
 }
 
 /******************************************************************************/

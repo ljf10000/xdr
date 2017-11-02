@@ -28,17 +28,17 @@ typedef struct {
 
 #if 1
 #define TLV_T_MAPPER(_)         \
-    _(TLV_T,    u8,         0), \
-    _(TLV_T,    u16,        1), \
-    _(TLV_T,    u32,        2), \
-    _(TLV_T,    u64,        3), \
-    _(TLV_T,    string,     4), \
-    _(TLV_T,    binary,     5), \
-    _(TLV_T,    object,     6), \
-    _(TLV_T,    time,       7), \
-    _(TLV_T,    duration,   8), \
-    _(TLV_T,    ip4,        9), \
-    _(TLV_T,    ip6,        10),\
+    _(TLV_T,    u8,         0)  \
+    _(TLV_T,    u16,        1)  \
+    _(TLV_T,    u32,        2)  \
+    _(TLV_T,    u64,        3)  \
+    _(TLV_T,    string,     4)  \
+    _(TLV_T,    binary,     5)  \
+    _(TLV_T,    object,     6)  \
+    _(TLV_T,    time,       7)  \
+    _(TLV_T,    duration,   8)  \
+    _(TLV_T,    ip4,        9)  \
+    _(TLV_T,    ip6,        10) \
     /* end */
 DECLARE_ENUM(TLV_T, tlv_type, TLV_T_MAPPER, TLV_T_END);
 
@@ -295,12 +295,10 @@ enum { TLV_MAPPER(__TLV_ENUM) tlv_id_end };
     .toxdr  = _toxdr,   \
 },  /* end */
 #define DECLARE_TLV_VARS \
-    uint32 xdr_seq; \
     tlv_ops_t __tlv_ops[tlv_id_end] = { TLV_MAPPER(__TLV_STRUCT) }; \
     os_fake_declare /* end */
 
 extern tlv_ops_t __tlv_ops[];
-extern uint32 xdr_seq;
 
 enum {
     TLV_OPT_CLI             = 0x01,

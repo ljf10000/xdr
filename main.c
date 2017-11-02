@@ -1,6 +1,6 @@
 #include "xdr.h"
 
-DECLARE_OPTION;
+DECLARE_OS_VARS;
 DECLARE_TLV_VARS;
 /******************************************************************************/
 #ifndef XDR_SUFFIX
@@ -123,10 +123,11 @@ static int monitor(char *path[PATH_END])
         if (len == -1 && errno != EAGAIN) {
             return -errno;
         }
+        OS_VAR(time) = time(NULL);
 
         inotify_ev_t *ev    = (inotify_ev_t *)EVBUF;
         inotify_ev_t *end   = (inotify_ev_t *)(EVBUF + len);
-
+        
         for (; ev<end; ev=EVNEXT(ev)) {
             if (ev->mask & EVMASK) {
                 ev_debug(ev);
