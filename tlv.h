@@ -559,6 +559,16 @@ tlv_check(tlv_t *tlv)
     else if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
         return tlv_error(tlv, -ETOOSMALL, "tlv check too small");
     }
+    
+    if (tlv_extend(tlv)) {
+        if (tlv_len(tlv) < 4096 && is_option(TLV_OPT_STRICT)) {
+            return tlv_error(tlv, -EPROTOCOL, "tlv[extend] too small len:%d", tlv_len(tlv));
+        }
+        
+        if (tlv_datalen(tlv) < tlv->pad) {
+            return tlv_error(tlv, -EPROTOCOL, "tlv[extend] datalen:%d < pad:%d", tlv_datalen(tlv), tlv->pad);
+        }
+    }
 
     if (ops->check) {
         int err = (*ops->check)(tlv);
@@ -993,11 +1003,7 @@ tlv_check_session(tlv_t *tlv)
     int err = -ENOSUPPORT;
     tlv_error(tlv, err, "no support ip proto:%d", obj->proto);
     tlv_dump_session(tlv);
-    os_println("IPPROTO_ESP=%d, option=0x%x, is_option(TLV_OPT_STRICT)=%s", 
-        IPPROTO_ESP, 
-        OS_VAR(option),
-        bool_string(is_option(TLV_OPT_STRICT)));
-    
+
     return err;
 }
 

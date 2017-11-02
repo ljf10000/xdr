@@ -11,6 +11,7 @@ enum {
     PATH_TLV = 0,
     PATH_XDR = 1,
     PATH_SHA = 2,
+    PATH_BAD = 3,
     
     PATH_END
 };
@@ -68,18 +69,33 @@ opt_analysis(char *args)
     set_option(flag);
 }
 
-static int xdr_handle(inotify_ev_t *ev, char *path[PATH_END])
+static int xdr_handle(char *file, char *path[PATH_END])
 {
-    char tlv[1+OS_FILENAME_LEN] = {0};
-    char xdr[1+OS_FILENAME_LEN] = {0};
-    xpair_t pair = XPAIR_INITER(tlv, xdr, path[PATH_SHA]);
+    static int tlv_path_len;
+    static int xdr_path_len;
+    static char tlv[1+OS_FILENAME_LEN]; 
+    static char xdr[1+OS_FILENAME_LEN]; 
+    xpair_t pair = XPAIR_INITER(file, tlv, xdr, path[PATH_SHA], path[PATH_BAD]);
+    int len = strlen(file);
 
-    os_saprintf(tlv, "%s/%s", path[PATH_TLV], ev->name);
-    os_saprintf(xdr, "%s/%s", path[PATH_XDR], ev->name);
+    if (0==tlv_path_len) {
+        tlv_path_len = strlen(path[PATH_TLV]);
+        memcpy(tlv, path[PATH_TLV], tlv_path_len);
+        tlv[tlv_path_len++] = '/';
+    }
 
+    if (0==xdr_path_len) {
+        xdr_path_len = 1+strlen(path[PATH_XDR]);
+        memcpy(xdr, path[PATH_XDR], xdr_path_len);
+        xdr[xdr_path_len++] = '/';
+    }
+    
+    memcpy(tlv+tlv_path_len, file, len); tlv[tlv_path_len+len] = 0;
+    memcpy(xdr+xdr_path_len, file, len); xdr[xdr_path_len+len] = 0;
+    
     xdr_dprint("handle tlv:%s", tlv);
     xdr_dprint("handle xdr:%s", xdr);
-    
+
     int err = tlv_to_xdr(&pair);
     if (err<0) {
         // log
@@ -88,11 +104,11 @@ static int xdr_handle(inotify_ev_t *ev, char *path[PATH_END])
     return 0;
 }
 
-static int remove_handle(inotify_ev_t *ev, char *path[PATH_END])
+static int remove_handle(char *file, char *path[PATH_END])
 {
     char filename[1+OS_FILENAME_LEN] = {0};
 
-    os_saprintf(filename, "%s/%s", path[PATH_TLV], ev->name);
+    os_saprintf(filename, "%s/%s", path[PATH_TLV], file);
 
     remove(filename);
     
@@ -104,9 +120,9 @@ static int remove_handle(inotify_ev_t *ev, char *path[PATH_END])
 static int handle(inotify_ev_t *ev, char *path[PATH_END])
 {
     if (ISXDR(ev)) {
-        return xdr_handle(ev, path);
+        return xdr_handle(ev->name, path);
     } else {
-        return remove_handle(ev, path);
+        return remove_handle(ev->name, path);
     }
 }
 
@@ -147,11 +163,18 @@ static int monitor(char *path[PATH_END])
     }
 }
 
+#ifndef ENV_TLV_FILE
+#define ENV_TLV_FILE    "TLV_FILE"
+#endif
+
 static int cli(char *path[PATH_END])
 {
-    xpair_t pair = XPAIR_INITER(path[PATH_TLV], path[PATH_XDR], path[PATH_SHA]);
-
-    return tlv_to_xdr(&pair);
+    char *file = env_gets(ENV_TLV_FILE);
+    if (NULL==file) {
+        os_println("not found env ENV_TLV_FILE");
+    }
+    
+    return xdr_handle(file, path);
 }
 
 int main(int argc, char *argv[])
@@ -177,7 +200,7 @@ int main(int argc, char *argv[])
         argc--; argv++;
     }
 
-    if (3 != argc) {
+    if (4 != argc) {
         return usage();
     }
 

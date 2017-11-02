@@ -553,7 +553,6 @@ typedef struct {
 
 struct xdr_buffer_st {
     char *file;
-    char *path; // sha path
     
     union {
         void *buffer;
@@ -565,9 +564,8 @@ struct xdr_buffer_st {
     xdr_size_t      size;       // include xdr_t header
     xdr_offset_t    current;    // include xdr_t header
 };
-#define XBUFFER_INITER(_file, _path) { \
+#define XBUFFER_INITER(_file) { \
     .file = _file,              \
-    .path = _path,              \
     .fd   = -1,                 \
     .current = sizeof(xdr_t),   \
 } /* end */
@@ -794,6 +792,7 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
     char digest[1+2*XDR_DIGEST_SIZE] = {0};
     byte *buf   = tlv_data(tlv);
     int len     = tlv_binlen(tlv);
+#if 0
     if (len<0) {
         os_println("tlv id:%d, extern %d, pad=%d, len=%d, hdrlen=%d, datalen=%d", 
             tlv->id,
@@ -805,13 +804,14 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 
         return 0;
     }
-    
+#endif
+
     sha256(buf, len, file->digest);
     file->bkdr = os_bkdr(file->digest, sizeof(file->digest));
     file->size = len;
     
     os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
-    os_saprintf(filename, "%s/%s/%s", x->path, dir, digest);
+    os_saprintf(filename, "%s/%s/%s", xdr_to_pair(x)->sha, dir, digest);
 
 #if 0
     if (os_fexist(filename)) {
@@ -1563,14 +1563,23 @@ tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
 }
 
 typedef struct {
+    char *file  // filename, not include path
+    char *sha;  // sha path
+    char *bad;  // bad path
     xdr_buffer_t tlv, xdr;
 
     int count;
 } xpair_t;
-#define XPAIR_INITER(_tlv_file, _xdr_file, _sha_path) { \
-    .tlv = XBUFFER_INITER(_tlv_file, _sha_path), \
-    .xdr = XBUFFER_INITER(_xdr_file, _sha_path), \
+#define XPAIR_INITER(_file, _tlv_file, _xdr_file, _sha_path, _bad_path) { \
+    .file= _file,                       \
+    .sha = _sha_path,                   \
+    .bad = _bad_path,                   \
+    .tlv = XBUFFER_INITER(_tlv_file),   \
+    .xdr = XBUFFER_INITER(_xdr_file),   \
 }   /* end */
+
+#define tlv_to_pair(_x)     container_of(_x, xpair_t, tlv)
+#define xdr_to_pair(_x)     container_of(_x, xpair_t, xdr)
 
 static inline int
 tlv_open(xdr_buffer_t *x, int size)
@@ -1647,6 +1656,26 @@ xpair_open(xpair_t *pair)
     return 0;
 }
 
+static inline void
+xpair_log(xpair_t *pair)
+{
+    xdr_buffer_t *tlv = &pair->tlv;
+    xdr_buffer_t *xdr = &pair->xdr;
+    
+    xpair_close(pair);
+
+    if (os_fexist(xdr->file)) {
+        remove(xdr->file);
+    }
+
+    if (os_fexist(tlv->file)) {
+        char filename[1+OS_FILENAME_LEN] = {0};
+
+        os_saprintf(filename, "%s/%s", pair->bad, );
+        rename(tlv->file);
+    }
+}
+
 static inline int
 tlv_to_xdr(xpair_t *pair)
 {
@@ -1659,6 +1688,8 @@ tlv_to_xdr(xpair_t *pair)
 
         err = tlv_trace(tlv_record_parse(&r), "tlv_record_parse");
         if (err<0) {
+            xpair_log(pair);
+            
             return err;
         }
 

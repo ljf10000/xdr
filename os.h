@@ -156,6 +156,22 @@
 #define BUILD_BUG_NOT_OBJECT(_obj)          BUILD_BUG_ON(sizeof(_obj)==sizeof(void *))
 #endif
 
+#ifndef offsetof
+#define offsetof(_TYPE, _MEMBER)            __builtin_offsetof(_TYPE, _MEMBER)
+#endif
+
+#ifndef container_of
+/**
+ * container_of - cast a member of a structure out to the containing structure
+ * @ptr:	the pointer to the container.
+ * @type:	the type of the container struct this is embedded in.
+ * @member:	the name of the member within the struct.
+ *
+ */
+#define container_of(_ptr, _type, _member) \
+	    ((_type *)((char *)(_ptr) - offsetof(_type, _member)))
+#endif
+
 #define NO_ALIGN                __attribute__ ((aligned (1)))
 
 #ifndef OS_IFNAME_LEN
@@ -579,6 +595,12 @@ os_time_string(time_t t)
 }
 
 static inline bool
+is_good_str(const char *s)
+{
+    return s && s[0];
+}
+
+static inline bool
 is_option_args(char *args)
 {
     return args 
@@ -925,6 +947,57 @@ static inline bool
 is_option(int flag)
 {
     return flag==(flag & OS_VAR(option));
+}
+
+#if 0
+#define env_println(_fmt, _args...)     os_println(_fmt, ##_args)
+#else
+#define env_println(_fmt, _args...)     os_do_nothing()
+#endif
+
+#define is_good_env(_env)               is_good_str(_env)
+
+static inline char *
+env_gets(char *envname, char *deft) 
+{
+    if (envname) {
+        char *env = getenv(envname);
+        
+        if (is_good_env(env)) {
+            env_println("get env:%s=%s", envname, env);
+            
+            return env;
+        } else {
+            env_println("no-found env:%s, use default:%s", envname, deft);
+
+            return deft;
+        }
+    } else {
+        env_println("empty env, use default:%s", deft);
+
+        return deft;
+    }
+}
+
+static inline int
+env_geti(char *envname, int deft) 
+{
+    if (NULL==envname) {
+        return os_assertV(deft);
+    }
+    
+    char *env = getenv(envname);
+    if (false==is_good_env(env)) {
+        env_println("no-found env:%s, use default:%d", envname, deft);
+        
+        return deft;
+    } else {
+        int value = atoi(env);
+
+        env_println("get env:%s=%d", envname, value);
+
+        return value;
+    }
 }
 
 /******************************************************************************/
