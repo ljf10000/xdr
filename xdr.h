@@ -1545,9 +1545,6 @@ tlv_record_to_xdr_helper(tlv_cache_t *cache, xdr_buffer_t *x)
 static inline int
 tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
 {
-    tlv_cache_t *cache;
-    tlv_ops_t *ops;
-    tlv_t *tlv;
     int i, err;
 
     for (i=tlv_id_header; i<tlv_id_low_end; i++) {
