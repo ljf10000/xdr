@@ -436,7 +436,7 @@ tlv_error(tlv_t *tlv, int err, const char *fmt, ...)
     
     if (err<0) {
         va_start(args, fmt);
-        err = vprintf(fmt, args);
+        vprintf(fmt, args);
         va_end(args);
         
         os_println(__crlf __tab 
@@ -555,19 +555,17 @@ tlv_check_dynamic(tlv_t *tlv)
 static inline int
 tlv_check(tlv_t *tlv)
 {
-    int err = 0;
-    
     tlv_ops_t *ops = tlv_ops(tlv);
     if (NULL==ops) {
-        err = tlv_error(tlv, -EBADIDX, "not support tlv id:%d", tlv->id); goto ERROR;
+        return tlv_error(tlv, -EBADIDX, "not support tlv id:%d", tlv->id);
     }
     else if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
-        err = tlv_error(tlv, -ETOOSMALL, "tlv check too small"); goto ERROR;
+        return tlv_error(tlv, -ETOOSMALL, "tlv check too small");
     }
     
     if (tlv_extend(tlv)) {
         if (tlv_len(tlv) < 4096 && is_option(TLV_OPT_STRICT)) {
-            err = tlv_error(tlv, -EPROTOCOL, "tlv[extend] too small len:%d", tlv_len(tlv)); goto ERROR;
+            return tlv_error(tlv, -EPROTOCOL, "tlv[extend] too small len:%d", tlv_len(tlv));
         }
     }
 
@@ -575,27 +573,23 @@ tlv_check(tlv_t *tlv)
         case TLV_T_string:
         case TLV_T_binary:
             if (tlv_datalen(tlv) < tlv->pad) {
-                err = tlv_error(tlv, -EPROTOCOL, "tlv[extend] datalen:%d < pad:%d", tlv_datalen(tlv), tlv->pad); goto ERROR;
+                return tlv_error(tlv, -EPROTOCOL, "tlv[extend] datalen:%d < pad:%d", tlv_datalen(tlv), tlv->pad);
             }
     }
 
     if (ops->check) {
         int err = (*ops->check)(tlv);
         if (err<0) {
-            goto ERROR;
+            return err;
         }
     }
 
     if (TLV_F_FIXED & ops->flag) {
         // use default checker
-        err = tlv_check_fixed(tlv);
+        return tlv_check_fixed(tlv);
     } else {
-        err = tlv_check_dynamic(tlv);
+        return tlv_check_dynamic(tlv);
     }
-
-ERROR:
-    os_println("tlv_check error:%d", err);
-    return err;
 }
 
 #define TLV_DUMP(_fmt, _args...)       os_println(__tab  _fmt, ##_args)
