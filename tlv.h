@@ -485,7 +485,7 @@ tlv_error(tlv_t *tlv, int err, const char *fmt, ...)
             tlv_hdrlen(tlv),
             tlv_datalen(tlv));
 
-        os_dump_buffer(tlv, 8);
+        os_dump_buffer(tlv, tlv_len(tlv));
     }
 
     return err;
