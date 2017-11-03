@@ -11,6 +11,15 @@
 
 #define tlv_trace(_call, _fmt, _args...)    os_trace(tlv_dprint, _call, _fmt, ##_args)
 
+enum {
+    OPT_CLI         = 0x01,
+    OPT_IP6         = 0x02,
+    OPT_SPLIT       = 0x04,
+    OPT_STRICT      = 0x08,
+    OPT_DUMP        = 0x10,
+    OPT_DUMP_SIMPLE = 0x20 | OPT_DUMP,
+};
+
 typedef uint8  tlv_u8_t;
 typedef uint16 tlv_u16_t;
 typedef uint32 tlv_u32_t;
@@ -18,7 +27,7 @@ typedef uint64 tlv_u64_t;
 
 typedef uint64 xdr_duration_t,  tlv_duration_t;
 typedef uint64 xdr_time_t,      tlv_time_t;
-#define XDR_SECOND(_us)     ((time_t)((_us)/1000000))
+#define XDR_SECOND(_us)         ((time_t)((_us)/1000000))
 
 typedef uint32 xdr_ip4_t, tlv_ip4_t;
 typedef struct {
@@ -315,15 +324,6 @@ enum { TLV_MAPPER(__TLV_ENUM) tlv_id_end };
 
 extern tlv_ops_t __tlv_ops[];
 
-enum {
-    TLV_OPT_CLI             = 0x01,
-    TLV_OPT_IP6             = 0x02,
-    TLV_OPT_SPLIT           = 0x04,
-    TLV_OPT_STRICT          = 0x08,
-    TLV_OPT_DUMP            = 0x10,
-    TLV_OPT_DUMP_SIMPLE     = 0x20 | TLV_OPT_DUMP,
-};
-
 static inline bool
 is_good_tlv_id(int id)
 {
@@ -373,7 +373,7 @@ tlv_ops(tlv_t *tlv)
 static inline uint32
 tlv_len_n(tlv_t *tlv)
 {
-    if (is_option(TLV_OPT_STRICT)) {
+    if (is_option(OPT_STRICT)) {
         
     } else {
         return tlv->len;
@@ -485,12 +485,10 @@ tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv))
 static inline void
 tlv_dump(tlv_t *tlv)
 {
-    if (is_option(TLV_OPT_DUMP)) {
-        tlv_ops_t *ops = tlv_ops(tlv);
+    tlv_ops_t *ops = tlv_ops(tlv);
 
-        if (ops && ops->dump) {
-            (*ops->dump)(tlv);
-        }
+    if (ops && ops->dump) {
+        (*ops->dump)(tlv);
     }
 }
 
@@ -514,7 +512,7 @@ tlv_check_fixed(tlv_t *tlv)
 
             break;
         default:
-            if (is_option(TLV_OPT_STRICT)) {
+            if (is_option(OPT_STRICT)) {
                 if (dlen != ops->maxsize) {
                     return tlv_error(tlv, -EINVAL7, "tlv check fixed[strict] other");
                 }
@@ -564,7 +562,7 @@ tlv_check(tlv_t *tlv)
     }
     
     if (tlv_extend(tlv)) {
-        if (tlv_len(tlv) < 4096 && is_option(TLV_OPT_STRICT)) {
+        if (tlv_len(tlv) < 4096 && is_option(OPT_STRICT)) {
             return tlv_error(tlv, -EPROTOCOL, "tlv[extend] too small len:%d", tlv_len(tlv));
         }
     }
@@ -643,13 +641,13 @@ tlv_dump_ip6(tlv_t *tlv)
 static inline void 
 tlv_dump_binary(tlv_t *tlv)
 {
-    if (is_option(TLV_OPT_SPLIT)) {
+    if (is_option(OPT_SPLIT)) {
         TLV_DUMP("id: %d, %s: %s", tlv->id, tlv_ops_name(tlv), tlv_string(tlv));
     } else {
         TLV_DUMP("id: %d, %s:", tlv->id, tlv_ops_name(tlv));
 
         int size = tlv_datalen(tlv);
-        if (is_option(TLV_OPT_DUMP_SIMPLE)) {
+        if (is_option(OPT_DUMP_SIMPLE)) {
             size = os_min(size, XDR_DUMP_SIMPLE);
         }
 
@@ -1002,7 +1000,7 @@ tlv_check_session(tlv_t *tlv)
         case IPPROTO_GRE:
         case IPPROTO_ESP:
         case IPPROTO_AH:
-            if (!is_option(TLV_OPT_STRICT)) {
+            if (!is_option(OPT_STRICT)) {
                 return 0;
             }
     }
@@ -1027,8 +1025,6 @@ typedef struct {
 static inline int
 tlv_cache_save(tlv_cache_t *cache, tlv_t *tlv)
 {
-    int err = 0;
-
     if (cache->count < TLV_CACHE_MULTI) {
         if (0==cache->count) {
             cache->multi[cache->count++] = tlv;
@@ -1037,14 +1033,14 @@ tlv_cache_save(tlv_cache_t *cache, tlv_t *tlv)
             cache->multi[cache->count++] = tlv;
         }
         else {
-            err = -ENOSUPPORT;
+            return tlv_error(tlv, -ENOSUPPORT, "not support cache multi")
         }
     }
     else {
-        err = -ENOSPACE;
+        return tlv_error(tlv, -ENOSPACE, "too more cache multi")
     }
 
-    return err;
+    return 0;
 }
 
 typedef struct {
@@ -1070,17 +1066,17 @@ tlv_record_parse(tlv_record_t *r)
     {
         int err;
 
-        err = tlv_trace(tlv_check(tlv), "tlv_check");
+        err = tlv_check(tlv);
         if (err<0) {
             return err;
         }
 
-        err = tlv_trace(tlv_record_save(r, tlv), "tlv_record_save");
+        err = tlv_record_save(r, tlv);
         if (err<0) {
             return err;
         }
 
-        if (is_option(TLV_OPT_DUMP)) {
+        if (is_option(OPT_DUMP)) {
             tlv_dump(tlv);
         }
 

@@ -22,6 +22,58 @@
 
 #define xdr_trace(_call, _fmt, _args...)    os_trace(xdr_dprint, _call, _fmt, ##_args)
 
+enum {
+    PATH_TLV = 0,
+    PATH_XDR = 1,
+    PATH_SHA = 2,
+    PATH_BAD = 3,
+    
+    PATH_END
+};
+
+typedef struct {
+    char filename[1+OS_FILENAME_LEN];   // full filename
+    char *file;                         // just filename, not include path
+} xpath_t;
+
+static inline void
+xpath_init(xpath_t *xpath, char *path)
+{
+    int len = strlen(path);
+    
+    memcpy(xpath->filename, path, len); 
+    xpath->filename[len++] = '/';
+    xpath->file = xpath->filename + len;
+}
+
+static inline char *
+xpath_fill(xpath_t *xpath, char *file, int namelen)
+{
+    memcpy(xpath->file, file, namelen);
+    xpath->file[namelen] = 0;
+
+    return xpath->filename;
+}
+
+static inline char *
+xpath_fill_sha(xpath_t *xpath, char *dir, char *sha)
+{
+    char *file = xpath->file;
+    int len = strlen(dir);
+
+    memcpy(file, dir, len);
+    file[len++] = '/';
+    
+    memcpy(file, sha, 2*XDR_DIGEST_SIZE);
+    file[2*XDR_DIGEST_SIZE] = 0;
+    
+    return xpath->filename;
+}
+
+typedef struct xpair_st xpair_t;
+static inline xpair_t *xdr_pair(xdr_buffer_t *x);
+static inline xpair_t *tlv_pair(xdr_buffer_t *x);
+
 #if 1
 #define XDR_ARRAY_MAPPER(_) \
     _(XDR_ARRAY, string,0)  \
@@ -780,8 +832,6 @@ xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, tlv_t *tlv)
     return xb_pre_binnary(x, obj, tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
 }
 
-static inline char *get_pair_sha(xdr_buffer_t *x);
-
 static inline int
 xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 {
@@ -790,31 +840,18 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
         return -ENOSUPPORT;
     }
     
-    char filename[1+OS_FILENAME_LEN] = {0};
     char digest[1+2*XDR_DIGEST_SIZE] = {0};
     byte *buf   = tlv_data(tlv);
     int len     = tlv_binlen(tlv);
-#if 0
-    if (len<0) {
-        os_println("tlv id:%d, extern %d, pad=%d, len=%d, hdrlen=%d, datalen=%d", 
-            tlv->id,
-            tlv_extend(tlv), 
-            tlv->pad,
-            tlv_len(tlv),
-            tlv_hdrlen(tlv),
-            tlv_datalen(tlv));
-
-        return 0;
-    }
-#endif
 
     sha256(buf, len, file->digest);
     file->bkdr = os_bkdr(file->digest, sizeof(file->digest));
     file->size = len;
     
     os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
-    os_saprintf(filename, "%s/%s/%s", get_pair_sha(x), dir, digest);
-
+    xpath_t *xpath = &xdr_pair(x)->xpath[PATH_SHA];
+    char *filename = xpath_fill_sha(xpath, dir, digest);
+    
 #if 0
     if (os_fexist(filename)) {
         return 0;
@@ -845,7 +882,7 @@ xb_pre_file(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
 {
     int err;
     
-    if (is_option(TLV_OPT_SPLIT)) {
+    if (is_option(OPT_SPLIT)) {
         err = xb_pre_file_bypath(x, file, tlv);
     } else {
         err = xb_pre_file_bybuffer(x, file, tlv);
@@ -1564,27 +1601,35 @@ tlv_record_to_xdr(tlv_record_t *r, xdr_buffer_t *x)
     return 0;
 }
 
-typedef struct {
+struct xpair_st {
     char *file; // filename, not include path
-    char *sha;  // sha path
-    char *bad;  // bad path
+    int  len;   // filename len
+    
+    xpath_t *xpath;
     xdr_buffer_t tlv;
     xdr_buffer_t xdr;
 
     int count;
-} xpair_t;
-#define XPAIR_INITER(_file, _tlv_file, _xdr_file, _sha_path, _bad_path) { \
-    .file= _file,                       \
-    .sha = _sha_path,                   \
-    .bad = _bad_path,                   \
-    .tlv = XBUFFER_INITER(_tlv_file),   \
-    .xdr = XBUFFER_INITER(_xdr_file),   \
+};
+
+#define XPAIR_INITER(_file, _len, _xpath)               {   \
+    .file   = _file,                                        \
+    .len    = _len,                                         \
+    .xpath  = _xpath,                                       \
+    .tlv    = XBUFFER_INITER((_xpath)[PATH_TLV].filename),  \
+    .xdr    = XBUFFER_INITER((_xpath)[PATH_XDR].filename),  \
 }   /* end */
 
-static inline char *
-get_pair_sha(xdr_buffer_t *x)
+static inline xpair_t *
+tlv_pair(xdr_buffer_t *x)
 {
-    return container_of(x, xpair_t, xdr)->sha;
+    return container_of(x, xpair_t, tlv);
+}
+
+static inline xpair_t *
+xdr_pair(xdr_buffer_t *x)
+{
+    return container_of(x, xpair_t, xdr);
 }
 
 static inline int
@@ -1677,13 +1722,12 @@ xpair_log(xpair_t *pair)
     }
 
     if (os_fexist(tlv->file)) {
-        char filename[1+OS_FILENAME_LEN] = {0};
-
-        os_saprintf(filename, "%s/%s", pair->bad, pair->file);
-
-        rename(tlv->file, filename);
+        xpath_t *xpath = &pair->xpath[PATH_BAD];
         
-        os_println("move bad file: %s==>%s", tlv->file, filename);
+        xpath_fill(xpath, pair->file, pair->len);
+
+        rename(tlv->file, xpath->filename);
+        os_println("move bad file: %s==>%s", tlv->file, xpath->filename);
     }
 }
 

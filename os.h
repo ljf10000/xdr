@@ -949,6 +949,15 @@ is_option(int flag)
     return flag==(flag & OS_VAR(option));
 }
 
+static inline void
+option_analysis(nameflag_t opt[], int count, char *args)
+{
+    int flag = __get_nameflag_byname(opt, count, args);
+
+    set_option(flag);
+}
+
+
 #if 0
 #define env_println(_fmt, _args...)     os_println(_fmt, ##_args)
 #else
@@ -1000,5 +1009,6 @@ env_geti(char *envname, int deft)
     }
 }
 
+#include "log.h"
 /******************************************************************************/
 #endif
