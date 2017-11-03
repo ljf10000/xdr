@@ -15,6 +15,10 @@
 #define tlv_trace(_call, _fmt, _args...)    (_call)
 #endif
 
+#ifndef TLV_MAXDATA
+#define TLV_MAXDATA     (128*1024*1024)
+#endif
+
 enum {
     OPT_CLI         = 0x01,
     OPT_IP6         = 0x02,
@@ -466,6 +470,10 @@ tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv, int count))
 {
     int err, count = 0;
 
+    if (left > TLV_MAXDATA) {
+        return tlv_error(tlv, -ETOOBIG, "too big:%d", left);
+    }
+    
     while(left>0) {
         if (left < tlv_hdrlen(tlv)) {
             return tlv_error(tlv, -ETOOSMALL, "left:%d < tlv hdrlen:%d", left, tlv_hdrlen(tlv));
