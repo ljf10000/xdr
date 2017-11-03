@@ -1678,7 +1678,7 @@ static inline int
 xpair_close(xpair_t *pair)
 {
     tlv_trace(tlv_close(&pair->tlv), "tlv_close");
-    xdr_trace(xdr_close(&pair->xdr), "xdr_close");
+    tlv_trace(xdr_close(&pair->xdr), "xdr_close");
 
     return 0;
 }
@@ -1704,7 +1704,7 @@ xpair_open(xpair_t *pair)
     }
 
     size = XDR_EXPAND_ALIGN(size);
-    err = xdr_trace(xdr_open(xdr, size), "xdr_open %s:%d", xdr->file, size);
+    err = tlv_trace(xdr_open(xdr, size), "xdr_open %s:%d", xdr->file, size);
     if (err<0) {
         return err;
     }
