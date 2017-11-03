@@ -9,7 +9,7 @@
 #define tlv_dprint(_fmt, _args...)      os_do_nothing()
 #endif
 
-#if 0
+#if 1
 #define tlv_trace(_call, _fmt, _args...)    os_trace(tlv_dprint, _call, _fmt, ##_args)
 #else
 #define tlv_trace(_call, _fmt, _args...)    (_call)
