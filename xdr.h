@@ -1729,7 +1729,10 @@ xpair_log(xpair_t *pair)
         xpath_fill(xpath, pair->file, pair->len);
 
         rename(tlv->file, xpath->filename);
-        os_println("move bad xdr: \n\t%s\n\t\t==>\n\t%s", tlv->file, xpath->filename);
+        os_println("move bad xdr:" __crlf 
+                    __tab "%s" __crlf
+                    __tab2  "==>" __crlf
+                    __tab "%s", tlv->file, xpath->filename);
     }
 }
 
