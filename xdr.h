@@ -14,6 +14,8 @@
 #define XDR_ALIGN(x)        OS_ALIGN(x, 4)
 #define XDR_EXPAND_ALIGN(x) OS_ALIGN(x + XDR_EXPAND, XDR_EXPAND)
 
+enum { XDR_DIGEST_SIZE = SHA256_DIGEST_SIZE };
+
 #if 1
 #define xdr_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
 #else
@@ -186,8 +188,6 @@ typedef union {
 
     void *session;
 } xdr_session_t;
-
-enum { XDR_DIGEST_SIZE = SHA256_DIGEST_SIZE };
 
 enum {
     XDR_FILE_HEADER_SIZE    = 60,
