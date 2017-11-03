@@ -1690,9 +1690,6 @@ xpair_open(xpair_t *pair)
     xdr_buffer_t *xdr = &pair->xdr;
     int size, err;
 
-    xdr_dprint("tlv file=%s", tlv->file);
-    xdr_dprint("xdr file=%s", xdr->file);
-    
     size = os_fsize(tlv->file);
     if (size<0) {
         return size;
