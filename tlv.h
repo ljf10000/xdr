@@ -1080,7 +1080,11 @@ tlv_record_save(tlv_record_t *r, tlv_t *tlv)
 {
     tlv_cache_t *cache = &r->cache[tlv->id];
 
-    return tlv_trace(tlv_cache_save(cache, tlv), "tlv_cache_save");
+    tlv_dprint("tlv_record_save ...");
+    int err = tlv_trace(tlv_cache_save(cache, tlv), "tlv_cache_save");
+    tlv_dprint("tlv_record_save %d", err);
+
+    return err;
 }
 
 static inline int
