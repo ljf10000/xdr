@@ -21,7 +21,11 @@
 #define xdr_dprint(_fmt, _args...)      os_do_nothing()
 #endif
 
+#if 1
 #define xdr_trace(_call, _fmt, _args...)    os_trace(xdr_dprint, _call, _fmt, ##_args)
+#else
+#define xdr_trace(_call, _fmt, _args...)    (_call)
+#endif
 
 enum {
     PATH_TLV = 0,
