@@ -835,7 +835,7 @@ __byte2hex(int ch)
 }
 
 static inline void
-os_byte2hex(int ch, byte bin[2])
+os_byte2hex(int ch, char bin[2])
 {
     bin[0] = __byte2hex(ch>>3);
     bin[1] = __byte2hex(ch & 0xf);
