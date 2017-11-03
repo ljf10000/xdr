@@ -1718,7 +1718,7 @@ xpair_log(xpair_t *pair)
     xpair_close(pair);
 
     if (os_fexist(xdr->file)) {
-        os_println("remove bad file: %s", xdr->file);
+        os_println("remove xdr: %s", xdr->file);
         
         remove(xdr->file);
     }
@@ -1729,7 +1729,7 @@ xpair_log(xpair_t *pair)
         xpath_fill(xpath, pair->file, pair->len);
 
         rename(tlv->file, xpath->filename);
-        os_println("move bad file: %s==>%s", tlv->file, xpath->filename);
+        os_println("move bad xdr: \n\t%s\n\t\t==>\n\t%s", tlv->file, xpath->filename);
     }
 }
 
