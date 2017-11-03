@@ -1085,12 +1085,12 @@ tlv_record_parse(tlv_record_t *r)
     {
         int err;
 
-        err = tlv_check(tlv);
+        err = tlv_trace(tlv_check(tlv), "tlv_check %d", count);
         if (err<0) {
             return err;
         }
 
-        err = tlv_record_save(r, tlv);
+        err = tlv_trace(tlv_record_save(r, tlv), "tlv_record_save %d", count);
         if (err<0) {
             return err;
         }
