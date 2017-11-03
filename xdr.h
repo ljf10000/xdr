@@ -1744,19 +1744,19 @@ tlv_to_xdr(xpair_t *pair)
 {
     int err = 0;
 
-    int walk(tlv_t *header)
+    int walk(tlv_t *header, int count)
     {
         tlv_record_t r = TLV_RECORD_INITER(header);
         int err;
 
-        err = tlv_trace(tlv_record_parse(&r), "tlv_record_parse");
+        err = tlv_trace(tlv_record_parse(&r), "tlv_record_parse:%d", count);
         if (err<0) {
             xpair_log(pair);
             
             return err;
         }
 
-        err = tlv_trace(tlv_record_to_xdr(&r, &pair->xdr), "tlv_record_to_xdr");
+        err = tlv_trace(tlv_record_to_xdr(&r, &pair->xdr), "tlv_record_to_xdr:%d", count);
         if (err<0) {
             return err;
         }

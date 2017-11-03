@@ -462,9 +462,9 @@ tlv_error(tlv_t *tlv, int err, const char *fmt, ...)
 }
 
 static inline int
-tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv))
+tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv, int count))
 {
-    int err;
+    int err, count = 0;
 
     while(left>0) {
         if (left < tlv_hdrlen(tlv)) {
@@ -474,7 +474,7 @@ tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv))
             return tlv_error(tlv, -ETOOSMALL, "left:%d < tlv len:%d", left, tlv_len(tlv));
         }
         
-        err = (*walk)(tlv);
+        err = (*walk)(tlv, ++count);
         if (err<0) {
             os_println("break walk!!!");
             return err;
@@ -1066,7 +1066,7 @@ tlv_record_save(tlv_record_t *r, tlv_t *tlv)
 static inline int
 tlv_record_parse(tlv_record_t *r)
 {
-    int walk(tlv_t *tlv) 
+    int walk(tlv_t *tlv, int count) 
     {
         int err;
 
