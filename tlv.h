@@ -1033,11 +1033,11 @@ tlv_cache_save(tlv_cache_t *cache, tlv_t *tlv)
             cache->multi[cache->count++] = tlv;
         }
         else {
-            return tlv_error(tlv, -ENOSUPPORT, "not support cache multi")
+            return tlv_error(tlv, -ENOSUPPORT, "not support cache multi");
         }
     }
     else {
-        return tlv_error(tlv, -ENOSPACE, "too more cache multi")
+        return tlv_error(tlv, -ENOSPACE, "too more cache multi");
     }
 
     return 0;
