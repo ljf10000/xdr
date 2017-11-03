@@ -1017,7 +1017,7 @@ tlv_check_session(tlv_t *tlv)
 }
 
 #ifndef TLV_CACHE_MULTI
-#define TLV_CACHE_MULTI    7
+#define TLV_CACHE_MULTI    31
 #endif
 
 typedef struct {
