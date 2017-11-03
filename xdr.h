@@ -1748,6 +1748,8 @@ tlv_to_xdr(xpair_t *pair)
 {
     int err = 0;
 
+    tlv_dprint("handle %s", pair->tlv.file);
+    
     int walk(tlv_t *header, int count)
     {
         tlv_record_t r = TLV_RECORD_INITER(header);
