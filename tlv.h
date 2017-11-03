@@ -1044,6 +1044,7 @@ typedef struct {
 static inline int
 tlv_cache_save(tlv_cache_t *cache, tlv_t *tlv)
 {
+    tlv_dprint("tlv_cache_save ...")
     if (cache->count < TLV_CACHE_MULTI) {
         if (0==cache->count) {
             cache->multi[cache->count++] = tlv;
@@ -1052,12 +1053,16 @@ tlv_cache_save(tlv_cache_t *cache, tlv_t *tlv)
             cache->multi[cache->count++] = tlv;
         }
         else {
+            tlv_dprint("tlv_cache_save ENOSUPPORT.")
             return tlv_error(tlv, -ENOSUPPORT, "not support cache multi");
         }
     }
     else {
+            tlv_dprint("tlv_cache_save ENOSPACE.")
         return tlv_error(tlv, -ENOSPACE, "too more cache multi");
     }
+    
+    tlv_dprint("tlv_cache_save ok.")
 
     return 0;
 }
