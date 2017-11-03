@@ -64,15 +64,10 @@ static void path_init(xpath_t xpath[PATH_END], char *path[PATH_END])
 static int xdr_handle(char *file, int namelen, xpath_t xpath[])
 {
     xpair_t pair = XPAIR_INITER(file, namelen, xpath);
-    xpath_t *tlv = &xpath[PATH_TLV];
-    xpath_t *xdr = &xpath[PATH_XDR];
-    
-    xpath_fill(tlv, file, namelen);
-    xpath_fill(xdr, file, namelen);
-    
-    xdr_dprint("handle tlv:%s", tlv->filename);
-    xdr_dprint("handle xdr:%s", xdr->filename);
 
+    xpath_fill(&xpath[PATH_TLV], file, namelen);
+    xpath_fill(&xpath[PATH_XDR], file, namelen);
+    
     int err = tlv_to_xdr(&pair);
     if (err<0) {
         // log
@@ -130,7 +125,7 @@ static int monitor(char *watch, xpath_t xpath[])
         
         for (; ev<end; ev=EVNEXT(ev)) {
             if (ev->mask & EVMASK) {
-                ev_debug(ev);
+                // ev_debug(ev);
                 
                 err = handler(ev, xpath);
                 if (err<0) {
