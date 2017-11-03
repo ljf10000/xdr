@@ -19,6 +19,10 @@
 #define TLV_MAXDATA     (128*1024*1024)
 #endif
 
+#ifndef TLV_MAXCOUNT
+#define TLV_MAXCOUNT    (128*1024)
+#endif
+
 enum {
     OPT_CLI         = 0x01,
     OPT_IP6         = 0x02,
@@ -475,7 +479,10 @@ tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv, int count))
     }
     
     while(left>0) {
-        if (left < tlv_hdrlen(tlv)) {
+        if (count > TLV_MAXCOUNT) {
+            return tlv_error(tlv, -ETOOMORE, "too more tlv:%d", count);
+        }
+        else if (left < tlv_hdrlen(tlv)) {
             return tlv_error(tlv, -ETOOSMALL, "left:%d < tlv hdrlen:%d", left, tlv_hdrlen(tlv));
         }
         else if (left < tlv_len(tlv)) {

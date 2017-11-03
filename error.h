@@ -229,7 +229,7 @@ enum {
     EFILTER     = ERRNO(65),
     EFORK       = ERRNO(66),
     EDEAMON     = ERRNO(67),
-    E2SMALL     = ERRNO(68),
+    ETOOMORE    = ERRNO(68),
     ECALLBACK   = ERRNO(69),
     ESCRIPT     = ERRNO(70),
     EBOUND      = ERRNO(71),
