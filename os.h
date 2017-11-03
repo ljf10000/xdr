@@ -618,6 +618,19 @@ os_fexist(const char *file)
 }
 
 static inline int
+os_fexist_handle(const char *file, int (*handle)(const char *file))
+{
+    int err = 0;
+    int fd = open(file, O_RDONLY, S_IRUSR | S_IRGRP);
+    if (is_good_fd(fd)) {
+        err = (*handle)(file);
+    }
+    close(fd);
+
+    return err;
+}
+
+static inline int
 os_fsize(const char *file)
 {
     struct stat st;

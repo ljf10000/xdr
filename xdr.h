@@ -1714,23 +1714,29 @@ xpair_log(xpair_t *pair)
     
     xpair_close(pair);
 
-    if (os_fexist(xdr->file)) {
-        os_println("remove xdr: %s", xdr->file);
-        
-        remove(xdr->file);
-    }
+    int handle_1(const char *file)
+    {
+        os_println("remove xdr: %s", file);
 
-    if (os_fexist(tlv->file)) {
+        remove(file);
+    }
+    
+    os_fexist_handle(xdr->file, handle_1);
+
+    int handle_2(const char *file)
+    {
         xpath_t *xpath = &pair->xpath[PATH_BAD];
         
         xpath_fill(xpath, pair->file, pair->len);
-
-        rename(tlv->file, xpath->filename);
+        rename(file, xpath->filename);
+        
         os_println("move bad xdr:" __crlf 
                     __tab "%s" __crlf
                     __tab2  "==>" __crlf
-                    __tab "%s", tlv->file, xpath->filename);
+                    __tab "%s", file, xpath->filename);
     }
+    
+    os_fexist_handle(tlv->file, handle_2);
 }
 
 static inline int
