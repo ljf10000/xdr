@@ -66,10 +66,8 @@ xpath_fill_sha(xpath_t *xpath, char *dir, char *sha)
     char *p = xpath->file;
     int len = strlen(dir);
 
-    memcpy(p, dir, len); p += len; p++ = '/';
-    
-    memcpy(p, sha, 2*XDR_DIGEST_SIZE);
-    p[2*XDR_DIGEST_SIZE] = 0;
+    memcpy(p, dir, len); p += len; *p++ = '/';
+    memcpy(p, sha, 2*XDR_DIGEST_SIZE); p[2*XDR_DIGEST_SIZE] = 0;
     
     return xpath->filename;
 }
