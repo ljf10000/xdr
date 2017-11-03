@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
         if (0==strcmp("--help", args)) {
             return usage();
         } else {
-            option_analysis(args);
+            option_analysis(opt, os_count_of(opt), args);
         }
 
         argc--; argv++;
