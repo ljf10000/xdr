@@ -79,8 +79,8 @@ enum {
     TLV_F_SSL_CLIENT_CERT   = 0x0010,
 
     TLV_F_HTTP              = TLV_F_HTTP_REQUEST|TLV_F_HTTP_RESPONSE,
-    TLV_F_SSL               = TLV_F_SSL_SERVER_CERT|TLV_F_SSL_CLIENT_CERT,
-    TLV_F_FILE              = TLV_F_FILE_CONTENT|TLV_F_HTTP|TLV_F_SSL,
+    TLV_F_CERT               = TLV_F_SSL_SERVER_CERT|TLV_F_SSL_CLIENT_CERT,
+    TLV_F_FILE              = TLV_F_FILE_CONTENT|TLV_F_HTTP|TLV_F_CERT,
 };
 
 static inline const char *
@@ -89,7 +89,7 @@ getdirbyflag(int flag)
     static nameflag_t opt[] = {
         { .flag = TLV_F_FILE_CONTENT,   .name = "file" },
         { .flag = TLV_F_HTTP,           .name = "http" },
-        { .flag = TLV_F_SSL,            .name = "ssl" },
+        { .flag = TLV_F_CERT,           .name = "cert" },
     };
 
     return get_nameflag_byflag(opt, flag);
