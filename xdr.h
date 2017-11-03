@@ -840,7 +840,6 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
         return -ENOSUPPORT;
     }
     
-    char digest[1+2*XDR_DIGEST_SIZE] = {0};
     byte *buf   = tlv_data(tlv);
     int len     = tlv_binlen(tlv);
 
@@ -848,17 +847,17 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
     file->bkdr = os_bkdr(file->digest, sizeof(file->digest));
     file->size = len;
     
+    char digest[1+2*XDR_DIGEST_SIZE] = {0};
     os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
+    
     xpath_t *xpath = &xdr_pair(x)->xpath[PATH_SHA];
     char *filename = xpath_fill_sha(xpath, dir, digest);
     
-#if 0
     if (os_fexist(filename)) {
         return 0;
+    } else {
+        return os_mmap_w_async(filename, buf, len);
     }
-#endif
-
-    return os_mmap_w_async(filename, buf, len);
 }
 
 static inline int
