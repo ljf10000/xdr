@@ -1716,9 +1716,9 @@ xpair_log(xpair_t *pair)
 
     int handle_1(const char *file)
     {
-        os_println("remove xdr: %s", file);
-
+        os_println("try remove xdr: %s", file);
         remove(file);
+        os_println("OK remove xdr: %s", file);
     }
     
     os_fexist_handle(xdr->file, handle_1);
@@ -1726,6 +1726,8 @@ xpair_log(xpair_t *pair)
     int handle_2(const char *file)
     {
         xpath_t *xpath = &pair->xpath[PATH_BAD];
+        
+        os_println("try move bad xdr: %s", file);
         
         xpath_fill(xpath, pair->file, pair->len);
         rename(file, xpath->filename);
