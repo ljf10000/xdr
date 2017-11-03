@@ -856,6 +856,7 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
     
     xpath_t *xpath = xpair_path(xdr_pair(x), PATH_SHA);
     char *filename = xpath_fill_sha(xpath, (char *)dir, digest);
+    os_println("dir=%s filename=%s", dir, filename);
     
     if (os_fexist(filename)) {
         return 0;
