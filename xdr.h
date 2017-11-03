@@ -63,14 +63,13 @@ xpath_fill(xpath_t *xpath, char *file, int namelen)
 static inline char *
 xpath_fill_sha(xpath_t *xpath, char *dir, char *sha)
 {
-    char *file = xpath->file;
+    char *p = xpath->file;
     int len = strlen(dir);
 
-    memcpy(file, dir, len);
-    file[len++] = '/';
+    memcpy(p, dir, len); p += len; p++ = '/';
     
-    memcpy(file, sha, 2*XDR_DIGEST_SIZE);
-    file[2*XDR_DIGEST_SIZE] = 0;
+    memcpy(p, sha, 2*XDR_DIGEST_SIZE);
+    p[2*XDR_DIGEST_SIZE] = 0;
     
     return xpath->filename;
 }
