@@ -74,6 +74,7 @@ xpath_fill_sha(xpath_t *xpath, char *dir, char *sha)
 typedef struct xpair_st xpair_t;
 static inline xpair_t *xdr_pair(xdr_buffer_t *x);
 static inline xpair_t *tlv_pair(xdr_buffer_t *x);
+static inline xpath_t *xpair_path(xpair_t *pair, int obj);
 
 #if 1
 #define XDR_ARRAY_MAPPER(_) \
@@ -849,8 +850,8 @@ xb_pre_file_bybuffer(xdr_buffer_t *x, xdr_file_t *file, tlv_t *tlv)
     char digest[1+2*XDR_DIGEST_SIZE] = {0};
     os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
     
-    xpath_t *xpath = &xdr_pair(x)->xpath[PATH_SHA];
-    char *filename = xpath_fill_sha(xpath, dir, digest);
+    xpath_t *xpath = xpair_path(xdr_pair(x), PATH_SHA);
+    char *filename = xpath_fill_sha(xpath, (char *)dir, digest);
     
     if (os_fexist(filename)) {
         return 0;
@@ -1617,6 +1618,12 @@ struct xpair_st {
     .tlv    = XBUFFER_INITER((_xpath)[PATH_TLV].filename),  \
     .xdr    = XBUFFER_INITER((_xpath)[PATH_XDR].filename),  \
 }   /* end */
+
+static inline xpath_t *
+xpair_path(xpair_t *pair, int obj)
+{
+    return &pair->xpath[obj];
+}
 
 static inline xpair_t *
 tlv_pair(xdr_buffer_t *x)
