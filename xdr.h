@@ -1719,6 +1719,8 @@ xpair_log(xpair_t *pair)
         remove(file);
         
         os_println("remove xdr: %s", file);
+
+        return 0;
     }
     
     os_fexist_handle(xdr->file, handle_1);
@@ -1734,6 +1736,8 @@ xpair_log(xpair_t *pair)
                     __tab "%s" __crlf
                     __tab2  "==>" __crlf
                     __tab "%s", file, xpath->filename);
+
+        return 0;
     }
     
     os_fexist_handle(tlv->file, handle_2);
