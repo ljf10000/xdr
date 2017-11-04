@@ -402,8 +402,8 @@ tlv_len_n(tlv_t *tlv)
 #define tlv_datalen_e(_tlv)     (tlv_len_e(_tlv)-tlv_hdrlen_e)
 #define tlv_datalen(_tlv)       (tlv_extend(_tlv)?tlv_datalen_e(_tlv):tlv_datalen_n(_tlv))
 
-#define tlv_strlen(_tlv)        (tlv_datalen(_tlv) - (_tlv)->pad)
 #define tlv_binlen(_tlv)        (tlv_datalen(_tlv) - (_tlv)->pad)
+#define tlv_strlen(_tlv)        tlv_binlen(_tlv)
 
 #define tlv_first(_tlv_header)  (tlv_t *)tlv_data(_tlv_header)
 #define tlv_next(_tlv)          (tlv_t *)((byte *)(_tlv) + tlv_len(_tlv))
@@ -421,21 +421,21 @@ tlv_len_n(tlv_t *tlv)
 #define tlv_time(_tlv)      (*(tlv_time_t *)tlv_data(_tlv))
 #define tlv_duration(_tlv)  (*(tlv_duration_t *)tlv_data(_tlv))
 
-#define tlv_ip4(_tlv)       (*(uint32 *)tlv_data(_tlv))
-#define tlv_ip6(_tlv)       ((xdr_ipaddr_t *)tlv_data(_tlv))
+#define tlv_ip4(_tlv)       (*(tlv_ip4_t *)tlv_data(_tlv))
+#define tlv_ip6(_tlv)       ((tlv_ip6_t *)tlv_data(_tlv))
 
-#define tlv_string(_tlv)    ((char *)tlv_data(_tlv))
 #define tlv_binary(_tlv)    tlv_data(_tlv)
+#define tlv_string(_tlv)    ((char *)tlv_binary(_tlv))
 
-#define tlv_session(_tlv)       (tlv_session_t *)tlv_data(_tlv)
-#define tlv_session_st(_tlv)    (tlv_session_st_t *)tlv_data(_tlv)
-#define tlv_session_time(_tlv)  (tlv_session_time_t *)tlv_data(_tlv)
-#define tlv_service_st(_tlv)    (tlv_service_st_t *)tlv_data(_tlv)
-#define tlv_tcp(_tlv)           (tlv_tcp_t *)tlv_data(_tlv)
-#define tlv_L7(_tlv)            (tlv_L7_t *)tlv_data(_tlv)
-#define tlv_http(_tlv)          (tlv_http_t *)tlv_data(_tlv)
-#define tlv_sip(_tlv)           (tlv_sip_t *)tlv_data(_tlv)
-#define tlv_rtsp(_tlv)          (tlv_rtsp_t *)tlv_data(_tlv)
+#define tlv_session(_tlv)       ((tlv_session_t *)tlv_data(_tlv))
+#define tlv_session_st(_tlv)    ((tlv_session_st_t *)tlv_data(_tlv))
+#define tlv_session_time(_tlv)  ((tlv_session_time_t *)tlv_data(_tlv))
+#define tlv_service_st(_tlv)    ((tlv_service_st_t *)tlv_data(_tlv))
+#define tlv_tcp(_tlv)           ((tlv_tcp_t *)tlv_data(_tlv))
+#define tlv_L7(_tlv)            ((tlv_L7_t *)tlv_data(_tlv))
+#define tlv_http(_tlv)          ((tlv_http_t *)tlv_data(_tlv))
+#define tlv_sip(_tlv)           ((tlv_sip_t *)tlv_data(_tlv))
+#define tlv_rtsp(_tlv)          ((tlv_rtsp_t *)tlv_data(_tlv))
 
 static inline int
 tlv_error(tlv_t *tlv, int err, const char *fmt, ...)
@@ -605,7 +605,7 @@ tlv_check(tlv_t *tlv)
     }
 }
 
-#define TLV_DUMP(_fmt, _args...)       os_println(__tab  _fmt, ##_args)
+#define TLV_DUMP( _fmt, _args...)      os_println(__tab  _fmt, ##_args)
 #define TLV_DUMP2(_fmt, _args...)      os_println(__tab2 _fmt, ##_args)
 #define TLV_DUMP3(_fmt, _args...)      os_println(__tab3 _fmt, ##_args)
 #define TLV_DUMP4(_fmt, _args...)      os_println(__tab4 _fmt, ##_args)
@@ -623,7 +623,7 @@ static inline void tlv_dump_string(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%s", string);
 static inline void 
 tlv_dump_time(tlv_t *tlv)
 {
-    TLV_DUMP("id:%d, %s: %s", tlv->id, tlv_ops_name(tlv), os_time_string(XDR_SECOND(tlv_time(tlv))));
+    TLV_DUMP("id:%d, %s: %s", tlv->id, tlv_ops_name(tlv), unsafe_time_string(XDR_SECOND(tlv_time(tlv))));
 }
 
 static inline void tlv_dump_duration(tlv_t *tlv) 
@@ -640,7 +640,7 @@ tlv_dump_ip4(tlv_t *tlv)
 {
     uint32 ip = tlv_ip4(tlv); // ip = htonl(ip);
     
-    TLV_DUMP("id:%d, %s: %s", tlv->id, tlv_ops_name(tlv), os_ipstring(ip));
+    TLV_DUMP("id:%d, %s: %s", tlv->id, tlv_ops_name(tlv), unsafe_ipstring(ip));
 }
 
 static inline void 
@@ -708,10 +708,10 @@ tlv_dump_session(tlv_t *tlv)
         uint32 ip;
 
         ip = XDR_IP(&obj->sip); // ip = htonl(ip);
-        TLV_DUMP2("sip    : %s", os_ipstring(ip));
+        TLV_DUMP2("sip    : %s", unsafe_ipstring(ip));
         
         ip = XDR_IP(&obj->dip); // ip = htonl(ip);
-        TLV_DUMP2("dip    : %s", os_ipstring(ip));
+        TLV_DUMP2("dip    : %s", unsafe_ipstring(ip));
     } else {
         TLV_DUMP2("sip    : ipv6 address");
         TLV_DUMP2("dip    : ipv6 addres");
@@ -773,9 +773,9 @@ tlv_dump_session_time(tlv_t *tlv)
     
     TLV_DUMP("id: %d, session_time:", tlv->id);
     
-    TLV_DUMP2("create: %s", os_time_string(XDR_SECOND(obj->create)));
-    TLV_DUMP2("start : %s", os_time_string(XDR_SECOND(obj->start)));
-    TLV_DUMP2("stop  : %s", os_time_string(XDR_SECOND(obj->stop)));
+    TLV_DUMP2("create: %s", unsafe_time_string(XDR_SECOND(obj->create)));
+    TLV_DUMP2("start : %s", unsafe_time_string(XDR_SECOND(obj->start)));
+    TLV_DUMP2("stop  : %s", unsafe_time_string(XDR_SECOND(obj->stop)));
 }
 
 #ifndef sizeof_tcp
@@ -916,9 +916,9 @@ tlv_dump_http(tlv_t *tlv)
     
     TLV_DUMP("id: %d, http:", tlv->id);
     
-    TLV_DUMP2("time_request        : %s", os_time_string(XDR_SECOND(obj->time_request)));
-    TLV_DUMP2("time_first_response : %s", os_time_string(XDR_SECOND(obj->time_first_response)));
-    TLV_DUMP2("time_last_content   : %s", os_time_string(XDR_SECOND(obj->time_last_content)));
+    TLV_DUMP2("time_request        : %s", unsafe_time_string(XDR_SECOND(obj->time_request)));
+    TLV_DUMP2("time_first_response : %s", unsafe_time_string(XDR_SECOND(obj->time_first_response)));
+    TLV_DUMP2("time_last_content   : %s", unsafe_time_string(XDR_SECOND(obj->time_last_content)));
     TLV_DUMP2("service_delay       : %llu us", obj->service_delay);
     TLV_DUMP2("content_length      : %u", obj->content_length);
     TLV_DUMP2("status_code         : %u", obj->status_code);

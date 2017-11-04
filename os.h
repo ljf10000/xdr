@@ -243,6 +243,7 @@
 #ifndef OS_ALIGN
 #define OS_ALIGN(_x, _align)            (((_x)+(_align)-1) & ~((_align)-1))
 #endif
+#define OS_FORMAT_SIZE(_fmt)            OS_ALIGN(sizeof(_fmt))
 
 #ifndef os_objscpy
 #define os_objscpy(_dst, _src)          memcpy(_dst, _src, sizeof(*(_src)))
@@ -273,7 +274,7 @@
 #endif
 
 #ifndef os_close
-#define os_close(_fd)       ({ \
+#define os_close(_fd)       ({  \
     int __err = 0;              \
     if ((_fd)<0) {              \
         __err = close(_fd);     \
@@ -549,23 +550,24 @@ enum { mv2_ok = 0 };
 #define is_mv2_break(_mv)       (__MV_BREAK==mv2_control(_mv))
 #define is_mv2_go(_mv)          (__MV_GO==mv2_control(_mv))
 
+typedef uint32 os_ip4_t;
 /*
 * just for single-thread, unsafe for multi-thread
 *
 * @ip: network sort
 */
 static inline char *
-os_ipstring(uint32 ip)
+unsafe_ipstring(os_ip4_t ip)
 {
-    struct in_addr in = {.s_addr = ip};
-    
-    return (char *)inet_ntoa(in);
+    return (char *)inet_ntoa(*(struct in_addr *)&ip);
 }
 
+#define OS_FORMAT_FULLTIME      "1900-01-01#00:00:00"
+
 static inline char *
-os_time_string(time_t t)
+unsafe_time_string(time_t t)
 {
-    static char current[1+sizeof("1900-01-01#00:00:00")];
+    static char current[OS_FORMAT_SIZE(OS_FORMAT_FULLTIME)];
 
     struct tm *tm = gmtime(&t);
 
@@ -649,7 +651,7 @@ os_fhandle(const char *file, int (*handle)(const char *file, int fd))
 }
 
 #ifndef os_munmap
-#define os_munmap(_mem, _size)  ({ \
+#define os_munmap(_mem, _size)  ({  \
     int __err = 0;                  \
     if (_mem) {                     \
         __err = munmap(_mem, _size);\
@@ -753,17 +755,16 @@ ERROR:
 
 #ifndef os_array_search
 #define os_array_search(_array, _obj, _cmp, _begin, _end) ({ \
-    int i;              \
-    int idx = (_end);   \
-                        \
-    for (i=(_begin); i<(_end); i++) {   \
-        if (0==_cmp((_array)[i], _obj)) { \
-            idx = i;    \
+    int m_i, m_idx = (_end);    \
+                                \
+    for (m_i=(_begin); m_i<(_end); m_i++) {   \
+        if (0==_cmp((_array)[m_i], _obj)) { \
+            m_idx = m_i;        \
             break;      \
         }               \
     }                   \
                         \
-    idx;                \
+    m_idx;              \
 })  /* end */
 #endif
 
