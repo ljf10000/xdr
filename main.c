@@ -11,7 +11,7 @@ DECLARE_TLV_VARS;
 #define EVCOUNT             128
 #define EVSIZE              INOTIFY_EVSIZE
 #define EVNEXT(_ev)         inotify_ev_next(_ev)
-#define ISXDR(_ev, _len)    OS_HAS_SUFFIX((_ev)->name, _len, XDR_SUFFIX, sizeof(XDR_SUFFIX)-1)
+#define ISXDR(_ev, _len)    os_str_has_suffix((_ev)->name, _len, XDR_SUFFIX, sizeof(XDR_SUFFIX)-1)
 
 static char *self;
 
@@ -36,23 +36,18 @@ static nameflag_t opt[] = {
     { .flag = OPT_SPLIT,        .name = "--file-split", .help = "dpi file split from xdr"},
 };
 
-static int usage(void)
+static int
+usage(void)
 {
     os_println("%s [OPTION] tlv-path xdr-path sha-path", self);
-    os_println(__tab "OPTION:");
 
-    int i;
-
-    for (i=0; i<os_count_of(opt); i++) {
-        os_println(__tab "%s: %s", opt[i].name, opt[i].help);
-    }
-
-    return -1;
+    return nameflag_usage(opt);
 }
 
 static xpath_t Path[PATH_END];
 
-static void path_init(xpath_t xpath[PATH_END], char *path[PATH_END])
+static void
+path_init(xpath_t xpath[PATH_END], char *path[PATH_END])
 {
     int i;
 
@@ -61,7 +56,8 @@ static void path_init(xpath_t xpath[PATH_END], char *path[PATH_END])
     }
 }
 
-static int xdr_handle(char *file, int namelen, xpath_t xpath[])
+static int
+xdr_handle(char *file, int namelen, xpath_t xpath[])
 {
     xpair_t pair = XPAIR_INITER(file, namelen, xpath);
 
@@ -76,7 +72,8 @@ static int xdr_handle(char *file, int namelen, xpath_t xpath[])
     return 0;
 }
 
-static int tlv_remove(char *file, int namelen, xpath_t xpath[])
+static int
+tlv_remove(char *file, int namelen, xpath_t xpath[])
 {
     char *filename = xpath_fill(&xpath[PATH_TLV], file, namelen);
     
@@ -87,7 +84,8 @@ static int tlv_remove(char *file, int namelen, xpath_t xpath[])
     return 0;
 }
 
-static int handler(inotify_ev_t *ev, xpath_t xpath[])
+static int
+handler(inotify_ev_t *ev, xpath_t xpath[])
 {
     int namelen = inotify_ev_len(ev);
     
@@ -98,7 +96,8 @@ static int handler(inotify_ev_t *ev, xpath_t xpath[])
     }
 }
 
-static int monitor(char *watch, xpath_t xpath[])
+static int
+monitor(char *watch, xpath_t xpath[])
 {
     static char EV_BUFFER[EVCOUNT * INOTIFY_EVSIZE];
     int fd, len, err;
@@ -140,7 +139,8 @@ static int monitor(char *watch, xpath_t xpath[])
 #define ENV_TLV_FILE    "TLV_FILE"
 #endif
 
-static int cli(xpath_t xpath[])
+static int
+cli(xpath_t xpath[])
 {
     char *file = env_gets(ENV_TLV_FILE, NULL);
     if (NULL==file) {
@@ -148,6 +148,24 @@ static int cli(xpath_t xpath[])
     }
     
     return xdr_handle(file, strlen(file), xpath);
+}
+
+static int
+check(int argc, char *argv[])
+{
+    int i;
+
+    if (PATH_END != argc) {
+        return -1;
+    }
+
+    for (i=0; i<PATH_END; i++) {
+        if (false==os_fisdir(argv[i])) {
+            return -1;
+        }
+    }
+
+    return 0;
 }
 
 int main(int argc, char *argv[])
@@ -167,16 +185,16 @@ int main(int argc, char *argv[])
         if (0==strcmp("--help", args)) {
             return usage();
         } else {
-            option_analysis(opt, os_count_of(opt), args);
+            option_analysis(opt, args);
         }
 
         argc--; argv++;
     }
 
-    if (PATH_END != argc) {
+    if (0!=check(argc, argv)) {
         return usage();
     }
-
+    
     path_init(Path, argv);
 
     if (is_option(OPT_CLI)) {

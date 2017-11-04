@@ -3,6 +3,26 @@
 /******************************************************************************/
 #include "tlv.h"
 /******************************************************************************/
+#ifndef D_xdr_dprint
+#define D_xdr_dprint    1
+#endif
+
+#if D_xdr_dprint
+#define xdr_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
+#else
+#define xdr_dprint(_fmt, _args...)      os_do_nothing()
+#endif
+
+#ifndef D_xdr_trace
+#define D_xdr_trace     1
+#endif
+
+#if D_xdr_trace
+#define xdr_trace(_call, _fmt, _args...)    os_trace(xdr_dprint, _call, _fmt, ##_args)
+#else
+#define xdr_trace(_call, _fmt, _args...)    (_call)
+#endif
+
 #ifndef XDR_VERSION
 #define XDR_VERSION     0
 #endif
@@ -14,18 +34,6 @@
 #define XDR_ALIGN(x)        OS_ALIGN(x, 4)
 #define XDR_EXPAND_ALIGN(x) OS_ALIGN(x + XDR_EXPAND, XDR_EXPAND)
 #define XDR_DIGEST_SIZE     SHA256_DIGEST_SIZE
-
-#if 1
-#define xdr_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
-#else
-#define xdr_dprint(_fmt, _args...)      os_do_nothing()
-#endif
-
-#if 1
-#define xdr_trace(_call, _fmt, _args...)    os_trace(xdr_dprint, _call, _fmt, ##_args)
-#else
-#define xdr_trace(_call, _fmt, _args...)    (_call)
-#endif
 
 enum {
     PATH_TLV = 0,
@@ -684,7 +692,7 @@ xb_open(xdr_buffer_t *x, bool readonly, int size)
 static inline int
 xb_close(xdr_buffer_t *x)
 {
-    if (is_good_fd(x->fd)) {
+    if (x->fd<0) {
         close(x->fd); x->fd = -1;
     }
 
@@ -831,6 +839,18 @@ static inline int
 xb_pre_binary_ex(xdr_buffer_t *x, xdr_binary_t *obj, tlv_t *tlv)
 {
     return xb_pre_binnary(x, obj, tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
+}
+
+static inline const char *
+getdirbyflag(int flag)
+{
+    static nameflag_t opt[] = {
+        { .flag = TLV_F_FILE_CONTENT,   .name = "file" },
+        { .flag = TLV_F_HTTP,           .name = "http" },
+        { .flag = TLV_F_CERT,           .name = "cert" },
+    };
+
+    return get_nameflag_byflag(opt, flag);
 }
 
 static inline int
@@ -1664,7 +1684,7 @@ xdr_close(xdr_buffer_t *x)
         x->u.xdr->total = x->current;
     }
 
-    if (is_good_fd(x->fd)) {
+    if (x->fd<0) {
         ftruncate(x->fd, x->current);
     }
 
@@ -1708,13 +1728,8 @@ xpair_open(xpair_t *pair)
 
 static inline void
 xpair_log(xpair_t *pair)
-{
-    xdr_buffer_t *tlv = &pair->tlv;
-    xdr_buffer_t *xdr = &pair->xdr;
-    
-    xpair_close(pair);
-
-    int handle_1(const char *file)
+{    
+    int handle_remove(const char *file, int fd)
     {
         remove(file);
         
@@ -1722,10 +1737,8 @@ xpair_log(xpair_t *pair)
 
         return 0;
     }
-    
-    os_fexist_handle(xdr->file, handle_1);
 
-    int handle_2(const char *file)
+    int handle_move(const char *file, int fd)
     {
         xpath_t *xpath = &pair->xpath[PATH_BAD];
         
@@ -1740,7 +1753,10 @@ xpair_log(xpair_t *pair)
         return 0;
     }
     
-    os_fexist_handle(tlv->file, handle_2);
+    xpair_close(pair);
+    
+    os_fhandle(pair->tlv.file, handle_remove);
+    os_fhandle(pair->xdr.file, handle_move);
 }
 
 static inline int

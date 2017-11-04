@@ -272,14 +272,10 @@
 #define is_good_enum(_id, _end)         is_good_value(_id, 0, _end)
 #endif
 
-#ifndef is_good_fd
-#define is_good_fd(_fd)                 ((_fd)>=0)
-#endif
-
 #ifndef os_close
 #define os_close(_fd)       ({ \
     int __err = 0;              \
-    if (is_good_fd(_fd)) {      \
+    if ((_fd)<0) {              \
         __err = close(_fd);     \
         _fd = -1;               \
     }                           \
@@ -394,16 +390,6 @@
 
 #ifndef os_println
 #define os_println(_fmt, _args...)                  printf(_fmt __crlf, ##_args)
-#endif
-
-#ifndef os_trace
-#define os_trace(_print, _call, _fmt, _args...) ({  \
-    int __err;                                  \
-    _print("try " _fmt " ...", ##_args);        \
-    __err = (_call);                            \
-    _print(__tab "%s:%d " _fmt, ok_string(__err), __err, ##_args); \
-    __err;                                      \
-})  /* end */
 #endif
 
 #ifndef os_sprintf
@@ -609,33 +595,57 @@ is_option_args(char *args)
         && args[2];
 }
 
-static inline bool
-os_fexist(const char *file)
-{
-    int fd = open(file, O_RDONLY, S_IRUSR | S_IRGRP);
-
-    return fd<0?false:(close(fd), true);
-}
-
-static inline int
-os_fexist_handle(const char *file, int (*handle)(const char *file))
-{
-    int err = 0;
-    int fd = open(file, O_RDONLY, S_IRUSR | S_IRGRP);
-    if (is_good_fd(fd)) {
-        err = (*handle)(file);
-        close(fd);
-    }
-
-    return err;
-}
+#define os_fstat(_file, _st)    stat(_file, _st)
 
 static inline int
 os_fsize(const char *file)
 {
     struct stat st;
 
-    return 0==stat(file, &st)?st.st_size:-errno;
+    return 0==os_fstat(file, &st)?st.st_size:-errno;
+}
+
+static inline mode_t
+os_fmode(const char *file)
+{
+    struct stat st;
+
+    return 0==os_fstat(file, &st)?st.st_mode:0;
+}
+
+static inline bool
+os_fisdir(const char *file)
+{
+    mode_t mode = os_fmode(file);
+    
+    return S_ISDIR(mode);
+}
+
+static inline bool
+os_fexist(const char *file)
+{
+    int fd = open(file, O_RDONLY, S_IRUSR | S_IRGRP);
+    if (fd<0) {
+        return false;
+    } else {
+        close(fd);
+        
+        return true;
+    }
+}
+
+static inline int
+os_fhandle(const char *file, int (*handle)(const char *file, int fd))
+{
+    int fd = open(file, O_RDONLY, S_IRUSR | S_IRGRP);
+    if (fd<0) {
+        return -errno;
+    }
+    
+    int err = (*handle)(file, fd);
+    close(fd);
+
+    return err;
 }
 
 #ifndef os_munmap
@@ -760,15 +770,15 @@ ERROR:
 #define os_array_search_str(_array, _string, _begin, _end) \
     os_array_search(_array, _string, strcmp, _begin, _end)
 
-#define UXXCMP(_type, _a, _b)   (*(_type *)(_a) == *(_type *)(_b))
-#define U16CMP(_a, _b)          UXXCMP(uint16, _a, _b)
-#define U32CMP(_a, _b)          UXXCMP(uint32, _a, _b)
-#define U64CMP(_a, _b)          UXXCMP(uint64, _a, _b)
+#define UXXEQ(_type, _a, _b)    (*(_type *)(_a) == *(_type *)(_b))
+#define U16EQ(_a, _b)           UXXEQ(uint16, _a, _b)
+#define U32EQ(_a, _b)           UXXEQ(uint32, _a, _b)
+#define U64EQ(_a, _b)           UXXEQ(uint64, _a, _b)
 
 static inline bool
-OS_HAS_SUFFIX(char *s, int len, char *suffix, int suffix_len)
+os_str_has_suffix(char *s, int len, char *suffix, int suffix_len)
 {
-    return (len > suffix_len)?U32CMP(s + len - suffix_len, suffix):false;
+    return (len > suffix_len)?U32EQ(s + len - suffix_len, suffix):false;
 }
 
 #ifndef OS_BKDR_NUMBER
@@ -912,6 +922,36 @@ inotify_ev_len(inotify_ev_t *ev)
     return p - ev->name + 1;
 }
 
+#define OS_VAR(_name)       __the_os_##_name##_sb_var
+#define OS_VAR_MAPPER(_)    \
+    _(int,      option)     \
+    _(int,      levle)      \
+    _(time_t,   time)       \
+    _(uint32,   seq)        \
+    /* end */
+
+#define __DECLARE_VARS(_type, _name)    _type OS_VAR(_name);
+#define __EXTERN_VARS(_type, _name)     extern __DECLARE_VARS(_type, _name)
+
+#define DECLARE_OS_VARS                 OS_VAR_MAPPER(__DECLARE_VARS)   os_fake_declare
+#define  EXTERN_OS_VARS                 OS_VAR_MAPPER(__EXTERN_VARS)    os_fake_declare
+
+EXTERN_OS_VARS;
+
+static inline void
+set_option(int flag)
+{
+    OS_VAR(option) |= flag;
+}
+
+static inline bool
+is_option(int flag)
+{
+    return flag==(flag & OS_VAR(option));
+}
+
+#define option_analysis(_opt, _args)    nameflag_analysis(_opt, _args)
+
 typedef struct {
     const char *name;
     const char *help;
@@ -923,6 +963,20 @@ typedef struct {
     .name = _name; \
     .help = _help; \
 }   /* end */
+
+static inline int 
+__nameflag_usage(nameflag_t opt[], int count)
+{
+    os_println(__tab "OPTION:");
+
+    int i;
+
+    for (i=0; i<os_count_of(opt); i++) {
+        os_println(__tab "%s: %s", opt[i].name, opt[i].help);
+    }
+
+    return -EHELP;
+}
 
 static inline const char *
 __get_nameflag_byflag(nameflag_t opt[], int count, int flag)
@@ -952,46 +1006,24 @@ __get_nameflag_byname(nameflag_t opt[], int count, char *name)
     return 0;
 }
 
-#define get_nameflag_byflag(_opt, _flag)    __get_nameflag_byflag(_opt, os_count_of(_opt), _flag)
-#define get_nameflag_byname(_opt, _flag)    __get_nameflag_byname(_opt, os_count_of(_opt), _flag)
-
-#define OS_VAR(_name)       __os_##_name##_var
-#define OS_VAR_MAPPER(_)    \
-    _(int,      option)     \
-    _(time_t,   time)       \
-    _(uint32,   seq)        \
-    /* end */
-
-#define __DECLARE_VARS(_type, _name)    _type OS_VAR(_name);
-#define __EXTERN_VARS(_type, _name)     extern __DECLARE_VARS(_type, _name)
-
-#define DECLARE_OS_VARS                 OS_VAR_MAPPER(__DECLARE_VARS)   os_fake_declare
-#define  EXTERN_OS_VARS                 OS_VAR_MAPPER(__EXTERN_VARS)    os_fake_declare
-
-EXTERN_OS_VARS;
-
 static inline void
-set_option(int flag)
-{
-    OS_VAR(option) |= flag;
-}
-
-static inline bool
-is_option(int flag)
-{
-    return flag==(flag & OS_VAR(option));
-}
-
-static inline void
-option_analysis(nameflag_t opt[], int count, char *args)
+__nameflag_analysis(nameflag_t opt[], int count, char *args)
 {
     int flag = __get_nameflag_byname(opt, count, args);
 
     set_option(flag);
 }
 
+#define get_nameflag_byflag(_opt, _flag)    __get_nameflag_byflag(_opt, os_count_of(_opt), _flag)
+#define get_nameflag_byname(_opt, _flag)    __get_nameflag_byname(_opt, os_count_of(_opt), _flag)
+#define nameflag_usage(_opt)                __nameflag_usage(_opt, os_count_of(_opt))
+#define nameflag_analysis(_opt, _args)      __nameflag_analysis(_opt, os_count_of(_opt), _args)
 
-#if 0
+#ifndef D_env_println
+#define D_env_println   0
+#endif
+
+#if D_env_println
 #define env_println(_fmt, _args...)     os_println(_fmt, ##_args)
 #else
 #define env_println(_fmt, _args...)     os_do_nothing()
@@ -1041,6 +1073,16 @@ env_geti(char *envname, int deft)
         return value;
     }
 }
+
+#ifndef os_trace
+#define os_trace(_print, _call, _fmt, _args...) ({  \
+    int __err;                                  \
+    _print("try " _fmt " ...", ##_args);        \
+    __err = (_call);                            \
+    _print(__tab "%s:%d " _fmt, ok_string(__err), __err, ##_args); \
+    __err;                                      \
+})  /* end */
+#endif
 
 #include "log.h"
 /******************************************************************************/

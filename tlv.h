@@ -3,13 +3,21 @@
 /******************************************************************************/
 #include "os.h"
 /******************************************************************************/
-#if 1
+#ifndef D_tlv_dprint
+#define D_tlv_dprint    1
+#endif
+
+#if D_tlv_dprint
 #define tlv_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
 #else
 #define tlv_dprint(_fmt, _args...)      os_do_nothing()
 #endif
 
-#if 1
+#ifndef D_tlv_trace
+#define D_tlv_trace     1
+#endif
+
+#if D_tlv_trace
 #define tlv_trace(_call, _fmt, _args...)    os_trace(tlv_dprint, _call, _fmt, ##_args)
 #else
 #define tlv_trace(_call, _fmt, _args...)    (_call)
@@ -90,18 +98,6 @@ enum {
     TLV_F_CERT               = TLV_F_SSL_SERVER_CERT|TLV_F_SSL_CLIENT_CERT,
     TLV_F_FILE              = TLV_F_FILE_CONTENT|TLV_F_HTTP|TLV_F_CERT,
 };
-
-static inline const char *
-getdirbyflag(int flag)
-{
-    static nameflag_t opt[] = {
-        { .flag = TLV_F_FILE_CONTENT,   .name = "file" },
-        { .flag = TLV_F_HTTP,           .name = "http" },
-        { .flag = TLV_F_CERT,           .name = "cert" },
-    };
-
-    return get_nameflag_byflag(opt, flag);
-}
 
 typedef struct tlv_st tlv_t;
 typedef struct xdr_buffer_st xdr_buffer_t;
@@ -676,8 +672,8 @@ tlv_dump_binary(tlv_t *tlv)
 
 enum { XDR_IPV4 = 0, XDR_IPV6 = 1 };
 
-#ifndef SIZEOF_session
-#define SIZEOF_session  40
+#ifndef sizeof_session
+#define sizeof_session  40
 #endif
 
 typedef struct {
@@ -722,12 +718,12 @@ tlv_dump_session(tlv_t *tlv)
     }
 }
 
-#ifndef SIZEOF_session_st
-#define SIZEOF_session_st   44
+#ifndef sizeof_session_st
+#define sizeof_session_st   44
 #endif
 
-#ifndef SIZEOF_service_st
-#define SIZEOF_service_st   SIZEOF_session_st
+#ifndef sizeof_service_st
+#define sizeof_service_st   sizeof_session_st
 #endif
 
 typedef struct {
@@ -760,8 +756,8 @@ tlv_dump_session_st(tlv_t *tlv)
     }
 }
 
-#ifndef SIZEOF_session_time
-#define SIZEOF_session_time 24
+#ifndef sizeof_session_time
+#define sizeof_session_time 24
 #endif
 
 typedef struct {
@@ -782,8 +778,8 @@ tlv_dump_session_time(tlv_t *tlv)
     TLV_DUMP2("stop  : %s", os_time_string(XDR_SECOND(obj->stop)));
 }
 
-#ifndef SIZEOF_tcp
-#define SIZEOF_tcp      28
+#ifndef sizeof_tcp
+#define sizeof_tcp      28
 #endif
 
 typedef struct {
@@ -834,8 +830,8 @@ tlv_dump_tcp(tlv_t *tlv)
     TLV_DUMP2("handshake23         : %s", success_string(0==obj->handshake23));
 }
 
-#ifndef SIZEOF_L7
-#define SIZEOF_L7   4
+#ifndef sizeof_L7
+#define sizeof_L7   4
 #endif
 
 typedef struct {
@@ -856,8 +852,8 @@ tlv_dump_L7(tlv_t *tlv)
     TLV_DUMP2("protocol: %u", obj->protocol);
 }
 
-#ifndef SIZEOF_http
-#define SIZEOF_http     44
+#ifndef sizeof_http
+#define sizeof_http     44
 #endif
 
 typedef struct {
@@ -939,8 +935,8 @@ tlv_dump_http(tlv_t *tlv)
 enum { XDR_SIP_INVITE = 1 };
 enum { XDR_SIP_BYE = 1 };
 
-#ifndef SIZEOF_sip
-#define SIZEOF_sip      8
+#ifndef sizeof_sip
+#define sizeof_sip      8
 #endif
 
 typedef struct {
@@ -973,8 +969,8 @@ tlv_dump_sip(tlv_t *tlv)
     TLV_DUMP2("malloc          : %s", bool_string(obj->malloc));
 }
 
-#ifndef SIZEOF_rtsp
-#define SIZEOF_rtsp     16
+#ifndef sizeof_rtsp
+#define sizeof_rtsp     16
 #endif
 
 typedef struct {
@@ -1117,7 +1113,7 @@ tlv_record_parse(tlv_record_t *r)
 }
 
 #ifndef TLV_CHECK_OBJ
-#define TLV_CHECK_OBJ(_name)    BUILD_BUG_ON(sizeof(tlv_##_name##_t) != SIZEOF_##_name)
+#define TLV_CHECK_OBJ(_name)    BUILD_BUG_ON(sizeof(tlv_##_name##_t) != sizeof_##_name)
 #endif
 
 static inline void
