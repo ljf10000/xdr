@@ -218,81 +218,6 @@
 #define ilanmbda(_type, _body)  lanmbda(int, _body)
 #endif
 
-#define os_malloc(_size)            malloc(_size)
-#define os_calloc(_count, _size)    calloc(_count, _size)
-#define os_realloc(_ptr, _size)     realloc(_ptr, _size)
-#define os_free(_ptr)   do{ \
-    if (_ptr) {             \
-        free(_ptr);         \
-        (_ptr) = NULL;      \
-    } \
-}while(0)
-
-#ifndef os_memzero
-#define os_memzero(_obj, _size)         memset(_obj, 0, _size)
-#endif
-
-#ifndef os_objzero
-#define os_objzero(_obj)                os_memzero(_obj, sizeof(*(_obj)))
-#endif
-
-#ifndef os_count_of
-#define os_count_of(x)                  (sizeof(x)/sizeof((x)[0]))
-#endif
-
-#ifndef OS_ALIGN
-#define OS_ALIGN(_x, _align)            (((_x)+(_align)-1) & ~((_align)-1))
-#endif
-#define OS_FORMAT_SIZE(_fmt)            OS_ALIGN(sizeof(_fmt))
-
-#ifndef os_objscpy
-#define os_objscpy(_dst, _src)          memcpy(_dst, _src, sizeof(*(_src)))
-#endif
-
-#ifndef os_objdcpy
-#define os_objdcpy(_dst, _src)          memcpy(_dst, _src, sizeof(*(_dst)))
-#endif
-
-#ifndef os_objcpy
-#define os_objcpy(_dst, _src)           os_objdcpy(_dst, _src)
-#endif
-
-#ifndef os_do_nothing
-#define os_do_nothing()                 do{}while(0)
-#endif
-
-#ifndef os_fake_declare
-#define os_fake_declare                 extern int __os_value_not_used_forever
-#endif
-
-#ifndef is_good_value
-#define is_good_value(_v, _begin, _end) ((_v) >= (_begin) && (_v) < (_end))
-#endif
-
-#ifndef is_good_enum
-#define is_good_enum(_id, _end)         is_good_value(_id, 0, _end)
-#endif
-
-#ifndef os_close
-#define os_close(_fd)       ({  \
-    int __err = 0;              \
-    if ((_fd)<0) {              \
-        __err = close(_fd);     \
-        _fd = -1;               \
-    }                           \
-                                \
-    __err;                      \
-})  /* end */
-#endif
-
-#ifndef os_min
-#define os_min(_x, _y)  ((_x)<(_y)?(_x):(_y))
-#endif
-
-#ifndef os_max
-#define os_max(_x, _y)  ((_x)>(_y)?(_x):(_y))
-#endif
-
 #ifndef __space
 #define __space         " "
 #endif
@@ -370,19 +295,94 @@
 #endif
 
 #ifndef bool_string
-#define bool_string(_is_ture)                       ((_is_ture)?__true:__false)
+#define bool_string(_is_ture)           ((_is_ture)?__true:__false)
 #endif
 
 #ifndef success_string
-#define success_string(_is_success)                 ((_is_success)?__success:__failed)
+#define success_string(_is_success)     ((_is_success)?__success:__failed)
 #endif
 
 #ifndef yes_string
-#define yes_string(_is_yes)                         ((_is_yes)?__yes:__no)
+#define yes_string(_is_yes)             ((_is_yes)?__yes:__no)
 #endif
 
 #ifndef ok_string
-#define ok_string(_err)                             (0==(_err)?__ok:__error)
+#define ok_string(_err)                 (0==(_err)?__ok:__error)
+#endif
+
+#define os_malloc(_size)            malloc(_size)
+#define os_calloc(_count, _size)    calloc(_count, _size)
+#define os_realloc(_ptr, _size)     realloc(_ptr, _size)
+#define os_free(_ptr)   do{ \
+    if (_ptr) {             \
+        free(_ptr);         \
+        _ptr = NULL;        \
+    } \
+}while(0)
+
+#ifndef os_memzero
+#define os_memzero(_obj, _size)     memset(_obj, 0, _size)
+#endif
+
+#ifndef os_objzero
+#define os_objzero(_obj)            os_memzero(_obj, sizeof(*(_obj)))
+#endif
+
+#ifndef os_count_of
+#define os_count_of(x)              (sizeof(x)/sizeof((x)[0]))
+#endif
+
+#ifndef OS_ALIGN
+#define OS_ALIGN(_x, _align)        (((_x)+(_align)-1) & ~((_align)-1))
+#endif
+#define OS_FORMAT_SIZE(_fmt)        OS_ALIGN(sizeof(_fmt))
+
+#ifndef os_objscpy
+#define os_objscpy(_dst, _src)      memcpy(_dst, _src, sizeof(*(_src)))
+#endif
+
+#ifndef os_objdcpy
+#define os_objdcpy(_dst, _src)      memcpy(_dst, _src, sizeof(*(_dst)))
+#endif
+
+#ifndef os_objcpy
+#define os_objcpy(_dst, _src)       os_objdcpy(_dst, _src)
+#endif
+
+#ifndef os_do_nothing
+#define os_do_nothing()             do{}while(0)
+#endif
+
+#ifndef os_fake_declare
+#define os_fake_declare             extern int __the_value_not_used_forever
+#endif
+
+#ifndef is_good_value
+#define is_good_value(_v, _begin, _end) ((_v) >= (_begin) && (_v) < (_end))
+#endif
+
+#ifndef is_good_enum
+#define is_good_enum(_id, _end)         is_good_value(_id, 0, _end)
+#endif
+
+#ifndef os_close
+#define os_close(_fd)       ({  \
+    int m_err = 0;              \
+    if ((_fd)<0) {              \
+        m_err = close(_fd);     \
+        _fd = -1;               \
+    }                           \
+                                \
+    m_err;                      \
+})  /* end */
+#endif
+
+#ifndef os_min
+#define os_min(_x, _y)  ((_x)<(_y)?(_x):(_y))
+#endif
+
+#ifndef os_max
+#define os_max(_x, _y)  ((_x)>(_y)?(_x):(_y))
 #endif
 
 #ifndef os_printf
@@ -850,7 +850,7 @@ __byte2hex(int ch)
 {
     switch(ch) {
         case 0 ... 9:
-            return '0' + ch - 0x0;
+            return '0' + ch;
         case 0xA ... 0xF:
             return 'A' + ch - 0xA;
         default:
