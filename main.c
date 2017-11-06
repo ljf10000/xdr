@@ -32,7 +32,7 @@ ev_debug(inotify_ev_t *ev)
 }
 
 static nameflag_t opt[] = {
-    { .flag = OPT_CLI,          .name = "--cli",        .help = "cli mode"},
+    { .flag = OPT_CLI,          .name = "--cli",        .help = "cli mode. must support env: ENV_TLV_FILE"},
     { .flag = OPT_IP6,          .name = "--ip6",        .help = "ipv6[not support now]"},
     { .flag = OPT_DUMP,         .name = "--dump",       .help = "dump all"},
     { .flag = OPT_STRICT,       .name = "--strict",     .help = "strict check"},
@@ -64,13 +64,24 @@ static int
 xdr_handle(xpath_t path[], char *filename, int namelen)
 {
     struct xparse parse = XPARSE_INITER(path, filename, namelen);
+    int err;
+    
+    xparse_init(&parse);
 
-    int err = xparse_run(&parse);
+    err = xparse_open(&parse);
     if (err<0) {
-        // log
+        goto ERROR;
     }
 
-    return 0;
+    err = xparse_run(&parse);
+    if (err<0) {
+        goto ERROR;
+    }
+
+ERROR:
+    xparse_close(parse);
+
+    return err;
 }
 
 static int
@@ -118,12 +129,11 @@ monitor(xpath_t path[])
 
                 if (ISXDR(ev->name, len)) {
                     err = xdr_handle(path, ev->name, len);
+                    if (err<0) {
+                        // log
+                    }
                 } else {
-                    err = tlv_remove(path, ev->name, len);
-                }
-    
-                if (err<0) {
-                    return err;
+                    tlv_remove(path, ev->name, len);
                 }
             }
         }
@@ -140,6 +150,8 @@ cli(xpath_t path[])
     char *filename = env_gets(ENV_TLV_FILE, NULL);
     if (NULL==filename) {
         os_println("not found env ENV_TLV_FILE");
+
+        return -EBADENV;
     }
     
     return xdr_handle(path, filename, strlen(filename));

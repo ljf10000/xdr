@@ -1494,10 +1494,6 @@ to_xdr(tlv_record_t *r, xbuffer_t *x)
 static inline int
 xparse_run(struct xparse *parse)
 {
-    int err = 0;
-
-    tlv_dprint("handle %s", parse->tlv.fullname);
-    
     int walk(struct xparse *parse, struct tlv *header)
     {
         tlv_record_t r = TLV_RECORD_INITER(parse);
@@ -1518,22 +1514,7 @@ xparse_run(struct xparse *parse)
         return 0;
     }
 
-    xparse_init(parse);
-
-    err = xparse_open(parse);
-    if (err<0) {
-        goto ERROR;
-    }
-
-    err = tlv_walk(parse, parse->tlv.u.tlv, parse->tlv.size, walk);
-    if (err<0) {
-        goto ERROR;
-    }
-
-ERROR:
-    xparse_close(parse);
-
-    return err;
+    return tlv_walk(parse, parse->tlv.u.tlv, parse->tlv.size, walk);
 }
 /******************************************************************************/
 #endif /* __XDR_H_049defbc41a4441e855ee0479dad96eb__ */
