@@ -776,6 +776,15 @@ ERROR:
 #define U32EQ(_a, _b)           UXXEQ(uint32, _a, _b)
 #define U64EQ(_a, _b)           UXXEQ(uint64, _a, _b)
 
+static inline char *
+os_strmcpy(char *dst, char *src, int len)
+{
+    memcpy(dst, src, len);
+    dst[len] = 0;
+
+    return dst;
+}
+
 static inline bool
 os_str_has_suffix(char *s, int len, char *suffix, int suffix_len)
 {

@@ -4,14 +4,18 @@ DECLARE_OS_VARS;
 DECLARE_TLV_VARS;
 /******************************************************************************/
 #ifndef XDR_SUFFIX
-#define XDR_SUFFIX      ".xdr"
+#define XDR_SUFFIX      "xdr"
+#endif
+
+#ifndef ERR_SUFFIX
+#define ERR_SUFFIX      "err"
 #endif
 
 #define EVMASK              (IN_CLOSE_WRITE|IN_MOVED_TO)
 #define EVCOUNT             128
 #define EVSIZE              INOTIFY_EVSIZE
 #define EVNEXT(_ev)         inotify_ev_next(_ev)
-#define ISXDR(_ev, _len)    os_str_has_suffix((_ev)->name, _len, XDR_SUFFIX, sizeof(XDR_SUFFIX)-1)
+#define ISXDR(_file, _len)  os_str_has_suffix(_file, _len, "." XDR_SUFFIX, sizeof("." XDR_SUFFIX)-1)
 
 static char *self;
 
@@ -47,24 +51,21 @@ usage(void)
 static xpath_t Path[PATH_END];
 
 static void
-path_init(xpath_t xpath[PATH_END], char *path[PATH_END])
+init_xpath(xpath_t path[PATH_END], char *dir[PATH_END])
 {
     int i;
 
     for (i=0; i<PATH_END; i++) {
-        xpath_init(&xpath[i], path[i]);
+        xpath_init(&path[i], dir[i]);
     }
 }
 
 static int
-xdr_handle(char *file, int namelen, xpath_t xpath[])
+xdr_handle(xpath_t path[], char *filename, int namelen)
 {
-    xpair_t pair = XPAIR_INITER(file, namelen, xpath);
+    struct xparse parse = XPARSE_INITER(path, filename, namelen);
 
-    xpath_fill(&xpath[PATH_TLV], file, namelen);
-    xpath_fill(&xpath[PATH_XDR], file, namelen);
-    
-    int err = tlv_to_xdr(&pair);
+    int err = xparse_run(&parse);
     if (err<0) {
         // log
     }
@@ -73,31 +74,19 @@ xdr_handle(char *file, int namelen, xpath_t xpath[])
 }
 
 static int
-tlv_remove(char *file, int namelen, xpath_t xpath[])
+tlv_remove(xpath_t path[], char *filename, int namelen)
 {
-    char *filename = xpath_fill(&xpath[PATH_TLV], file, namelen);
+    char *fullname = xpath_fill(&path[PATH_TLV], filename, namelen);
     
-    remove(filename);
+    remove(fullname);
     
-    xdr_dprint("remove %s", filename);
+    xdr_dprint("remove %s", fullname);
     
     return 0;
 }
 
 static int
-handler(inotify_ev_t *ev, xpath_t xpath[])
-{
-    int namelen = inotify_ev_len(ev);
-    
-    if (ISXDR(ev, namelen)) {
-        return xdr_handle(ev->name, namelen, xpath);
-    } else {
-        return tlv_remove(ev->name, namelen, xpath);
-    }
-}
-
-static int
-monitor(char *watch, xpath_t xpath[])
+monitor(xpath_t path[])
 {
     static char EV_BUFFER[EVCOUNT * INOTIFY_EVSIZE];
     int fd, len, err;
@@ -107,7 +96,7 @@ monitor(char *watch, xpath_t xpath[])
         return -errno;
     }
 
-    err = inotify_add_watch(fd, watch, EVMASK);
+    err = inotify_add_watch(fd, path[PATH_TLV], EVMASK);
     if (err<0) {
         return -errno;
     }
@@ -124,9 +113,15 @@ monitor(char *watch, xpath_t xpath[])
         
         for (; ev<end; ev=EVNEXT(ev)) {
             if (ev->mask & EVMASK) {
+                len = inotify_ev_len(ev);
                 // ev_debug(ev);
-                
-                err = handler(ev, xpath);
+
+                if (ISXDR(ev->name, len)) {
+                    err = xdr_handle(path, ev->name, len);
+                } else {
+                    err = tlv_remove(path, ev->name, len);
+                }
+    
                 if (err<0) {
                     return err;
                 }
@@ -140,14 +135,14 @@ monitor(char *watch, xpath_t xpath[])
 #endif
 
 static int
-cli(xpath_t xpath[])
+cli(xpath_t path[])
 {
-    char *file = env_gets(ENV_TLV_FILE, NULL);
-    if (NULL==file) {
+    char *filename = env_gets(ENV_TLV_FILE, NULL);
+    if (NULL==filename) {
         os_println("not found env ENV_TLV_FILE");
     }
     
-    return xdr_handle(file, strlen(file), xpath);
+    return xdr_handle(path, filename, strlen(filename));
 }
 
 static int
@@ -195,12 +190,12 @@ int main(int argc, char *argv[])
         return usage();
     }
     
-    path_init(Path, argv);
+    init_xpath(Path, argv);
 
     if (is_option(OPT_CLI)) {
         return cli(Path);
     } else {
-        return monitor(argv[PATH_TLV], Path);
+        return monitor(Path);
     }
 }
 
