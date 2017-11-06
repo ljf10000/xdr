@@ -366,14 +366,14 @@
 #endif
 
 #ifndef os_close
-#define os_close(_fd)       ({  \
-    int m_err = 0;              \
-    if ((_fd)<0) {              \
-        m_err = close(_fd);     \
-        _fd = -1;               \
-    }                           \
-                                \
-    m_err;                      \
+#define os_close(_fd)   ({  \
+    int m_err = 0;          \
+    if ((_fd)>=0) {         \
+        m_err = close(_fd); \
+        _fd = -1;           \
+    }                       \
+                            \
+    m_err;                  \
 })  /* end */
 #endif
 

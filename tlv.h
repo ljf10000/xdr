@@ -99,94 +99,95 @@ enum {
     TLV_F_FILE              = TLV_F_FILE_CONTENT|TLV_F_HTTP|TLV_F_CERT,
 };
 
-typedef struct tlv_st tlv_t;
-typedef struct xdr_buffer_st xdr_buffer_t;
+struct tlv;
+struct xbuffer;
+struct xpair;
 
-static inline void tlv_dump_u8 (tlv_t *tlv);
-static inline void tlv_dump_u16(tlv_t *tlv);
-static inline void tlv_dump_u32(tlv_t *tlv);
-static inline void tlv_dump_u64(tlv_t *tlv);
+static inline void tlv_dump_u8 (struct tlv *tlv);
+static inline void tlv_dump_u16(struct tlv *tlv);
+static inline void tlv_dump_u32(struct tlv *tlv);
+static inline void tlv_dump_u64(struct tlv *tlv);
 
-static inline void tlv_dump_string(tlv_t *tlv);
-static inline void tlv_dump_binary(tlv_t *tlv);
-static inline void tlv_dump_time(tlv_t *tlv);
-static inline void tlv_dump_duration(tlv_t *tlv);
-static inline void tlv_dump_ip4(tlv_t *tlv);
-static inline void tlv_dump_ip6(tlv_t *tlv);
+static inline void tlv_dump_string(struct tlv *tlv);
+static inline void tlv_dump_binary(struct tlv *tlv);
+static inline void tlv_dump_time(struct tlv *tlv);
+static inline void tlv_dump_duration(struct tlv *tlv);
+static inline void tlv_dump_ip4(struct tlv *tlv);
+static inline void tlv_dump_ip6(struct tlv *tlv);
 
-static inline void tlv_dump_session(tlv_t *tlv);
-static inline void tlv_dump_session_st(tlv_t *tlv);
+static inline void tlv_dump_session(struct tlv *tlv);
+static inline void tlv_dump_session_st(struct tlv *tlv);
 #define tlv_dump_service_st    tlv_dump_session_st
-static inline void tlv_dump_session_time(tlv_t *tlv);
-static inline void tlv_dump_tcp(tlv_t *tlv);
-static inline void tlv_dump_L7(tlv_t *tlv);
-static inline void tlv_dump_http(tlv_t *tlv);
-static inline void tlv_dump_sip(tlv_t *tlv);
-static inline void tlv_dump_rtsp(tlv_t *tlv);
+static inline void tlv_dump_session_time(struct tlv *tlv);
+static inline void tlv_dump_tcp(struct tlv *tlv);
+static inline void tlv_dump_L7(struct tlv *tlv);
+static inline void tlv_dump_http(struct tlv *tlv);
+static inline void tlv_dump_sip(struct tlv *tlv);
+static inline void tlv_dump_rtsp(struct tlv *tlv);
 
-static inline int tlv_check_session(tlv_t *tlv);
+static inline int tlv_check_session(struct tlv *tlv);
 
-static inline int tlv_to_xdr_session_state(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_appid(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_session(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_session_st(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_service_st(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_session_time(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_tcp(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_first_response_delay(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_L7(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_http(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_http_host(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_http_url(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_http_host_xonline(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_http_user_agent(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_http_content(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_http_refer(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_http_cookie(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_http_location(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_sip(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_sip_calling_number(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_sip_called_number(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_sip_session_id(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_rtsp(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_rtsp_url(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_rtsp_user_agent(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_rtsp_server_ip(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_ftp_status(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_ftp_user(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_ftp_pwd(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_ftp_trans_mode(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_ftp_trans_type(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_ftp_filename(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_ftp_filesize(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_ftp_response_delay(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_ftp_trans_duration(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_mail_msg_type(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_mail_status_code(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_mail_user(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_mail_sender(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_mail_length(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_mail_domain(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_mail_recver(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_mail_hdr(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_mail_acs_type(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_dns_domain(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_dns_ip_count(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_dns_ip4(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_dns_ip6(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_dns_response_code(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_dns_count_request(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_dns_count_response_record(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_dns_count_response_auth(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_dns_count_response_extra(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_dns_delay(xdr_buffer_t *x, tlv_t *tlv);
+static inline int tlv_to_xdr_session_state(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_appid(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_session(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_session_st(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_service_st(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_session_time(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_tcp(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_first_response_delay(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_L7(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_http(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_http_host(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_http_url(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_http_host_xonline(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_http_user_agent(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_http_content(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_http_refer(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_http_cookie(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_http_location(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_sip(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_sip_calling_number(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_sip_called_number(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_sip_session_id(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_rtsp(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_rtsp_url(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_rtsp_user_agent(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_rtsp_server_ip(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_ftp_status(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_ftp_user(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_ftp_pwd(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_ftp_trans_mode(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_ftp_trans_type(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_ftp_filename(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_ftp_filesize(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_ftp_response_delay(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_ftp_trans_duration(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_mail_msg_type(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_mail_status_code(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_mail_user(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_mail_sender(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_mail_length(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_mail_domain(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_mail_recver(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_mail_hdr(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_mail_acs_type(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_dns_domain(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_dns_ip_count(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_dns_ip4(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_dns_ip6(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_dns_response_code(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_dns_count_request(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_dns_count_response_record(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_dns_count_response_auth(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_dns_count_response_extra(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_dns_delay(struct xbuffer *x, struct tlv *tlv);
 
-static inline int tlv_to_xdr_http_request(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_http_response(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_file_content(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_ssl_server_cert(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_ssl_client_cert(xdr_buffer_t *x, tlv_t *tlv);
-static inline int tlv_to_xdr_ssl_fail_reason(xdr_buffer_t *x, tlv_t *tlv);
+static inline int tlv_to_xdr_http_request(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_http_response(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_file_content(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_ssl_server_cert(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_ssl_client_cert(struct xbuffer *x, struct tlv *tlv);
+static inline int tlv_to_xdr_ssl_fail_reason(struct xbuffer *x, struct tlv *tlv);
 
 typedef struct {
     int     type;
@@ -195,9 +196,9 @@ typedef struct {
     uint32  maxsize;
     char    *name;
 
-    void (*dump)(tlv_t * /*tlv*/);
-    int (*check)(tlv_t * /*tlv*/);
-    int (*toxdr)(xdr_buffer_t * /*x*/, tlv_t * /*tlv*/);
+    void (*dump)(struct tlv * /*tlv*/);
+    int (*check)(struct tlv * /*tlv*/);
+    int (*toxdr)(struct xbuffer * /*x*/, struct tlv * /*tlv*/);
 } tlv_ops_t;
 
 #define tlv_mapper_fixed(_mapper, _id, _name, _type, _check, _flag) \
@@ -341,7 +342,7 @@ is_good_tlv_id(int id)
 
 #define TLV_OPS(_id)    (is_good_tlv_id(_id)?&__tlv_ops[_id]:NULL)
 
-struct tlv_st {
+struct tlv {
     byte id;
     byte pad;
     
@@ -353,7 +354,7 @@ struct tlv_st {
 };
 
 static inline tlv_ops_t *
-tlv_ops(tlv_t *tlv) 
+tlv_ops(struct tlv *tlv) 
 {
     return is_good_tlv_id(tlv->id)?TLV_OPS(tlv->id):NULL;
 }
@@ -379,7 +380,7 @@ tlv_ops(tlv_t *tlv)
 
 #if 0
 static inline uint32
-tlv_len_n(tlv_t *tlv)
+tlv_len_n(struct tlv *tlv)
 {
     if (is_option(OPT_STRICT)) {
         
@@ -394,8 +395,8 @@ tlv_len_n(tlv_t *tlv)
 #define tlv_len_e(_tlv)         (*(uint32 *)(_tlv)->body)
 #define tlv_len(_tlv)           (tlv_extend(_tlv)?tlv_len_e(_tlv):tlv_len_n(_tlv))
 
-#define tlv_hdrlen_n            sizeof(tlv_t)
-#define tlv_hdrlen_e            (sizeof(tlv_t)+sizeof(uint32))
+#define tlv_hdrlen_n            sizeof(struct tlv)
+#define tlv_hdrlen_e            (sizeof(struct tlv)+sizeof(uint32))
 #define tlv_hdrlen(_tlv)        (tlv_extend(_tlv)?tlv_hdrlen_e:tlv_hdrlen_n)
 
 #define tlv_datalen_n(_tlv)     (tlv_len_n(_tlv)-tlv_hdrlen_n)
@@ -405,8 +406,8 @@ tlv_len_n(tlv_t *tlv)
 #define tlv_binlen(_tlv)        (tlv_datalen(_tlv) - (_tlv)->pad)
 #define tlv_strlen(_tlv)        tlv_binlen(_tlv)
 
-#define tlv_first(_tlv_header)  (tlv_t *)tlv_data(_tlv_header)
-#define tlv_next(_tlv)          (tlv_t *)((byte *)(_tlv) + tlv_len(_tlv))
+#define tlv_first(_tlv_header)  (struct tlv *)tlv_data(_tlv_header)
+#define tlv_next(_tlv)          (struct tlv *)((byte *)(_tlv) + tlv_len(_tlv))
 
 #define tlv_u8(_tlv)        (_tlv)->pad
 #define tlv_u16(_tlv)       (*(uint16 *)tlv_data(_tlv))
@@ -438,7 +439,7 @@ tlv_len_n(tlv_t *tlv)
 #define tlv_rtsp(_tlv)          ((tlv_rtsp_t *)tlv_data(_tlv))
 
 static inline int
-tlv_error(tlv_t *tlv, int err, const char *fmt, ...)
+tlv_error(struct tlv *tlv, int err, const char *fmt, ...)
 {
     va_list args;
     
@@ -466,7 +467,7 @@ tlv_error(tlv_t *tlv, int err, const char *fmt, ...)
 }
 
 static inline int
-tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv, int count))
+tlv_walk(struct tlv *tlv, uint32 left, int (*walk)(struct tlv *tlv, int count))
 {
     int err, count = 0;
 
@@ -498,7 +499,7 @@ tlv_walk(tlv_t *tlv, uint32 left, int (*walk)(tlv_t *tlv, int count))
 }
 
 static inline void
-tlv_dump(tlv_t *tlv)
+tlv_dump(struct tlv *tlv)
 {
     tlv_ops_t *ops = tlv_ops(tlv);
 
@@ -508,7 +509,7 @@ tlv_dump(tlv_t *tlv)
 }
 
 static inline int
-tlv_check_fixed(tlv_t *tlv)
+tlv_check_fixed(struct tlv *tlv)
 {
     tlv_ops_t *ops = tlv_ops(tlv); // not NULL
     uint32 dlen = tlv_datalen(tlv);
@@ -545,7 +546,7 @@ tlv_check_fixed(tlv_t *tlv)
 }
 
 static inline int
-tlv_check_dynamic(tlv_t *tlv)
+tlv_check_dynamic(struct tlv *tlv)
 {
     tlv_ops_t *ops = tlv_ops(tlv); // not NULL
     uint32 dlen = tlv_datalen(tlv);
@@ -566,7 +567,7 @@ tlv_check_dynamic(tlv_t *tlv)
 }
 
 static inline int
-tlv_check(tlv_t *tlv)
+tlv_check(struct tlv *tlv)
 {
     tlv_ops_t *ops = tlv_ops(tlv);
     if (NULL==ops) {
@@ -613,20 +614,20 @@ tlv_check(tlv_t *tlv)
 #define TLV_DUMP_BY(_tlv, _format, _type) \
     TLV_DUMP("id: %d, %s: " _format, (_tlv)->id, tlv_ops_name(_tlv), tlv_##_type(_tlv))
 
-static inline void tlv_dump_u8 (tlv_t *tlv) { TLV_DUMP_BY(tlv, "%u", u8);  }
-static inline void tlv_dump_u16(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%u", u16); }
-static inline void tlv_dump_u32(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%u", u32); }
-static inline void tlv_dump_u64(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%llu", u64); }
+static inline void tlv_dump_u8 (struct tlv *tlv) { TLV_DUMP_BY(tlv, "%u", u8);  }
+static inline void tlv_dump_u16(struct tlv *tlv) { TLV_DUMP_BY(tlv, "%u", u16); }
+static inline void tlv_dump_u32(struct tlv *tlv) { TLV_DUMP_BY(tlv, "%u", u32); }
+static inline void tlv_dump_u64(struct tlv *tlv) { TLV_DUMP_BY(tlv, "%llu", u64); }
 
-static inline void tlv_dump_string(tlv_t *tlv) { TLV_DUMP_BY(tlv, "%s", string); }
+static inline void tlv_dump_string(struct tlv *tlv) { TLV_DUMP_BY(tlv, "%s", string); }
 
 static inline void 
-tlv_dump_time(tlv_t *tlv)
+tlv_dump_time(struct tlv *tlv)
 {
     TLV_DUMP("id:%d, %s: %s", tlv->id, tlv_ops_name(tlv), unsafe_time_string(XDR_SECOND(tlv_time(tlv))));
 }
 
-static inline void tlv_dump_duration(tlv_t *tlv) 
+static inline void tlv_dump_duration(struct tlv *tlv) 
 {
     tlv_duration_t d = tlv_duration(tlv);
     uint32 s = (uint32)(d>>32);
@@ -636,7 +637,7 @@ static inline void tlv_dump_duration(tlv_t *tlv)
 }
 
 static inline void 
-tlv_dump_ip4(tlv_t *tlv)
+tlv_dump_ip4(struct tlv *tlv)
 {
     uint32 ip = tlv_ip4(tlv); // ip = htonl(ip);
     
@@ -644,7 +645,7 @@ tlv_dump_ip4(tlv_t *tlv)
 }
 
 static inline void 
-tlv_dump_ip6(tlv_t *tlv)
+tlv_dump_ip6(struct tlv *tlv)
 {
     TLV_DUMP("id: %d, %s: ipv6 address", tlv->id, tlv_ops_name(tlv));
 }
@@ -654,7 +655,7 @@ tlv_dump_ip6(tlv_t *tlv)
 #endif
 
 static inline void 
-tlv_dump_binary(tlv_t *tlv)
+tlv_dump_binary(struct tlv *tlv)
 {
     if (is_option(OPT_SPLIT)) {
         TLV_DUMP("id: %d, %s: %s", tlv->id, tlv_ops_name(tlv), tlv_string(tlv));
@@ -692,7 +693,7 @@ typedef struct {
 enum { XDR_SESSION_HSIZE = sizeof(tlv_session_t) - 2*sizeof(xdr_ipaddr_t) };
 
 static inline void 
-tlv_dump_session(tlv_t *tlv)
+tlv_dump_session(struct tlv *tlv)
 {
     tlv_session_t *obj = tlv_session(tlv);
     
@@ -737,7 +738,7 @@ typedef struct {
 } tlv_session_st_t, tlv_service_st_t, xdr_session_st_t, xdr_service_st_t;
 
 static inline void 
-tlv_dump_session_st(tlv_t *tlv)
+tlv_dump_session_st(struct tlv *tlv)
 {
     tlv_session_st_t *obj = tlv_session_st(tlv);
     int i;
@@ -767,7 +768,7 @@ typedef struct {
 } tlv_session_time_t, xdr_session_time_t;
 
 static inline void 
-tlv_dump_session_time(tlv_t *tlv)
+tlv_dump_session_time(struct tlv *tlv)
 {
     tlv_session_time_t *obj = tlv_session_time(tlv);
     
@@ -808,7 +809,7 @@ tlv_tcp_t, xdr_tcp_t;
 enum { XDR_TCP_COMPLETE = 1 };
 
 static inline void 
-tlv_dump_tcp(tlv_t *tlv)
+tlv_dump_tcp(struct tlv *tlv)
 {
     tlv_tcp_t *obj = tlv_tcp(tlv);
     
@@ -841,7 +842,7 @@ typedef struct {
 } tlv_L7_t, xdr_L7_t;
 
 static inline void 
-tlv_dump_L7(tlv_t *tlv)
+tlv_dump_L7(struct tlv *tlv)
 {
     tlv_L7_t *obj = tlv_L7(tlv);
     
@@ -910,7 +911,7 @@ tlv_http_head(tlv_http_t *obj)
 #endif
 
 static inline void 
-tlv_dump_http(tlv_t *tlv)
+tlv_dump_http(struct tlv *tlv)
 {
     tlv_http_t *obj = tlv_http(tlv);
     
@@ -953,7 +954,7 @@ typedef struct {
 } tlv_sip_t;
 
 static inline void 
-tlv_dump_sip(tlv_t *tlv)
+tlv_dump_sip(struct tlv *tlv)
 {
     tlv_sip_t *obj = tlv_sip(tlv);
 
@@ -985,7 +986,7 @@ typedef struct {
 } tlv_rtsp_t;
 
 static inline void 
-tlv_dump_rtsp(tlv_t *tlv)
+tlv_dump_rtsp(struct tlv *tlv)
 {
     tlv_rtsp_t *obj = tlv_rtsp(tlv);
     
@@ -1001,7 +1002,7 @@ tlv_dump_rtsp(tlv_t *tlv)
 }
 
 static inline int
-tlv_check_session(tlv_t *tlv)
+tlv_check_session(struct tlv *tlv)
 {
     tlv_session_t *obj = tlv_session(tlv);
     
@@ -1034,11 +1035,11 @@ tlv_check_session(tlv_t *tlv)
 typedef struct {
     int count;
 
-    tlv_t *multi[TLV_CACHE_MULTI];
+    struct tlv *multi[TLV_CACHE_MULTI];
 } tlv_cache_t;
 
 static inline int
-tlv_cache_save(tlv_cache_t *cache, tlv_t *tlv)
+tlv_cache_save(tlv_cache_t *cache, struct tlv *tlv)
 {
     tlv_dprint("tlv_cache_save ...");
     if (cache->count < TLV_CACHE_MULTI) {
@@ -1064,7 +1065,7 @@ tlv_cache_save(tlv_cache_t *cache, tlv_t *tlv)
 }
 
 typedef struct {
-    tlv_t *header;
+    struct tlv *header;
     int count;
     
     tlv_cache_t cache[tlv_id_end];
@@ -1072,7 +1073,7 @@ typedef struct {
 #define TLV_RECORD_INITER(_header)  { .header = _header }
 
 static inline int
-tlv_record_save(tlv_record_t *r, tlv_t *tlv)
+tlv_record_save(tlv_record_t *r, struct tlv *tlv)
 {
     tlv_cache_t *cache = &r->cache[tlv->id];
 
@@ -1086,7 +1087,7 @@ tlv_record_save(tlv_record_t *r, tlv_t *tlv)
 static inline int
 tlv_record_parse(tlv_record_t *r)
 {
-    int walk(tlv_t *tlv, int count) 
+    int walk(struct tlv *tlv, int count) 
     {
         int err;
 
