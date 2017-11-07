@@ -1226,7 +1226,7 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         va_end(args);
     }
 
-    xp_close(parse);
+    xdr_close(&parse->xdr);
     remove(parse->xdr.fullname);
 
     xpath_t *path = xp_path(parse, PATH_BAD);
@@ -1253,6 +1253,7 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
 
     // move tlvs/xxx.xdr ==> bad/xxx.err
     xpath_change(path, XDR_SUFFIX);
+    tlv_close(&parse->tlv);
     rename(parse->tlv.fullname, path->fullname);
 
     tlv_dprint("xp_error ok.");
