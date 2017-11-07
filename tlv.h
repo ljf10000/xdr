@@ -1159,10 +1159,13 @@ xp_open(struct xparse *parse)
 static inline void
 xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const char *fmt, va_list args)
 {
-    tlv_dprint("stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
+    tlv_dprint("1:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
         stream, parse, tlv, err, fmt, args);
 
     vfprintf(stream, fmt, args);
+
+    tlv_dprint("2:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
+        stream, parse, tlv, err, fmt, args);
 
     fprintf(stream, __crlf __tab
             "ERROR:%d tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u" __crlf, 
@@ -1175,8 +1178,12 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
             tlv_len(tlv),
             tlv_hdrlen(tlv),
             tlv_datalen(tlv));
+    tlv_dprint("3:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
+        stream, parse, tlv, err, fmt, args);
 
     tlv_dump_binary(stream, tlv);
+    tlv_dprint("4:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
+        stream, parse, tlv, err, fmt, args);
 }
 
 static inline int
