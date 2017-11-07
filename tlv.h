@@ -1192,7 +1192,8 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
 {
     va_list args;
     char *fullname;
-
+    tlv_dprint("xp_error ...");
+    
     if (tlv) {
         va_start(args, fmt);
         xp_verror(DUMP_STREAM, parse, tlv, err, fmt, args);
@@ -1212,34 +1213,30 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         
         xpath_fill(path, parse->name, parse->namelen);
         
-        tlv_dprint("xp_error 6");
-
         // log
         if (tlv) {
-        tlv_dprint("xp_error 6.1");
             xpath_change(path, ERR_SUFFIX);
+            tlv_dprint("open %s ...", fullname);
             FILE *stream = fopen(fullname, "a+");
             if (NULL==stream) {
-                os_println("open %s error", fullname);
+                tlv_dprint("open %s error", fullname);
             } else {
-        tlv_dprint("xp_error 6.2");
+                tlv_dprint("open %s ok.", fullname);
+                
                 va_start(args, fmt);
-        tlv_dprint("xp_error 6.3");
                 xp_verror(stream, parse, tlv, err, fmt, args);
-        tlv_dprint("xp_error 6.4");
                 va_end(args);
-        tlv_dprint("xp_error 6.5");
                 fclose(stream);
             }
         }
-    tlv_dprint("xp_error 7");
 
         // move tlvs/xxx.xdr ==> bad/xxx.err
         xpath_change(path, XDR_SUFFIX);
         rename(fullname, path->fullname);
-    tlv_dprint("xp_error 9");
     }
 
+    tlv_dprint("xp_error ok.");
+    
     return err;
 }
 
