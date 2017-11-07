@@ -1193,30 +1193,46 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
     tlv_dprint("xp_error xp_close");
     xp_close(parse);
 
+    tlv_dprint("xp_error 1");
+
     fullname = parse->xdr.fullname;
+    tlv_dprint("xp_error 2");
     {
         remove(fullname);
     }
+    tlv_dprint("xp_error 3");
 
     fullname = parse->tlv.fullname;
+    tlv_dprint("xp_error 4");
     {
         xpath_t *path = &parse->path[PATH_BAD];
+    tlv_dprint("xp_error 5");
         
         xpath_fill(path, parse->name, parse->namelen);
+        
+        tlv_dprint("xp_error 6");
 
         // log
         if (tlv) {
+        tlv_dprint("xp_error 6.1");
             xpath_change(path, ERR_SUFFIX);
             FILE *stream = fopen(fullname, "a+");
+        tlv_dprint("xp_error 6.2");
                 va_start(args, fmt);
+        tlv_dprint("xp_error 6.3");
                 xp_verror(stream, parse, tlv, err, fmt, args);
+        tlv_dprint("xp_error 6.4");
                 va_end(args);
+        tlv_dprint("xp_error 6.5");
             fclose(stream);
         }
+    tlv_dprint("xp_error 7");
 
         // move tlvs/xxx.xdr ==> bad/xxx.err
         xpath_change(path, XDR_SUFFIX);
+    tlv_dprint("xp_error 8");
         rename(fullname, path->fullname);
+    tlv_dprint("xp_error 9");
     }
 
     return err;
