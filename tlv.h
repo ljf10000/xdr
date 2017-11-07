@@ -1216,12 +1216,12 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         // log
         if (tlv) {
             xpath_change(path, ERR_SUFFIX);
-            tlv_dprint("open %s ...", fullname);
-            FILE *stream = fopen(fullname, "a+");
+            tlv_dprint("open %s ...", path->fullname);
+            FILE *stream = fopen(path->fullname, "a+");
             if (NULL==stream) {
-                tlv_dprint("open %s error", fullname);
+                tlv_dprint("open %s error", path->fullname);
             } else {
-                tlv_dprint("open %s ok.", fullname);
+                tlv_dprint("open %s ok.", path->fullname);
                 
                 va_start(args, fmt);
                 xp_verror(stream, parse, tlv, err, fmt, args);
