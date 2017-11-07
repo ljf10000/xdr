@@ -1153,10 +1153,15 @@ static inline void
 xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const char *fmt, va_list args)
 {
     vfprintf(stream, fmt, args);
-    
+
     fprintf(stream, __crlf __tab
-            "ERROR:%d tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u offset:%u" __crlf, 
-            err,
+        "ERROR:%d offset:%d %s" __crlf,
+        err,
+        (uint32)((byte *)tlv - (byte *)parse->tlv.u.header),
+        parse->filename);
+
+    fprintf(stream, __tab
+            "tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u" __crlf, 
             tlv_ops_name(tlv), 
             tlv->id, 
             tlv_extend(tlv),
@@ -1164,8 +1169,7 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
             tlv->pad,
             tlv_len(tlv),
             tlv_hdrlen(tlv),
-            tlv_datalen(tlv),
-            (uint32)((byte *)tlv - (byte *)parse->tlv.u.header));
+            tlv_datalen(tlv));
 
     tlv_dump_binary(stream, tlv);
 }
@@ -1380,7 +1384,7 @@ tlv_cache_save(struct xparse *parse, tlv_cache_t *cache, struct tlv *tlv)
         }
     }
     else {
-        return xp_error(parse, tlv, -ENOSPACE, "too more cache multi");
+        return xp_error(parse, tlv, -ENOSPACE, "too more[%d] cache multi", TLV_CACHE_MULTI);
     }
     
     return 0;
