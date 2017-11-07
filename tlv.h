@@ -1278,22 +1278,27 @@ tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
     int err = 0;
 
     if (left > TLV_MAXDATA) {
+        tlv_dprint("break tlv walk by ETOOBIG");
         return xp_error(parse, tlv, -ETOOBIG, "too big:%d", left);
     }
     
     while(left>0) {
         if (parse->count > TLV_MAXCOUNT) {
+            tlv_dprint("break tlv walk by ETOOMORE");
             return xp_error(parse, tlv, -ETOOMORE, "too more tlv:%d", parse->count);
         }
         else if (left < tlv_hdrlen(tlv)) {
+            tlv_dprint("break tlv walk by ETOOSMALL");
             return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv hdrlen:%d", left, tlv_hdrlen(tlv));
         }
         else if (left < tlv_len(tlv)) {
+            tlv_dprint("break tlv walk by ETOOSMALL2");
             return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv len:%d", left, tlv_len(tlv));
         }
         
         err = (*walk)(parse, tlv);
         if (err<0) {
+            tlv_dprint("break tlv walk");
             return err;
         }
 
