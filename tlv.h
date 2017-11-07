@@ -222,6 +222,83 @@ static inline int to_xdr_ssl_server_cert(struct xb *x, struct tlv *tlv);
 static inline int to_xdr_ssl_client_cert(struct xb *x, struct tlv *tlv);
 static inline int to_xdr_ssl_fail_reason(struct xb *x, struct tlv *tlv);
 
+struct tlv {
+    byte id;
+    byte pad;
+    
+    uint16 e:1;
+    uint16 _:3;
+    uint16 len:12;
+
+    byte body[0];
+};
+
+#define tlv_extend(_tlv)        (_tlv)->e
+
+#define tlv_data_n(_tlv)        (_tlv)->body
+#define tlv_data_e(_tlv)        ((_tlv)->body + sizeof(uint32))
+#define tlv_data(_tlv)          (tlv_extend(_tlv)?tlv_data_e(_tlv):tlv_data_n(_tlv))
+
+#if 0
+static inline uint32
+tlv_len_n(struct tlv *tlv)
+{
+    if (is_option(OPT_STRICT)) {
+        
+    } else {
+        return tlv->len;
+    }
+}
+#else
+#define tlv_len_n(_tlv)         (_tlv)->len
+#endif
+
+#define tlv_len_e(_tlv)         (*(uint32 *)(_tlv)->body)
+#define tlv_len(_tlv)           (tlv_extend(_tlv)?tlv_len_e(_tlv):tlv_len_n(_tlv))
+
+#define tlv_hdrlen_n            sizeof(struct tlv)
+#define tlv_hdrlen_e            (sizeof(struct tlv)+sizeof(uint32))
+#define tlv_hdrlen(_tlv)        (tlv_extend(_tlv)?tlv_hdrlen_e:tlv_hdrlen_n)
+
+#define tlv_datalen_n(_tlv)     (tlv_len_n(_tlv)-tlv_hdrlen_n)
+#define tlv_datalen_e(_tlv)     (tlv_len_e(_tlv)-tlv_hdrlen_e)
+#define tlv_datalen(_tlv)       (tlv_extend(_tlv)?tlv_datalen_e(_tlv):tlv_datalen_n(_tlv))
+
+#define tlv_binlen(_tlv)        (tlv_datalen(_tlv) - (_tlv)->pad)
+#define tlv_strlen(_tlv)        tlv_binlen(_tlv)
+
+#define tlv_first(_tlv_header)  (struct tlv *)tlv_data(_tlv_header)
+#define tlv_next(_tlv)          (struct tlv *)((byte *)(_tlv) + tlv_len(_tlv))
+
+#define tlv_u8(_tlv)        (_tlv)->pad
+#define tlv_u16(_tlv)       (*(uint16 *)tlv_data(_tlv))
+#define tlv_u32(_tlv)       (*(uint32 *)tlv_data(_tlv))
+#define tlv_u64(_tlv)       (*(uint64 *)tlv_data(_tlv))
+
+#define tlv_i8(_tlv)        (_tlv)->pad
+#define tlv_i16(_tlv)       (*(int16 *)tlv_data(_tlv))
+#define tlv_i32(_tlv)       (*(int32 *)tlv_data(_tlv))
+#define tlv_i64(_tlv)       (*(int64 *)tlv_data(_tlv))
+
+#define tlv_time(_tlv)      (*(tlv_time_t *)tlv_data(_tlv))
+#define tlv_duration(_tlv)  (*(tlv_duration_t *)tlv_data(_tlv))
+
+#define tlv_ip4(_tlv)       (*(tlv_ip4_t *)tlv_data(_tlv))
+#define tlv_ip6(_tlv)       ((tlv_ip6_t *)tlv_data(_tlv))
+
+#define tlv_binary(_tlv)    tlv_data(_tlv)
+#define tlv_string(_tlv)    ((char *)tlv_binary(_tlv))
+
+#define tlv_session(_tlv)       ((tlv_session_t *)tlv_data(_tlv))
+#define tlv_session_st(_tlv)    ((tlv_session_st_t *)tlv_data(_tlv))
+#define tlv_session_time(_tlv)  ((tlv_session_time_t *)tlv_data(_tlv))
+#define tlv_service_st(_tlv)    ((tlv_service_st_t *)tlv_data(_tlv))
+#define tlv_tcp(_tlv)           ((tlv_tcp_t *)tlv_data(_tlv))
+#define tlv_L7(_tlv)            ((tlv_L7_t *)tlv_data(_tlv))
+#define tlv_http(_tlv)          ((tlv_http_t *)tlv_data(_tlv))
+#define tlv_sip(_tlv)           ((tlv_sip_t *)tlv_data(_tlv))
+#define tlv_rtsp(_tlv)          ((tlv_rtsp_t *)tlv_data(_tlv))
+
 typedef struct {
     int     type;
     uint32  flag;
@@ -230,9 +307,32 @@ typedef struct {
     char    *name;
 
     void (*dump)(struct tlv * /*tlv*/);
-    int (*check)(struct xparse *parse, struct tlv * /*tlv*/);
+    int (*check)(struct xparse * /*parse*/, struct tlv * /*tlv*/);
     int (*toxdr)(struct xb * /*x*/, struct tlv * /*tlv*/);
 } tlv_ops_t;
+
+static inline bool is_good_tlv_id(int id);
+
+extern tlv_ops_t __tlv_ops[];
+
+static inline tlv_ops_t *
+tlv_ops(struct tlv *tlv) 
+{
+    return is_good_tlv_id(tlv->id)?&__tlv_ops[tlv->id]:NULL;
+}
+
+#define tlv_ops_field(_tlv, _field, _deft)  ({  \
+    tlv_ops_t *m_ops = tlv_ops(_tlv);   \
+                                        \
+    m_ops?m_ops->_field:_deft;          \
+})
+
+#define tlv_ops_var(_tlv, _field)       tlv_ops_field(_tlv, _field, 0)
+#define tlv_ops_string(_tlv, _field)    tlv_ops_field(_tlv, _field, "invalid-tlv-id")
+
+#define tlv_ops_flag(_tlv)      tlv_ops_var(_tlv, flag)
+#define tlv_ops_fixed(_tlv)     tlv_ops_var(_tlv, maxsize)
+#define tlv_ops_name(_tlv)      tlv_ops_string(_tlv, name)
 
 #define tlv_mapper_fixed(_mapper, _id, _name, _type, _check, _flag) \
     _mapper(_name, _id, TLV_T_##_type, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_type##_t), tlv_dump_##_type, _check, to_xdr_##_name)
@@ -370,10 +470,6 @@ is_good_tlv_id(int id)
 #define DECLARE_TLV_VARS \
     tlv_ops_t __tlv_ops[tlv_id_end] = { TLV_MAPPER(__TLV_STRUCT) }; \
     os_fake_declare /* end */
-
-extern tlv_ops_t __tlv_ops[];
-
-#define TLV_OPS(_id)    (is_good_tlv_id(_id)?&__tlv_ops[_id]:NULL)
 
 #if 0
       |<-filename    |<-suffix
@@ -659,102 +755,6 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
     }
 }
 
-struct tlv {
-    byte id;
-    byte pad;
-    
-    uint16 e:1;
-    uint16 _:3;
-    uint16 len:12;
-
-    byte body[0];
-};
-
-static inline tlv_ops_t *
-tlv_ops(struct tlv *tlv) 
-{
-    return is_good_tlv_id(tlv->id)?TLV_OPS(tlv->id):NULL;
-}
-
-#define tlv_ops_field(_tlv, _field, _deft)  ({  \
-    tlv_ops_t *__ops = tlv_ops(_tlv);   \
-                                        \
-    __ops?__ops->_field:_deft;          \
-})
-
-#define tlv_ops_var(_tlv, _field)       tlv_ops_field(_tlv, _field, 0)
-#define tlv_ops_string(_tlv, _field)    tlv_ops_field(_tlv, _field, "invalid-tlv-id")
-
-#define tlv_ops_flag(_tlv)      tlv_ops_var(_tlv, flag)
-#define tlv_ops_fixed(_tlv)     tlv_ops_var(_tlv, maxsize)
-#define tlv_ops_name(_tlv)      tlv_ops_string(_tlv, name)
-
-#define tlv_extend(_tlv)        (_tlv)->e
-
-#define tlv_data_n(_tlv)        (_tlv)->body
-#define tlv_data_e(_tlv)        ((_tlv)->body + sizeof(uint32))
-#define tlv_data(_tlv)          (tlv_extend(_tlv)?tlv_data_e(_tlv):tlv_data_n(_tlv))
-
-#if 0
-static inline uint32
-tlv_len_n(struct tlv *tlv)
-{
-    if (is_option(OPT_STRICT)) {
-        
-    } else {
-        return tlv->len;
-    }
-}
-#else
-#define tlv_len_n(_tlv)         (_tlv)->len
-#endif
-
-#define tlv_len_e(_tlv)         (*(uint32 *)(_tlv)->body)
-#define tlv_len(_tlv)           (tlv_extend(_tlv)?tlv_len_e(_tlv):tlv_len_n(_tlv))
-
-#define tlv_hdrlen_n            sizeof(struct tlv)
-#define tlv_hdrlen_e            (sizeof(struct tlv)+sizeof(uint32))
-#define tlv_hdrlen(_tlv)        (tlv_extend(_tlv)?tlv_hdrlen_e:tlv_hdrlen_n)
-
-#define tlv_datalen_n(_tlv)     (tlv_len_n(_tlv)-tlv_hdrlen_n)
-#define tlv_datalen_e(_tlv)     (tlv_len_e(_tlv)-tlv_hdrlen_e)
-#define tlv_datalen(_tlv)       (tlv_extend(_tlv)?tlv_datalen_e(_tlv):tlv_datalen_n(_tlv))
-
-#define tlv_binlen(_tlv)        (tlv_datalen(_tlv) - (_tlv)->pad)
-#define tlv_strlen(_tlv)        tlv_binlen(_tlv)
-
-#define tlv_first(_tlv_header)  (struct tlv *)tlv_data(_tlv_header)
-#define tlv_next(_tlv)          (struct tlv *)((byte *)(_tlv) + tlv_len(_tlv))
-
-#define tlv_u8(_tlv)        (_tlv)->pad
-#define tlv_u16(_tlv)       (*(uint16 *)tlv_data(_tlv))
-#define tlv_u32(_tlv)       (*(uint32 *)tlv_data(_tlv))
-#define tlv_u64(_tlv)       (*(uint64 *)tlv_data(_tlv))
-
-#define tlv_i8(_tlv)        (_tlv)->pad
-#define tlv_i16(_tlv)       (*(int16 *)tlv_data(_tlv))
-#define tlv_i32(_tlv)       (*(int32 *)tlv_data(_tlv))
-#define tlv_i64(_tlv)       (*(int64 *)tlv_data(_tlv))
-
-#define tlv_time(_tlv)      (*(tlv_time_t *)tlv_data(_tlv))
-#define tlv_duration(_tlv)  (*(tlv_duration_t *)tlv_data(_tlv))
-
-#define tlv_ip4(_tlv)       (*(tlv_ip4_t *)tlv_data(_tlv))
-#define tlv_ip6(_tlv)       ((tlv_ip6_t *)tlv_data(_tlv))
-
-#define tlv_binary(_tlv)    tlv_data(_tlv)
-#define tlv_string(_tlv)    ((char *)tlv_binary(_tlv))
-
-#define tlv_session(_tlv)       ((tlv_session_t *)tlv_data(_tlv))
-#define tlv_session_st(_tlv)    ((tlv_session_st_t *)tlv_data(_tlv))
-#define tlv_session_time(_tlv)  ((tlv_session_time_t *)tlv_data(_tlv))
-#define tlv_service_st(_tlv)    ((tlv_service_st_t *)tlv_data(_tlv))
-#define tlv_tcp(_tlv)           ((tlv_tcp_t *)tlv_data(_tlv))
-#define tlv_L7(_tlv)            ((tlv_L7_t *)tlv_data(_tlv))
-#define tlv_http(_tlv)          ((tlv_http_t *)tlv_data(_tlv))
-#define tlv_sip(_tlv)           ((tlv_sip_t *)tlv_data(_tlv))
-#define tlv_rtsp(_tlv)          ((tlv_rtsp_t *)tlv_data(_tlv))
-
 typedef int tlv_walk_t(struct xparse *parse, struct tlv *tlv);
 
 static inline int
@@ -763,7 +763,7 @@ tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
     int err;
 
     if (left > TLV_MAXDATA) {
-        return tlv_error(tlv, -ETOOBIG, "too big:%d", left);
+        return xp_error(parse, tlv, -ETOOBIG, "too big:%d", left);
     }
     
     while(left>0) {
