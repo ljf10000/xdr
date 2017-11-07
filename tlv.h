@@ -232,7 +232,7 @@ typedef struct {
     uint32  maxsize;
     char    *name;
 
-    void (*dump)(struct tlv * /*tlv*/);
+    void (*dump)(FILE * /*stream*/, struct tlv * /*tlv*/);
     int (*check)(struct xparse * /*parse*/, struct tlv * /*tlv*/);
     int (*toxdr)(struct xb * /*x*/, struct tlv * /*tlv*/);
 } tlv_ops_t;
