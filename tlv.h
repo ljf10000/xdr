@@ -1093,6 +1093,9 @@ xp_init(struct xparse *parse)
 
     xpath_fill(&parse->path[PATH_TLV], parse->name, parse->namelen);
     xpath_fill(&parse->path[PATH_XDR], parse->name, parse->namelen);
+
+    tlv_dprint("init %s", parse->tlv.fullname);
+    xdr_dprint("init %s", parse->xdr.fullname);
 }
 
 static inline int
