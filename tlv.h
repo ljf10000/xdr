@@ -252,7 +252,7 @@ xdr_close(xbuffer_t *x)
 }
 
 static inline void
-xparse_init(struct xparse *parse)
+xp_init(struct xparse *parse)
 {
     parse->tlv.parse = parse;
     parse->xdr.parse = parse;
@@ -262,7 +262,7 @@ xparse_init(struct xparse *parse)
 }
 
 static inline int
-xparse_close(struct xparse *parse)
+xp_close(struct xparse *parse)
 {
     tlv_trace(tlv_close(&parse->tlv), "tlv_close");
     tlv_trace(xdr_close(&parse->xdr), "xdr_close");
@@ -271,7 +271,7 @@ xparse_close(struct xparse *parse)
 }
 
 static inline int
-xparse_open(struct xparse *parse)
+xp_open(struct xparse *parse)
 {
     xbuffer_t *tlv = &parse->tlv;
     xbuffer_t *xdr = &parse->xdr;
@@ -297,7 +297,7 @@ xparse_open(struct xparse *parse)
 }
 
 static inline void
-xparse_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
+xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
 {
     va_list args;
     char *fullname;
@@ -306,7 +306,7 @@ xparse_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ..
     // vprintf(fmt, args);
     va_end(args);
     
-    xparse_close(parse);
+    xp_close(parse);
 
 #if 1
     fullname = parse->tlv.fullname;

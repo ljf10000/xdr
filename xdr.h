@@ -1488,7 +1488,7 @@ to_xdr(tlv_record_t *r, xbuffer_t *x)
 }
 
 static inline int
-xparse_run(struct xparse *parse)
+xp_run(struct xparse *parse)
 {
     int walk(struct xparse *parse, struct tlv *header)
     {
@@ -1497,7 +1497,7 @@ xparse_run(struct xparse *parse)
 
         err = tlv_trace(tlv_record_parse(&r), "tlv_record_parse:%d", count);
         if (err<0) {
-            xparse_error(parse);
+            xp_error(parse);
             
             return err;
         }

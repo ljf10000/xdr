@@ -58,20 +58,20 @@ xdr_handle(xpath_t path[], char *filename, int namelen)
     struct xparse parse = XPARSE_INITER(path, filename, namelen);
     int err;
     
-    xparse_init(&parse);
+    xp_init(&parse);
 
-    err = xparse_open(&parse);
+    err = xp_open(&parse);
     if (err<0) {
         goto ERROR;
     }
 
-    err = xparse_run(&parse);
+    err = xp_run(&parse);
     if (err<0) {
         goto ERROR;
     }
 
 ERROR:
-    xparse_close(parse);
+    xp_close(parse);
 
     return err;
 }
