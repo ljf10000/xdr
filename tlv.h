@@ -914,6 +914,7 @@ typedef struct {
     char *filename;
     char *suffix;
 } xpath_t;
+#define xpath_fullname(_path, _id)      (_path)[_id].fullname
 
 static inline void
 xpath_init(xpath_t *path, char *dir)
@@ -1062,12 +1063,12 @@ struct xparse {
     struct xb xdr;
 };
 
-#define XPARSE_INITER(_path, _name, _namelen)              {    \
-    .name       = _name,                                        \
-    .namelen    = _namelen,                                     \
-    .path       = _path,                                        \
-    .tlv        = XBUFFER_INITER((_path)[PATH_TLV].fullname),   \
-    .xdr        = XBUFFER_INITER((_path)[PATH_XDR].fullname),   \
+#define XPARSE_INITER(_path, _name, _namelen) { \
+    .name       = _name,                        \
+    .namelen    = _namelen,                     \
+    .path       = _path,                        \
+    .tlv        = XBUFFER_INITER(xpath_fullname(_path, PATH_TLV),   \
+    .xdr        = XBUFFER_INITER(xpath_fullname(_path, PATH_XDR),   \
 }   /* end */
 
 static inline int
