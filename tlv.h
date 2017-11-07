@@ -1060,6 +1060,7 @@ xb_open(struct xb *x, bool readonly, int size)
 }
 
 struct xparse {
+    FILE *stream;   // tmp for bad file
     char *filename; // just filename, not include path
     int namelen;    // just filename, not include path
     
@@ -1107,6 +1108,7 @@ xp_init(struct xparse *parse)
 
     xpath_fill(xp_path(parse, PATH_TLV), parse->filename, parse->namelen);
     xpath_fill(xp_path(parse, PATH_XDR), parse->filename, parse->namelen);
+    xpath_fill(xp_path(parse, PATH_BAD), parse->filename, parse->namelen);
 }
 
 static inline int
@@ -1114,6 +1116,8 @@ xp_close(struct xparse *parse)
 {
     tlv_trace(tlv_close(&parse->tlv), "tlv_close");
     tlv_trace(xdr_close(&parse->xdr), "xdr_close");
+
+    os_fclose(parse->stream);
 
     return 0;
 }
@@ -1181,21 +1185,21 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
     remove(parse->xdr.fullname);
 
     xpath_t *path = xp_path(parse, PATH_BAD);
-    xpath_fill(path, parse->filename, parse->namelen);
-    
+
     // log
     if (tlv) {
         xpath_change(path, ERR_SUFFIX);
+
+        if (NULL==parse->stream) {
+            parse->stream = fopen(path->fullname, "a+");
+        }
         
-        FILE *stream = fopen(path->fullname, "a+");
-        if (NULL==stream) {
+        if (NULL==parse->stream) {
             os_println("open %s error", path->fullname);
         } else {
             va_start(args, fmt);
-            xp_verror(stream, parse, tlv, err, fmt, args);
+            xp_verror(parse->stream, parse, tlv, err, fmt, args);
             va_end(args);
-            
-            fclose(stream);
         }
     }
 
@@ -1220,30 +1224,24 @@ tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
     
     while(left>0) {
         if (parse->count > TLV_MAXCOUNT) {
-            err = xp_error(parse, tlv, -ETOOMORE, "too more tlv:%d", parse->count);
-            goto ERROR;
+            return xp_error(parse, tlv, -ETOOMORE, "too more tlv:%d", parse->count);
         }
         else if (left < tlv_hdrlen(tlv)) {
-            err = xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv hdrlen:%d", left, tlv_hdrlen(tlv));
-            goto ERROR;
+            return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv hdrlen:%d", left, tlv_hdrlen(tlv));
         }
         else if (left < tlv_len(tlv)) {
-            err = xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv len:%d", left, tlv_len(tlv));
-            goto ERROR;
+            return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv len:%d", left, tlv_len(tlv));
         }
         
         err = (*walk)(parse, tlv);
         if (err<0) {
-            goto ERROR;
+            return err;
         }
 
         left -= tlv_len(tlv); tlv = tlv_next(tlv);
     }
 
-ERROR:
-    os_println("break walk!!!");
-    
-    return err;
+    return 0;
 }
 
 static inline void

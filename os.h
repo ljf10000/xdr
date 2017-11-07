@@ -377,6 +377,18 @@
 })  /* end */
 #endif
 
+#ifndef os_fclose
+#define os_fclose(_stream)   ({  \
+    int m_err = 0;          \
+    if (_stream) {          \
+        m_err = fclose(_stream); \
+        _stream = NULL;     \
+    }                       \
+                            \
+    m_err;                  \
+})  /* end */
+#endif
+
 #ifndef os_min
 #define os_min(_x, _y)  ((_x)<(_y)?(_x):(_y))
 #endif
