@@ -1177,10 +1177,11 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
     fprintf(_stream,__tab _fmt __crlf, ##_args); \
     fflush(_stream); \
 }while(0)
-
+    tlv_ops_t *ops = tlv_ops(tlv);
+    
     mfprintf(stream, __tab "ERROR:%d"     __crlf, err);
-    mfprintf(stream, __tab "tlv:%p"  __crlf, tlv); 
-    mfprintf(stream, __tab "tlv ops:%p"  __crlf, tlv_ops(tlv)); 
+    mfprintf(stream, __tab "tlv:%p"     __crlf, tlv); 
+    mfprintf(stream, __tab "tlv ops:%p"  __crlf, ops); 
     mfprintf(stream, __tab "tlv name:%p"  __crlf, tlv_ops_name(tlv)); 
     mfprintf(stream, __tab "tlv name:%s"  __crlf, tlv_ops_name(tlv)); 
     mfprintf(stream, __tab "id:%d"        __crlf, tlv->id); 
