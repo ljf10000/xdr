@@ -47,6 +47,312 @@ typedef uint32 xdr_offset_t;
 typedef uint32 xdr_size_t;
 typedef uint32 xdr_delay_t;
 
+typedef uint8  tlv_u8_t;
+typedef uint16 tlv_u16_t;
+typedef uint32 tlv_u32_t;
+typedef uint64 tlv_u64_t;
+
+typedef uint64 xdr_duration_t,  tlv_duration_t;
+typedef uint64 xdr_time_t,      tlv_time_t;
+#define XDR_SECOND(_us)         ((time_t)((_us)/1000000))
+
+typedef uint32 xdr_ip4_t, tlv_ip4_t;
+typedef struct {
+    uint32 ip[4];
+} xdr_ipaddr_t, xdr_ip6_t, tlv_ip6_t;
+#define XDR_IP(_addr)   (_addr)->ip[0]
+
+enum {
+    OPT_CLI         = 0x01,
+    OPT_IP6         = 0x02,
+    OPT_SPLIT       = 0x04,
+    OPT_STRICT      = 0x08,
+    OPT_DUMP        = 0x10,
+    OPT_DUMP_SIMPLE = 0x20 | OPT_DUMP,
+};
+
+enum {
+    TLV_F_MULTI             = 0x1000,
+    TLV_F_FIXED             = 0x2000,
+    
+    TLV_F_FILE_CONTENT      = 0x0001,
+    TLV_F_HTTP_REQUEST      = 0x0002,
+    TLV_F_HTTP_RESPONSE     = 0x0004,
+    TLV_F_SSL_SERVER_CERT   = 0x0008,
+    TLV_F_SSL_CLIENT_CERT   = 0x0010,
+
+    TLV_F_HTTP              = TLV_F_HTTP_REQUEST|TLV_F_HTTP_RESPONSE,
+    TLV_F_CERT              = TLV_F_SSL_SERVER_CERT|TLV_F_SSL_CLIENT_CERT,
+    TLV_F_FILE              = TLV_F_FILE_CONTENT|TLV_F_HTTP|TLV_F_CERT,
+};
+
+#if 1
+#define TLV_T_MAPPER(_)         \
+    _(TLV_T,    u8,         0)  \
+    _(TLV_T,    u16,        1)  \
+    _(TLV_T,    u32,        2)  \
+    _(TLV_T,    u64,        3)  \
+    _(TLV_T,    string,     4)  \
+    _(TLV_T,    binary,     5)  \
+    _(TLV_T,    object,     6)  \
+    _(TLV_T,    time,       7)  \
+    _(TLV_T,    duration,   8)  \
+    _(TLV_T,    ip4,        9)  \
+    _(TLV_T,    ip6,        10) \
+    /* end */
+DECLARE_ENUM(TLV_T, tlv_type, TLV_T_MAPPER, TLV_T_END);
+
+static inline bool is_good_tlv_type(int id);
+static inline char *tlv_type_getnamebyid(int id);
+static inline int tlv_type_getidbyname(const char *name);
+
+#define TLV_T_u8        TLV_T_u8
+#define TLV_T_u16       TLV_T_u16
+#define TLV_T_string    TLV_T_string
+#define TLV_T_binary    TLV_T_binary
+#define TLV_T_object    TLV_T_object
+#define TLV_T_END       TLV_T_END
+#endif
+
+static inline void tlv_dump_u8 (struct tlv *tlv);
+static inline void tlv_dump_u16(struct tlv *tlv);
+static inline void tlv_dump_u32(struct tlv *tlv);
+static inline void tlv_dump_u64(struct tlv *tlv);
+
+static inline void tlv_dump_string(struct tlv *tlv);
+static inline void tlv_dump_binary(struct tlv *tlv);
+static inline void tlv_dump_time(struct tlv *tlv);
+static inline void tlv_dump_duration(struct tlv *tlv);
+static inline void tlv_dump_ip4(struct tlv *tlv);
+static inline void tlv_dump_ip6(struct tlv *tlv);
+
+static inline void tlv_dump_session(struct tlv *tlv);
+static inline void tlv_dump_session_st(struct tlv *tlv);
+#define tlv_dump_service_st    tlv_dump_session_st
+static inline void tlv_dump_session_time(struct tlv *tlv);
+static inline void tlv_dump_tcp(struct tlv *tlv);
+static inline void tlv_dump_L7(struct tlv *tlv);
+static inline void tlv_dump_http(struct tlv *tlv);
+static inline void tlv_dump_sip(struct tlv *tlv);
+static inline void tlv_dump_rtsp(struct tlv *tlv);
+
+static inline int tlv_check_session(struct tlv *tlv);
+
+static inline int to_xdr_session_state(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_appid(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_session(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_session_st(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_service_st(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_session_time(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_tcp(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_first_response_delay(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_L7(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_http(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_http_host(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_http_url(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_http_host_xonline(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_http_user_agent(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_http_content(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_http_refer(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_http_cookie(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_http_location(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_sip(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_sip_calling_number(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_sip_called_number(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_sip_session_id(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_rtsp(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_rtsp_url(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_rtsp_user_agent(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_rtsp_server_ip(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_ftp_status(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_ftp_user(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_ftp_pwd(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_ftp_trans_mode(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_ftp_trans_type(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_ftp_filename(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_ftp_filesize(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_ftp_response_delay(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_ftp_trans_duration(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_mail_msg_type(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_mail_status_code(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_mail_user(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_mail_sender(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_mail_length(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_mail_domain(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_mail_recver(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_mail_hdr(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_mail_acs_type(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_dns_domain(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_dns_ip_count(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_dns_ip4(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_dns_ip6(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_dns_response_code(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_dns_count_request(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_dns_count_response_record(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_dns_count_response_auth(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_dns_count_response_extra(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_dns_delay(xbuffer_t *x, struct tlv *tlv);
+
+static inline int to_xdr_http_request(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_http_response(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_file_content(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_ssl_server_cert(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_ssl_client_cert(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_ssl_fail_reason(xbuffer_t *x, struct tlv *tlv);
+
+typedef struct {
+    int     type;
+    uint32  flag;
+    uint32  minsize;
+    uint32  maxsize;
+    char    *name;
+
+    void (*dump)(struct tlv * /*tlv*/);
+    int (*check)(struct tlv * /*tlv*/);
+    int (*toxdr)(xbuffer_t * /*x*/, struct tlv * /*tlv*/);
+} tlv_ops_t;
+
+#define tlv_mapper_fixed(_mapper, _id, _name, _type, _check, _flag) \
+    _mapper(_name, _id, TLV_T_##_type, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_type##_t), tlv_dump_##_type, _check, tlv_to_xdr_##_name)
+#define tlv_mapper_dynamic(_mapper, _id, _name, _type, _check, _flag) \
+    _mapper(_name, _id, TLV_T_##_type, _flag, 0, 0, tlv_dump_##_type, _check, tlv_to_xdr_##_name)
+
+#define tlv_mapper_object(_mapper, _id, _name, _check, _flag) \
+    _mapper(_name, _id, TLV_T_object, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_name##_t), tlv_dump_##_name, _check, tlv_to_xdr_##_name)
+#define tlv_mapper_nothing(_mapper, _id, _name, _check, _flag) \
+    _mapper(_name, _id, TLV_T_string, _flag, 0, 0, NULL, _check, NULL)
+
+#define tlv_mapper_u8( _mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, u8, _check, _flag)
+#define tlv_mapper_u16(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, u16, _check, _flag)
+#define tlv_mapper_u32(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, u32, _check, _flag)
+#define tlv_mapper_u64(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, u64, _check, _flag)
+#define tlv_mapper_ip4(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, ip4, _check, _flag)
+#define tlv_mapper_ip6(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, ip6, _check, _flag)
+#define tlv_mapper_time(_mapper, _id, _name, _check, _flag)     tlv_mapper_fixed(_mapper, _id, _name, time, _check, _flag)
+#define tlv_mapper_duration(_mapper, _id, _name, _check, _flag) tlv_mapper_fixed(_mapper, _id, _name, duration, _check, _flag)
+#define tlv_mapper_string(_mapper, _id, _name, _check, _flag)   tlv_mapper_dynamic(_mapper, _id, _name, string, _check, _flag)
+#define tlv_mapper_binary(_mapper, _id, _name, _check, _flag)   tlv_mapper_dynamic(_mapper, _id, _name, binary, _check, _flag)
+
+#define TLV_MAPPER(_) \
+    tlv_mapper_nothing(_,   0,  header,         NULL,   0) \
+    \
+    tlv_mapper_u8(_,        1,  session_state,  NULL,   0) \
+    tlv_mapper_u8(_,        2,  appid,          NULL,   0) \
+    tlv_mapper_object(_,    3,  session,        tlv_check_session,  0) \
+    tlv_mapper_object(_,    4,  session_st,     NULL,   0) \
+    tlv_mapper_object(_,    5,  session_time,   NULL,   0) \
+    tlv_mapper_object(_,    6,  service_st,     NULL,   0) \
+    tlv_mapper_object(_,    7,  tcp,            NULL,   0) \
+    tlv_mapper_u32(_,       8,  first_response_delay,   NULL,   0) \
+    tlv_mapper_object(_,    9,  L7,             NULL,   0) \
+    tlv_mapper_object(_,    10, http,           NULL,   0) \
+    tlv_mapper_string(_,    11, http_host,      NULL,   0) \
+    tlv_mapper_string(_,    12, http_url,       NULL,   0) \
+    tlv_mapper_string(_,    13, http_host_xonline,      NULL,   0) \
+    tlv_mapper_string(_,    14, http_user_agent,NULL,   0) \
+    tlv_mapper_string(_,    15, http_content,   NULL,   0) \
+    tlv_mapper_string(_,    16, http_refer,     NULL,   0) \
+    tlv_mapper_string(_,    17, http_cookie,    NULL,   0) \
+    tlv_mapper_string(_,    18, http_location,  NULL,   0) \
+    tlv_mapper_object(_,    19, sip,            NULL,   0) \
+    tlv_mapper_string(_,    20, sip_calling_number,     NULL,   0) \
+    tlv_mapper_string(_,    21, sip_called_number,      NULL,   0) \
+    tlv_mapper_string(_,    22, sip_session_id, NULL,   0) \
+    tlv_mapper_object(_,    23, rtsp,           NULL,   0) \
+    tlv_mapper_string(_,    24, rtsp_url,       NULL,   0) \
+    tlv_mapper_string(_,    25, rtsp_user_agent,NULL,   0) \
+    tlv_mapper_string(_,    26, rtsp_server_ip, NULL,   0) \
+    tlv_mapper_u16(_,       27, ftp_status,     NULL,   0) \
+    tlv_mapper_string(_,    28, ftp_user,       NULL,   0) \
+    tlv_mapper_string(_,    29, ftp_pwd,        NULL,   0) \
+    tlv_mapper_u8(_,        30, ftp_trans_mode, NULL,   0) \
+    tlv_mapper_u8(_,        31, ftp_trans_type, NULL,   0) \
+    tlv_mapper_string(_,    32, ftp_filename,   NULL,   0) \
+    tlv_mapper_u32(_,       33, ftp_filesize,   NULL,   0) \
+    tlv_mapper_duration(_,  34, ftp_response_delay,     NULL,   0) \
+    tlv_mapper_duration(_,  35, ftp_trans_duration,     NULL,   0) \
+    tlv_mapper_u16(_,       36, mail_msg_type,  NULL,   0) \
+    tlv_mapper_u16(_,       37, mail_status_code,       NULL,   0) \
+    tlv_mapper_string(_,    38, mail_user,      NULL,   0) \
+    tlv_mapper_string(_,    39, mail_sender,    NULL,   0) \
+    tlv_mapper_u32(_,       40, mail_length,    NULL,   0) \
+    tlv_mapper_string(_,    41, mail_domain,    NULL,   0) \
+    tlv_mapper_string(_,    42, mail_recver,    NULL,   0) \
+    tlv_mapper_string(_,    43, mail_hdr,       NULL,   0) \
+    tlv_mapper_u8(_,        44, mail_acs_type,  NULL,   0) \
+    tlv_mapper_string(_,    45, dns_domain,     NULL,   0) \
+    tlv_mapper_u8(_,        46, dns_ip_count,   NULL,   0) \
+    tlv_mapper_ip4(_,       47, dns_ip4,        NULL,   TLV_F_MULTI) \
+    tlv_mapper_ip6(_,       48, dns_ip6,        NULL,   TLV_F_MULTI) \
+    tlv_mapper_u8(_,        49, dns_response_code,      NULL,   0) \
+    tlv_mapper_u8(_,        50, dns_count_request,      NULL,   0) \
+    tlv_mapper_u8(_,        51, dns_count_response_record,  NULL,   0) \
+    tlv_mapper_u8(_,        52, dns_count_response_auth,    NULL,   0) \
+    tlv_mapper_u8(_,        53, dns_count_response_extra,   NULL,   0) \
+    tlv_mapper_u32(_,       54, dns_delay,      NULL,   0) \
+    \
+    tlv_mapper_binary(_,    201,http_request,   NULL,   TLV_F_HTTP_REQUEST) \
+    tlv_mapper_binary(_,    202,http_response,  NULL,   TLV_F_HTTP_RESPONSE) \
+    tlv_mapper_binary(_,    203,file_content,   NULL,   TLV_F_FILE_CONTENT) \
+    tlv_mapper_binary(_,    204,ssl_server_cert,NULL,   TLV_F_MULTI|TLV_F_SSL_SERVER_CERT) \
+    tlv_mapper_binary(_,    205,ssl_client_cert,NULL,   TLV_F_MULTI|TLV_F_SSL_CLIENT_CERT) \
+    tlv_mapper_u8(_,        206,ssl_fail_reason,NULL,   0) \
+    /* end */
+
+#if 0
+    tlv_mapper_u8(_,        55, vpn_type,       NULL,   0) \
+    tlv_mapper_u8(_,        56, proxy_type,     NULL,   0) \
+    tlv_mapper_u32(_,       57, app_proto,      NULL,   0) \
+    tlv_mapper_u64(_,       58, vpn,            NULL,   0) \
+    tlv_mapper_u8(_,        59, dns_pkt_valid,  NULL,   0) \
+    tlv_mapper_string(_,    60, qq_number,      NULL,   0) \
+    tlv_mapper_u8(_,        61, pkt_dir,        NULL,   0) \
+    /* end */
+#endif
+
+#define tlv_id_low_end      55
+#define tlv_id_high_begin   201
+
+#define __TLV_ENUM(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr)  tlv_id_##_name = _id,
+enum { TLV_MAPPER(__TLV_ENUM) tlv_id_end };
+
+// just for source insight
+#define tlv_id_header          tlv_id_header
+#define tlv_id_appid           tlv_id_appid
+#define tlv_id_file_content    tlv_id_file_content
+#define tlv_id_http_request    tlv_id_http_request
+#define tlv_id_http_response   tlv_id_http_response
+#define tlv_id_ssl_server_cert tlv_id_ssl_server_cert
+#define tlv_id_ssl_client_cert tlv_id_ssl_client_cert
+#define tlv_id_dns_ip4         tlv_id_dns_ip4
+#define tlv_id_dns_ip6         tlv_id_dns_ip6
+#define tlv_id_end             tlv_id_end
+
+#define __TLV_STRUCT(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr) [_id] = { \
+    .type   = _type,    \
+    .flag   = _flag,    \
+    .name   = #_name,   \
+    .minsize= _minsize, \
+    .maxsize= _maxsize, \
+    .dump   = _dump,    \
+    .check  = _check,   \
+    .toxdr  = _toxdr,   \
+},  /* end */
+#define DECLARE_TLV_VARS \
+    tlv_ops_t __tlv_ops[tlv_id_end] = { TLV_MAPPER(__TLV_STRUCT) }; \
+    os_fake_declare /* end */
+
+extern tlv_ops_t __tlv_ops[];
+
+static inline bool
+is_good_tlv_id(int id)
+{
+    return is_good_value(id, 0, tlv_id_low_end) 
+        || is_good_value(id, tlv_id_high_begin, tlv_id_end);
+}
+
+#define TLV_OPS(_id)    (is_good_tlv_id(_id)?&__tlv_ops[_id]:NULL)
+
 #if 0
       |<-filename    |<-suffix
 /path/xxxxxxxxxxxxxx.xdr
@@ -332,313 +638,6 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
                 __tab "%s", fullname, path->fullname);
 #endif
 }
-
-enum {
-    OPT_CLI         = 0x01,
-    OPT_IP6         = 0x02,
-    OPT_SPLIT       = 0x04,
-    OPT_STRICT      = 0x08,
-    OPT_DUMP        = 0x10,
-    OPT_DUMP_SIMPLE = 0x20 | OPT_DUMP,
-};
-
-typedef uint8  tlv_u8_t;
-typedef uint16 tlv_u16_t;
-typedef uint32 tlv_u32_t;
-typedef uint64 tlv_u64_t;
-
-typedef uint64 xdr_duration_t,  tlv_duration_t;
-typedef uint64 xdr_time_t,      tlv_time_t;
-#define XDR_SECOND(_us)         ((time_t)((_us)/1000000))
-
-typedef uint32 xdr_ip4_t, tlv_ip4_t;
-typedef struct {
-    uint32 ip[4];
-} xdr_ipaddr_t, xdr_ip6_t, tlv_ip6_t;
-#define XDR_IP(_addr)   (_addr)->ip[0]
-
-#if 1
-#define TLV_T_MAPPER(_)         \
-    _(TLV_T,    u8,         0)  \
-    _(TLV_T,    u16,        1)  \
-    _(TLV_T,    u32,        2)  \
-    _(TLV_T,    u64,        3)  \
-    _(TLV_T,    string,     4)  \
-    _(TLV_T,    binary,     5)  \
-    _(TLV_T,    object,     6)  \
-    _(TLV_T,    time,       7)  \
-    _(TLV_T,    duration,   8)  \
-    _(TLV_T,    ip4,        9)  \
-    _(TLV_T,    ip6,        10) \
-    /* end */
-DECLARE_ENUM(TLV_T, tlv_type, TLV_T_MAPPER, TLV_T_END);
-
-static inline bool is_good_tlv_type(int id);
-static inline char *tlv_type_getnamebyid(int id);
-static inline int tlv_type_getidbyname(const char *name);
-
-#define TLV_T_u8        TLV_T_u8
-#define TLV_T_u16       TLV_T_u16
-#define TLV_T_string    TLV_T_string
-#define TLV_T_binary    TLV_T_binary
-#define TLV_T_object    TLV_T_object
-#define TLV_T_END       TLV_T_END
-#undef __ENUM_PREFIX__
-#endif
-
-enum {
-    TLV_F_MULTI             = 0x1000,
-    TLV_F_FIXED             = 0x2000,
-    
-    TLV_F_FILE_CONTENT      = 0x0001,
-    TLV_F_HTTP_REQUEST      = 0x0002,
-    TLV_F_HTTP_RESPONSE     = 0x0004,
-    TLV_F_SSL_SERVER_CERT   = 0x0008,
-    TLV_F_SSL_CLIENT_CERT   = 0x0010,
-
-    TLV_F_HTTP              = TLV_F_HTTP_REQUEST|TLV_F_HTTP_RESPONSE,
-    TLV_F_CERT               = TLV_F_SSL_SERVER_CERT|TLV_F_SSL_CLIENT_CERT,
-    TLV_F_FILE              = TLV_F_FILE_CONTENT|TLV_F_HTTP|TLV_F_CERT,
-};
-
-static inline void tlv_dump_u8 (struct tlv *tlv);
-static inline void tlv_dump_u16(struct tlv *tlv);
-static inline void tlv_dump_u32(struct tlv *tlv);
-static inline void tlv_dump_u64(struct tlv *tlv);
-
-static inline void tlv_dump_string(struct tlv *tlv);
-static inline void tlv_dump_binary(struct tlv *tlv);
-static inline void tlv_dump_time(struct tlv *tlv);
-static inline void tlv_dump_duration(struct tlv *tlv);
-static inline void tlv_dump_ip4(struct tlv *tlv);
-static inline void tlv_dump_ip6(struct tlv *tlv);
-
-static inline void tlv_dump_session(struct tlv *tlv);
-static inline void tlv_dump_session_st(struct tlv *tlv);
-#define tlv_dump_service_st    tlv_dump_session_st
-static inline void tlv_dump_session_time(struct tlv *tlv);
-static inline void tlv_dump_tcp(struct tlv *tlv);
-static inline void tlv_dump_L7(struct tlv *tlv);
-static inline void tlv_dump_http(struct tlv *tlv);
-static inline void tlv_dump_sip(struct tlv *tlv);
-static inline void tlv_dump_rtsp(struct tlv *tlv);
-
-static inline int tlv_check_session(struct tlv *tlv);
-
-static inline int to_xdr_session_state(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_appid(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_session(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_session_st(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_service_st(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_session_time(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_tcp(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_first_response_delay(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_L7(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_host(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_url(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_host_xonline(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_user_agent(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_content(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_refer(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_cookie(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_location(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_sip(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_sip_calling_number(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_sip_called_number(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_sip_session_id(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_rtsp(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_rtsp_url(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_rtsp_user_agent(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_rtsp_server_ip(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_status(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_user(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_pwd(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_trans_mode(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_trans_type(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_filename(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_filesize(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_response_delay(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_trans_duration(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_msg_type(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_status_code(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_user(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_sender(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_length(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_domain(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_recver(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_hdr(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_acs_type(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_domain(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_ip_count(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_ip4(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_ip6(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_response_code(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_count_request(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_count_response_record(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_count_response_auth(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_count_response_extra(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_delay(xbuffer_t *x, struct tlv *tlv);
-
-static inline int to_xdr_http_request(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_response(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_file_content(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ssl_server_cert(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ssl_client_cert(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ssl_fail_reason(xbuffer_t *x, struct tlv *tlv);
-
-typedef struct {
-    int     type;
-    uint32  flag;
-    uint32  minsize;
-    uint32  maxsize;
-    char    *name;
-
-    void (*dump)(struct tlv * /*tlv*/);
-    int (*check)(struct tlv * /*tlv*/);
-    int (*toxdr)(xbuffer_t * /*x*/, struct tlv * /*tlv*/);
-} tlv_ops_t;
-
-#define tlv_mapper_fixed(_mapper, _id, _name, _type, _check, _flag) \
-    _mapper(_name, _id, TLV_T_##_type, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_type##_t), tlv_dump_##_type, _check, tlv_to_xdr_##_name)
-#define tlv_mapper_dynamic(_mapper, _id, _name, _type, _check, _flag) \
-    _mapper(_name, _id, TLV_T_##_type, _flag, 0, 0, tlv_dump_##_type, _check, tlv_to_xdr_##_name)
-
-#define tlv_mapper_object(_mapper, _id, _name, _check, _flag) \
-    _mapper(_name, _id, TLV_T_object, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_name##_t), tlv_dump_##_name, _check, tlv_to_xdr_##_name)
-#define tlv_mapper_nothing(_mapper, _id, _name, _check, _flag) \
-    _mapper(_name, _id, TLV_T_string, _flag, 0, 0, NULL, _check, NULL)
-
-#define tlv_mapper_u8( _mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, u8, _check, _flag)
-#define tlv_mapper_u16(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, u16, _check, _flag)
-#define tlv_mapper_u32(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, u32, _check, _flag)
-#define tlv_mapper_u64(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, u64, _check, _flag)
-#define tlv_mapper_ip4(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, ip4, _check, _flag)
-#define tlv_mapper_ip6(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, ip6, _check, _flag)
-#define tlv_mapper_time(_mapper, _id, _name, _check, _flag)     tlv_mapper_fixed(_mapper, _id, _name, time, _check, _flag)
-#define tlv_mapper_duration(_mapper, _id, _name, _check, _flag) tlv_mapper_fixed(_mapper, _id, _name, duration, _check, _flag)
-#define tlv_mapper_string(_mapper, _id, _name, _check, _flag)   tlv_mapper_dynamic(_mapper, _id, _name, string, _check, _flag)
-#define tlv_mapper_binary(_mapper, _id, _name, _check, _flag)   tlv_mapper_dynamic(_mapper, _id, _name, binary, _check, _flag)
-
-#define TLV_MAPPER(_) \
-    tlv_mapper_nothing(_,   0,  header,         NULL,   0) \
-    \
-    tlv_mapper_u8(_,        1,  session_state,  NULL,   0) \
-    tlv_mapper_u8(_,        2,  appid,          NULL,   0) \
-    tlv_mapper_object(_,    3,  session,        tlv_check_session,  0) \
-    tlv_mapper_object(_,    4,  session_st,     NULL,   0) \
-    tlv_mapper_object(_,    5,  session_time,   NULL,   0) \
-    tlv_mapper_object(_,    6,  service_st,     NULL,   0) \
-    tlv_mapper_object(_,    7,  tcp,            NULL,   0) \
-    tlv_mapper_u32(_,       8,  first_response_delay,   NULL,   0) \
-    tlv_mapper_object(_,    9,  L7,             NULL,   0) \
-    tlv_mapper_object(_,    10, http,           NULL,   0) \
-    tlv_mapper_string(_,    11, http_host,      NULL,   0) \
-    tlv_mapper_string(_,    12, http_url,       NULL,   0) \
-    tlv_mapper_string(_,    13, http_host_xonline,      NULL,   0) \
-    tlv_mapper_string(_,    14, http_user_agent,NULL,   0) \
-    tlv_mapper_string(_,    15, http_content,   NULL,   0) \
-    tlv_mapper_string(_,    16, http_refer,     NULL,   0) \
-    tlv_mapper_string(_,    17, http_cookie,    NULL,   0) \
-    tlv_mapper_string(_,    18, http_location,  NULL,   0) \
-    tlv_mapper_object(_,    19, sip,            NULL,   0) \
-    tlv_mapper_string(_,    20, sip_calling_number,     NULL,   0) \
-    tlv_mapper_string(_,    21, sip_called_number,      NULL,   0) \
-    tlv_mapper_string(_,    22, sip_session_id, NULL,   0) \
-    tlv_mapper_object(_,    23, rtsp,           NULL,   0) \
-    tlv_mapper_string(_,    24, rtsp_url,       NULL,   0) \
-    tlv_mapper_string(_,    25, rtsp_user_agent,NULL,   0) \
-    tlv_mapper_string(_,    26, rtsp_server_ip, NULL,   0) \
-    tlv_mapper_u16(_,       27, ftp_status,     NULL,   0) \
-    tlv_mapper_string(_,    28, ftp_user,       NULL,   0) \
-    tlv_mapper_string(_,    29, ftp_pwd,        NULL,   0) \
-    tlv_mapper_u8(_,        30, ftp_trans_mode, NULL,   0) \
-    tlv_mapper_u8(_,        31, ftp_trans_type, NULL,   0) \
-    tlv_mapper_string(_,    32, ftp_filename,   NULL,   0) \
-    tlv_mapper_u32(_,       33, ftp_filesize,   NULL,   0) \
-    tlv_mapper_duration(_,  34, ftp_response_delay,     NULL,   0) \
-    tlv_mapper_duration(_,  35, ftp_trans_duration,     NULL,   0) \
-    tlv_mapper_u16(_,       36, mail_msg_type,  NULL,   0) \
-    tlv_mapper_u16(_,       37, mail_status_code,       NULL,   0) \
-    tlv_mapper_string(_,    38, mail_user,      NULL,   0) \
-    tlv_mapper_string(_,    39, mail_sender,    NULL,   0) \
-    tlv_mapper_u32(_,       40, mail_length,    NULL,   0) \
-    tlv_mapper_string(_,    41, mail_domain,    NULL,   0) \
-    tlv_mapper_string(_,    42, mail_recver,    NULL,   0) \
-    tlv_mapper_string(_,    43, mail_hdr,       NULL,   0) \
-    tlv_mapper_u8(_,        44, mail_acs_type,  NULL,   0) \
-    tlv_mapper_string(_,    45, dns_domain,     NULL,   0) \
-    tlv_mapper_u8(_,        46, dns_ip_count,   NULL,   0) \
-    tlv_mapper_ip4(_,       47, dns_ip4,        NULL,   TLV_F_MULTI) \
-    tlv_mapper_ip6(_,       48, dns_ip6,        NULL,   TLV_F_MULTI) \
-    tlv_mapper_u8(_,        49, dns_response_code,      NULL,   0) \
-    tlv_mapper_u8(_,        50, dns_count_request,      NULL,   0) \
-    tlv_mapper_u8(_,        51, dns_count_response_record,  NULL,   0) \
-    tlv_mapper_u8(_,        52, dns_count_response_auth,    NULL,   0) \
-    tlv_mapper_u8(_,        53, dns_count_response_extra,   NULL,   0) \
-    tlv_mapper_u32(_,       54, dns_delay,      NULL,   0) \
-    \
-    tlv_mapper_binary(_,    201,http_request,   NULL,   TLV_F_HTTP_REQUEST) \
-    tlv_mapper_binary(_,    202,http_response,  NULL,   TLV_F_HTTP_RESPONSE) \
-    tlv_mapper_binary(_,    203,file_content,   NULL,   TLV_F_FILE_CONTENT) \
-    tlv_mapper_binary(_,    204,ssl_server_cert,NULL,   TLV_F_MULTI|TLV_F_SSL_SERVER_CERT) \
-    tlv_mapper_binary(_,    205,ssl_client_cert,NULL,   TLV_F_MULTI|TLV_F_SSL_CLIENT_CERT) \
-    tlv_mapper_u8(_,        206,ssl_fail_reason,NULL,   0) \
-    /* end */
-
-#if 0
-    tlv_mapper_u8(_,        55, vpn_type,       NULL,   0) \
-    tlv_mapper_u8(_,        56, proxy_type,     NULL,   0) \
-    tlv_mapper_u32(_,       57, app_proto,      NULL,   0) \
-    tlv_mapper_u64(_,       58, vpn,            NULL,   0) \
-    tlv_mapper_u8(_,        59, dns_pkt_valid,  NULL,   0) \
-    tlv_mapper_string(_,    60, qq_number,      NULL,   0) \
-    tlv_mapper_u8(_,        61, pkt_dir,        NULL,   0) \
-    /* end */
-#endif
-
-#define tlv_id_low_end      55
-#define tlv_id_high_begin   201
-
-#define __TLV_ENUM(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr)  tlv_id_##_name = _id,
-enum { TLV_MAPPER(__TLV_ENUM) tlv_id_end };
-
-// just for source insight
-#define tlv_id_header          tlv_id_header
-#define tlv_id_appid           tlv_id_appid
-#define tlv_id_file_content    tlv_id_file_content
-#define tlv_id_http_request    tlv_id_http_request
-#define tlv_id_http_response   tlv_id_http_response
-#define tlv_id_ssl_server_cert tlv_id_ssl_server_cert
-#define tlv_id_ssl_client_cert tlv_id_ssl_client_cert
-#define tlv_id_dns_ip4         tlv_id_dns_ip4
-#define tlv_id_dns_ip6         tlv_id_dns_ip6
-#define tlv_id_end             tlv_id_end
-
-#define __TLV_STRUCT(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr) [_id] = { \
-    .type   = _type,    \
-    .flag   = _flag,    \
-    .name   = #_name,   \
-    .minsize= _minsize, \
-    .maxsize= _maxsize, \
-    .dump   = _dump,    \
-    .check  = _check,   \
-    .toxdr  = _toxdr,   \
-},  /* end */
-#define DECLARE_TLV_VARS \
-    tlv_ops_t __tlv_ops[tlv_id_end] = { TLV_MAPPER(__TLV_STRUCT) }; \
-    os_fake_declare /* end */
-
-extern tlv_ops_t __tlv_ops[];
-
-static inline bool
-is_good_tlv_id(int id)
-{
-    return is_good_value(id, 0, tlv_id_low_end) 
-        || is_good_value(id, tlv_id_high_begin, tlv_id_end);
-}
-
-#define TLV_OPS(_id)    (is_good_tlv_id(_id)?&__tlv_ops[_id]:NULL)
 
 struct tlv {
     byte id;
