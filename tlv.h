@@ -1116,6 +1116,7 @@ xp_open(struct xparse *parse)
 
     size = os_fsize(tlv->fullname);
     if (size<0) {
+        tlv_dprint("get size %s error:%d", tlv->fullname, size);
         return size;
     }
 
@@ -1157,9 +1158,11 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
     va_list args;
     char *fullname;
 
-    va_start(args, fmt);
-    xp_verror(stdout, parse, tlv, err, fmt, args);
-    va_end(args);
+    if (tlv) {
+        va_start(args, fmt);
+        xp_verror(stdout, parse, tlv, err, fmt, args);
+        va_end(args);
+    }
 
     xp_close(parse);
 
@@ -1175,13 +1178,15 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         xpath_fill(path, parse->name, parse->namelen);
 
         // log
-        xpath_change(path, ERR_SUFFIX);
-        FILE *stream = fopen(fullname, "a+");
-            va_start(args, fmt);
-            xp_verror(stream, parse, tlv, err, fmt, args);
-            va_end(args);
-        fclose(stream);
-        
+        if (tlv) {
+            xpath_change(path, ERR_SUFFIX);
+            FILE *stream = fopen(fullname, "a+");
+                va_start(args, fmt);
+                xp_verror(stream, parse, tlv, err, fmt, args);
+                va_end(args);
+            fclose(stream);
+        }
+
         // move tlvs/xxx.xdr ==> bad/xxx.err
         xpath_change(path, XDR_SUFFIX);
         rename(fullname, path->fullname);
