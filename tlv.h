@@ -39,6 +39,7 @@
 #define ERR_SUFFIX      "err"
 #endif
 
+struct xb;
 struct tlv;
 struct xdr;
 struct xparse;
@@ -138,67 +139,67 @@ static inline void tlv_dump_rtsp(struct tlv *tlv);
 
 static inline int tlv_check_session(struct tlv *tlv);
 
-static inline int to_xdr_session_state(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_appid(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_session(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_session_st(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_service_st(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_session_time(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_tcp(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_first_response_delay(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_L7(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_host(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_url(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_host_xonline(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_user_agent(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_content(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_refer(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_cookie(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_location(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_sip(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_sip_calling_number(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_sip_called_number(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_sip_session_id(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_rtsp(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_rtsp_url(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_rtsp_user_agent(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_rtsp_server_ip(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_status(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_user(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_pwd(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_trans_mode(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_trans_type(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_filename(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_filesize(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_response_delay(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ftp_trans_duration(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_msg_type(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_status_code(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_user(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_sender(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_length(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_domain(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_recver(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_hdr(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_mail_acs_type(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_domain(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_ip_count(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_ip4(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_ip6(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_response_code(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_count_request(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_count_response_record(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_count_response_auth(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_count_response_extra(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_dns_delay(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_session_state(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_appid(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_session(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_session_st(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_service_st(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_session_time(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_tcp(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_first_response_delay(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_L7(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_http(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_http_host(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_http_url(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_http_host_xonline(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_http_user_agent(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_http_content(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_http_refer(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_http_cookie(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_http_location(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_sip(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_sip_calling_number(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_sip_called_number(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_sip_session_id(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_rtsp(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_rtsp_url(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_rtsp_user_agent(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_rtsp_server_ip(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_ftp_status(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_ftp_user(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_ftp_pwd(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_ftp_trans_mode(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_ftp_trans_type(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_ftp_filename(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_ftp_filesize(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_ftp_response_delay(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_ftp_trans_duration(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_mail_msg_type(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_mail_status_code(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_mail_user(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_mail_sender(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_mail_length(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_mail_domain(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_mail_recver(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_mail_hdr(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_mail_acs_type(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_dns_domain(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_dns_ip_count(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_dns_ip4(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_dns_ip6(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_dns_response_code(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_dns_count_request(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_dns_count_response_record(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_dns_count_response_auth(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_dns_count_response_extra(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_dns_delay(struct xb *x, struct tlv *tlv);
 
-static inline int to_xdr_http_request(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_http_response(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_file_content(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ssl_server_cert(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ssl_client_cert(xbuffer_t *x, struct tlv *tlv);
-static inline int to_xdr_ssl_fail_reason(xbuffer_t *x, struct tlv *tlv);
+static inline int to_xdr_http_request(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_http_response(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_file_content(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_ssl_server_cert(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_ssl_client_cert(struct xb *x, struct tlv *tlv);
+static inline int to_xdr_ssl_fail_reason(struct xb *x, struct tlv *tlv);
 
 typedef struct {
     int     type;
@@ -209,7 +210,7 @@ typedef struct {
 
     void (*dump)(struct tlv * /*tlv*/);
     int (*check)(struct tlv * /*tlv*/);
-    int (*toxdr)(xbuffer_t * /*x*/, struct tlv * /*tlv*/);
+    int (*toxdr)(struct xb * /*x*/, struct tlv * /*tlv*/);
 } tlv_ops_t;
 
 #define tlv_mapper_fixed(_mapper, _id, _name, _type, _check, _flag) \
@@ -414,7 +415,7 @@ typedef struct {
 } tlv_record_t;
 #define TLV_RECORD_INITER(_parse)   { .parse = _parse }
 
-typedef struct {
+struct xb {
     struct xparse *parse;
     char *fullname;
     int fd;
@@ -428,7 +429,7 @@ typedef struct {
 
     xdr_size_t      size;       // include struct xdr/tlv header
     xdr_offset_t    current;    // include struct xdr/tlv header
-} xbuffer_t;
+};
 #define XBUFFER_INITER(_fullname)   {   \
     .fullname   = _fullname,            \
     .fd         = -1,                   \
@@ -436,7 +437,7 @@ typedef struct {
 } /* end */
 
 static inline int
-xb_mmap(xbuffer_t *x, bool readonly)
+xb_mmap(struct xb *x, bool readonly)
 {
     int prot = readonly?PROT_READ:(PROT_READ|PROT_WRITE);
     int flag = readonly?MAP_PRIVATE:MAP_SHARED;
@@ -462,7 +463,7 @@ xb_mmap(xbuffer_t *x, bool readonly)
 }
 
 static inline int
-xb_munmap(xbuffer_t *x)
+xb_munmap(struct xb *x)
 {
     if (x->u.header) {
         int err = os_munmap(x->u.header, x->size);
@@ -477,7 +478,7 @@ xb_munmap(xbuffer_t *x)
 }
 
 static inline int
-xb_close(xbuffer_t *x)
+xb_close(struct xb *x)
 {
     os_close(x->fd);
     
@@ -485,7 +486,7 @@ xb_close(xbuffer_t *x)
 }
 
 static inline int
-xb_open(xbuffer_t *x, bool readonly, int size)
+xb_open(struct xb *x, bool readonly, int size)
 {
     int flag = readonly?O_RDONLY:(O_CREAT|O_RDWR);
 
@@ -508,8 +509,8 @@ struct xparse {
     xpath_t *path;  // xpath_t path[PATH_END];
     
     int count;      // tlv count
-    xbuffer_t tlv;
-    xbuffer_t xdr;
+    struct xb tlv;
+    struct xb xdr;
 };
 
 #define XPARSE_INITER(_path, _name, _namelen)              {    \
@@ -521,19 +522,19 @@ struct xparse {
 }   /* end */
 
 static inline int
-tlv_open(xbuffer_t *x, int size)
+tlv_open(struct xb *x, int size)
 {
     return xb_open(x, true, size);
 }
 
 static inline int
-tlv_close(xbuffer_t *x)
+tlv_close(struct xb *x)
 {
     return xb_close(x);
 }
 
 static inline int
-xdr_open(xbuffer_t *x, int size)
+xdr_open(struct xb *x, int size)
 {
     int err = xb_open(x, false, size);
     if (0==err) {
@@ -544,7 +545,7 @@ xdr_open(xbuffer_t *x, int size)
 }
 
 static inline int
-xdr_close(xbuffer_t *x)
+xdr_close(struct xb *x)
 {
     if (x->u.xdr) {
         x->u.xdr->total = x->current;
@@ -579,8 +580,8 @@ xp_close(struct xparse *parse)
 static inline int
 xp_open(struct xparse *parse)
 {
-    xbuffer_t *tlv = &parse->tlv;
-    xbuffer_t *xdr = &parse->xdr;
+    struct xb *tlv = &parse->tlv;
+    struct xb *xdr = &parse->xdr;
     int size, err;
 
     size = os_fsize(tlv->fullname);
