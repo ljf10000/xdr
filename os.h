@@ -335,7 +335,7 @@
 #ifndef OS_ALIGN
 #define OS_ALIGN(_x, _align)        (((_x)+(_align)-1) & ~((_align)-1))
 #endif
-#define OS_FORMAT_SIZE(_fmt)        OS_ALIGN(sizeof(_fmt))
+#define OS_FORMAT_SIZE(_fmt)        OS_ALIGN(sizeof(_fmt), 4)
 
 #ifndef os_objscpy
 #define os_objscpy(_dst, _src)      memcpy(_dst, _src, sizeof(*(_src)))

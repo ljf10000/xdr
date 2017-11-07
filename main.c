@@ -3,14 +3,6 @@
 DECLARE_OS_VARS;
 DECLARE_TLV_VARS;
 /******************************************************************************/
-#ifndef XDR_SUFFIX
-#define XDR_SUFFIX      "xdr"
-#endif
-
-#ifndef ERR_SUFFIX
-#define ERR_SUFFIX      "err"
-#endif
-
 #define EVMASK              (IN_CLOSE_WRITE|IN_MOVED_TO)
 #define EVCOUNT             128
 #define EVSIZE              INOTIFY_EVSIZE

@@ -31,6 +31,14 @@
 #define TLV_MAXCOUNT    (128*1024)
 #endif
 
+#ifndef XDR_SUFFIX
+#define XDR_SUFFIX      "xdr"
+#endif
+
+#ifndef ERR_SUFFIX
+#define ERR_SUFFIX      "err"
+#endif
+
 struct tlv;
 struct xdr;
 struct xparse;
