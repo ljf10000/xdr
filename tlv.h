@@ -1174,19 +1174,8 @@ static inline int
 xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
 {
     va_list args;
-    
-    if (tlv) {
-        va_start(args, fmt);
-        xp_verror(DUMP_STREAM, parse, tlv, err, fmt, args);
-        va_end(args);
-    }
-
-    xdr_close(&parse->xdr);
-    remove(parse->xdr.fullname);
-
     xpath_t *path = xp_path(parse, PATH_BAD);
-
-    // log
+    
     if (tlv) {
         xpath_change(path, ERR_SUFFIX);
 
@@ -1197,16 +1186,26 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         if (NULL==parse->stream) {
             os_println("open %s error", path->fullname);
         } else {
+            // write to err
             va_start(args, fmt);
             xp_verror(parse->stream, parse, tlv, err, fmt, args);
             va_end(args);
         }
+        
+        // write to stdout
+        va_start(args, fmt);
+        xp_verror(DUMP_STREAM, parse, tlv, err, fmt, args);
+        va_end(args);
     }
 
     // move tlvs/xxx.xdr ==> bad/xxx.err
     xpath_change(path, XDR_SUFFIX);
     tlv_close(&parse->tlv);
     rename(parse->tlv.fullname, path->fullname);
+
+    // delete xdrs/xxx.xdr    
+    xdr_close(&parse->xdr);
+    remove(parse->xdr.fullname);
     
     return err;
 }
@@ -1259,6 +1258,7 @@ tlv_check_fixed(struct xparse *parse, struct tlv *tlv)
 {
     tlv_ops_t *ops = tlv_ops(tlv); // not NULL
     uint32 dlen = tlv_datalen(tlv);
+    uint32 fixed;
     
     switch (ops->type) {
         case TLV_T_u8:
@@ -1274,17 +1274,20 @@ tlv_check_fixed(struct xparse *parse, struct tlv *tlv)
 
             break;
         default:
+            fixed = ops->maxsize;
+            
             if (is_option(OPT_STRICT)) {
-                if (dlen != ops->maxsize) {
-                    return xp_error(parse, tlv, -EINVAL7, "tlv check fixed[strict] other");
+                if (dlen != fixed) {
+                    return xp_error(parse, tlv, -EINVAL7, 
+                        "tlv check fixed[strict] datalen[%d] != fixed[%d]", dlen, fixed);
                 }
             } else {
                 if (dlen < ops->maxsize) {
-                    return xp_error(parse, tlv, -EINVAL7, "tlv check fixed[loose] other");
+                    return xp_error(parse, tlv, -EINVAL7, 
+                        "tlv check fixed[loose] datalen[%d] < fixed[%d]", dlen, fixed);
                 }
             }
             
-
             break;
     }
 
@@ -1298,10 +1301,12 @@ tlv_check_dynamic(struct xparse *parse, struct tlv *tlv)
     uint32 dlen = tlv_datalen(tlv);
     
     if (ops->minsize && dlen < ops->minsize) {
-        return xp_error(parse, tlv, -ETOOSMALL, "tlv check dynamic too small");
+        return xp_error(parse, tlv, -ETOOSMALL, 
+            "tlv check dynamic datalen[%d] < minsize[%d]", dlen, ops->minsize);
     }
     else if (ops->maxsize && dlen > ops->maxsize) {
-        return xp_error(parse, tlv, -ETOOBIG, "tlv check dynamic too big");
+        return xp_error(parse, tlv, -ETOOBIG, 
+            "tlv check dynamic datalen[%d] > maxsize[%d]", dlen, ops->maxsize);
     }
 #if 0
     else if (tlv_datalen(tlv) < tlv->pad) {
@@ -1325,12 +1330,14 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
     }
 
     if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
-        return xp_error(parse, tlv, -ETOOSMALL, "tlv check too small");
+        return xp_error(parse, tlv, -ETOOSMALL, 
+            "tlv alen[%d] < hdrlen[%d]", tlv_len(tlv), tlv_hdrlen(tlv));
     }
     
     if (tlv_extend(tlv)) {
         if (tlv_len(tlv) < 4096 && is_option(OPT_STRICT)) {
-            return xp_error(parse, tlv, -EPROTOCOL, "tlv[extend] too small len:%d", tlv_len(tlv));
+            return xp_error(parse, tlv, -EPROTOCOL, 
+                "tlv[extend] alen[%d] < LIMIT[%d]", tlv_len(tlv), 4096);
         }
     }
 
@@ -1338,7 +1345,8 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
         case TLV_T_string:
         case TLV_T_binary:
             if (tlv_datalen(tlv) < tlv->pad) {
-                return xp_error(parse, tlv, -EPROTOCOL, "tlv[extend] datalen:%d < pad:%d", tlv_datalen(tlv), tlv->pad);
+                return xp_error(parse, tlv, -EPROTOCOL, 
+                    "tlv[extend] datalen:%d < pad:%d", tlv_datalen(tlv), tlv->pad);
             }
     }
 
