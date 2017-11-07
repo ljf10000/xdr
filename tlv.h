@@ -1166,7 +1166,7 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
 
     tlv_dprint("2:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
         stream, parse, tlv, err, fmt, args);
-
+#if 0
     fprintf(stream, __crlf __tab
             "ERROR:%d tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u" __crlf, 
             err,
@@ -1178,6 +1178,7 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
             tlv_len(tlv),
             tlv_hdrlen(tlv),
             tlv_datalen(tlv));
+#endif
     tlv_dprint("3:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
         stream, parse, tlv, err, fmt, args);
 
