@@ -782,7 +782,7 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
     vfprintf(stream, fmt, args);
     va_end(args);
 
-    vfprintf(stream, __crlf __tab 
+    fprintf(stream, __crlf __tab 
         "ERROR:%d tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u" __crlf, 
         err,
         tlv_ops_name(tlv), 
