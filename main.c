@@ -89,7 +89,7 @@ tlv_remove(xpath_t path[], char *filename, int namelen)
 }
 
 static int
-monitor(xpath_t path[])
+monitor(const char *watch, xpath_t path[])
 {
     static char EV_BUFFER[EVCOUNT * INOTIFY_EVSIZE];
     int fd, len, err;
@@ -99,7 +99,7 @@ monitor(xpath_t path[])
         return -errno;
     }
 
-    err = inotify_add_watch(fd, path[PATH_TLV], EVMASK);
+    err = inotify_add_watch(fd, watch, EVMASK);
     if (err<0) {
         return -errno;
     }
@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
     if (is_option(OPT_CLI)) {
         return cli(Path);
     } else {
-        return monitor(Path);
+        return monitor(argv[PATH_TLV], Path);
     }
 }
 
