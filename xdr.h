@@ -721,7 +721,7 @@ xb_pre_file_bybuffer(struct xb *x, xdr_file_t *file, struct tlv *tlv)
     char digest[1+2*XDR_DIGEST_SIZE] = {0};
     os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
     
-    xpath_t *path = &x->parse->path[PATH_SHA];
+    xpath_t *path = xp_path(x->parse, PATH_SHA);
     char *filename = getshafilename(path, dir, digest);
     
     if (os_fexist(filename)) {

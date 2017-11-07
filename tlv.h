@@ -1106,6 +1106,12 @@ struct xparse {
     .xdr        = XBUFFER_INITER((_path)[PATH_XDR].fullname),   \
 }   /* end */
 
+static inline xpath_t *
+xp_path(struct xparse *parse, int id)
+{
+    return &parse->path[id];
+}
+
 static inline int
 tlv_open(struct xb *x, int size)
 {
@@ -1127,8 +1133,8 @@ xp_init(struct xparse *parse)
     parse->tlv.parse = parse;
     parse->xdr.parse = parse;
 
-    xpath_fill(&parse->path[PATH_TLV], parse->name, parse->namelen);
-    xpath_fill(&parse->path[PATH_XDR], parse->name, parse->namelen);
+    xpath_fill(xp_path(parse, PATH_TLV), parse->name, parse->namelen);
+    xpath_fill(xp_path(parse, PATH_XDR), parse->name, parse->namelen);
 }
 
 static inline int
@@ -1205,7 +1211,7 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
     fullname = parse->tlv.fullname;
     tlv_dprint("xp_error 4");
     {
-        xpath_t *path = &parse->path[PATH_BAD];
+        xpath_t *path = xp_path(parse, PATH_BAD);
     tlv_dprint("xp_error 5");
         
         xpath_fill(path, parse->name, parse->namelen);
