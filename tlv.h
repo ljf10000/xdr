@@ -1226,6 +1226,9 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         tlv_dprint("xp_error 6.1");
             xpath_change(path, ERR_SUFFIX);
             FILE *stream = fopen(fullname, "a+");
+            if (NULL==stream) {
+                os_println("open %s error");
+            } else {
         tlv_dprint("xp_error 6.2");
                 va_start(args, fmt);
         tlv_dprint("xp_error 6.3");
@@ -1233,7 +1236,8 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         tlv_dprint("xp_error 6.4");
                 va_end(args);
         tlv_dprint("xp_error 6.5");
-            fclose(stream);
+                fclose(stream);
+            }
         }
     tlv_dprint("xp_error 7");
 
