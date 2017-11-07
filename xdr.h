@@ -1500,8 +1500,6 @@ xp_run(struct xparse *parse)
 
         err = tlv_trace(tlv_record_parse(&r), "tlv_record_parse:%d", count);
         if (err<0) {
-            xp_error(parse);
-            
             return err;
         }
 

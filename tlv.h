@@ -158,7 +158,7 @@ static inline void tlv_dump_http(struct tlv *tlv);
 static inline void tlv_dump_sip(struct tlv *tlv);
 static inline void tlv_dump_rtsp(struct tlv *tlv);
 
-static inline int tlv_check_session(struct tlv *tlv);
+static inline int tlv_check_session(struct xparse *parse, struct tlv *tlv);
 
 static inline int to_xdr_session_state(struct xb *x, struct tlv *tlv);
 static inline int to_xdr_appid(struct xb *x, struct tlv *tlv);
@@ -230,7 +230,7 @@ typedef struct {
     char    *name;
 
     void (*dump)(struct tlv * /*tlv*/);
-    int (*check)(struct tlv * /*tlv*/);
+    int (*check)(struct xparse *parse, struct tlv * /*tlv*/);
     int (*toxdr)(struct xb * /*x*/, struct tlv * /*tlv*/);
 } tlv_ops_t;
 
@@ -603,40 +603,60 @@ xp_open(struct xparse *parse)
 }
 
 static inline void
+xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const char *fmt, va_list args)
+{
+    va_start(args, fmt);
+    vfprintf(stream, fmt, args);
+    va_end(args);
+
+    vfprintf(stream, __crlf __tab 
+        "ERROR:%d tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u" __crlf, 
+        err,
+        tlv_ops_name(tlv), 
+        tlv->id, 
+        tlv_extend(tlv),
+        tlv_ops_fixed(tlv),
+        tlv->pad, 
+        tlv_len(tlv),
+        tlv_hdrlen(tlv),
+        tlv_datalen(tlv));
+}
+
+static inline void
 xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
 {
     va_list args;
     char *fullname;
-    
+
     va_start(args, fmt);
-    // vprintf(fmt, args);
+    xp_verror(stdout, parse, tlv, err, fmt, args);
     va_end(args);
-    
+
     xp_close(parse);
 
-#if 1
-    fullname = parse->tlv.fullname;
-    remove(fullname);
-    os_println("remove xdr: %s", fullname);
-#endif
-
-#if 1
     fullname = parse->xdr.fullname;
-    xpath_t *path = &parse->path[PATH_BAD];
-    
-    xpath_fill(path, parse->name, parse->namelen);
-    
-    xpath_change(path, ERR_SUFFIX);
-    // todo: log error
-    
-    xpath_change(path, XDR_SUFFIX);
-    rename(fullname, path->fullname);
+    {
+        remove(fullname);
+    }
 
-    os_println("move bad xdr:" __crlf 
-                __tab "%s" __crlf
-                __tab2  "==>" __crlf
-                __tab "%s", fullname, path->fullname);
-#endif
+    fullname = parse->tlv.fullname;
+    {
+        xpath_t *path = &parse->path[PATH_BAD];
+        
+        xpath_fill(path, parse->name, parse->namelen);
+
+        // log
+        xpath_change(path, ERR_SUFFIX);
+        FILE *stream = fopen(fullname, "a+");
+            va_start(args, fmt);
+            xp_verror(stream, parse, tlv, err, fmt, args);
+            va_end(args);
+        fclose(stream);
+        
+        // move tlvs/xxx.xdr ==> bad/xxx.err
+        xpath_change(path, XDR_SUFFIX);
+        rename(fullname, path->fullname);
+    }
 }
 
 struct tlv {
@@ -735,34 +755,6 @@ tlv_len_n(struct tlv *tlv)
 #define tlv_sip(_tlv)           ((tlv_sip_t *)tlv_data(_tlv))
 #define tlv_rtsp(_tlv)          ((tlv_rtsp_t *)tlv_data(_tlv))
 
-static inline int
-tlv_error(struct tlv *tlv, int err, const char *fmt, ...)
-{
-    va_list args;
-    
-    if (err<0) {
-        va_start(args, fmt);
-        vprintf(fmt, args);
-        va_end(args);
-        
-        os_println(__crlf __tab 
-            "ERROR:%d tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u", 
-            err,
-            tlv_ops_name(tlv), 
-            tlv->id, 
-            tlv_extend(tlv),
-            tlv_ops_fixed(tlv),
-            tlv->pad, 
-            tlv_len(tlv),
-            tlv_hdrlen(tlv),
-            tlv_datalen(tlv));
-
-        os_dump_buffer(tlv, tlv_len(tlv));
-    }
-
-    return err;
-}
-
 typedef int tlv_walk_t(struct xparse *parse, struct tlv *tlv);
 
 static inline int
@@ -776,13 +768,13 @@ tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
     
     while(left>0) {
         if (parse->count > TLV_MAXCOUNT) {
-            return tlv_error(tlv, -ETOOMORE, "too more tlv:%d", parse->count);
+            return xp_error(parse, tlv, -ETOOMORE, "too more tlv:%d", parse->count);
         }
         else if (left < tlv_hdrlen(tlv)) {
-            return tlv_error(tlv, -ETOOSMALL, "left:%d < tlv hdrlen:%d", left, tlv_hdrlen(tlv));
+            return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv hdrlen:%d", left, tlv_hdrlen(tlv));
         }
         else if (left < tlv_len(tlv)) {
-            return tlv_error(tlv, -ETOOSMALL, "left:%d < tlv len:%d", left, tlv_len(tlv));
+            return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv len:%d", left, tlv_len(tlv));
         }
         
         err = (*walk)(parse, tlv);
@@ -808,7 +800,7 @@ tlv_dump(struct tlv *tlv)
 }
 
 static inline int
-tlv_check_fixed(struct tlv *tlv)
+tlv_check_fixed(struct xparse *parse, struct tlv *tlv)
 {
     tlv_ops_t *ops = tlv_ops(tlv); // not NULL
     uint32 dlen = tlv_datalen(tlv);
@@ -816,24 +808,24 @@ tlv_check_fixed(struct tlv *tlv)
     switch (ops->type) {
         case TLV_T_u8:
             if (0 != dlen) {
-                return tlv_error(tlv, -EINVAL9, "tlv check fixed i8");
+                return xp_error(parse, tlv, -EINVAL9, "tlv check fixed i8");
             }
             
             break;
         case TLV_T_u16:
             if (sizeof(uint32) != dlen) {
-                return tlv_error(tlv, -EINVAL8, "tlv check fixed i16");
+                return xp_error(parse, tlv, -EINVAL8, "tlv check fixed i16");
             }
 
             break;
         default:
             if (is_option(OPT_STRICT)) {
                 if (dlen != ops->maxsize) {
-                    return tlv_error(tlv, -EINVAL7, "tlv check fixed[strict] other");
+                    return xp_error(parse, tlv, -EINVAL7, "tlv check fixed[strict] other");
                 }
             } else {
                 if (dlen < ops->maxsize) {
-                    return tlv_error(tlv, -EINVAL7, "tlv check fixed[loose] other");
+                    return xp_error(parse, tlv, -EINVAL7, "tlv check fixed[loose] other");
                 }
             }
             
@@ -845,20 +837,20 @@ tlv_check_fixed(struct tlv *tlv)
 }
 
 static inline int
-tlv_check_dynamic(struct tlv *tlv)
+tlv_check_dynamic(struct xparse *parse, struct tlv *tlv)
 {
     tlv_ops_t *ops = tlv_ops(tlv); // not NULL
     uint32 dlen = tlv_datalen(tlv);
     
     if (ops->minsize && dlen < ops->minsize) {
-        return tlv_error(tlv, -ETOOSMALL, "tlv check dynamic too small");
+        return xp_error(parse, tlv, -ETOOSMALL, "tlv check dynamic too small");
     }
     else if (ops->maxsize && dlen > ops->maxsize) {
-        return tlv_error(tlv, -ETOOBIG, "tlv check dynamic too big");
+        return xp_error(parse, tlv, -ETOOBIG, "tlv check dynamic too big");
     }
 #if 0
     else if (tlv_datalen(tlv) < tlv->pad) {
-        return tlv_error(tlv, -ETOOBIG, "tlv check dynamic too big pad");
+        return xp_error(parse, tlv, -ETOOBIG, "tlv check dynamic too big pad");
     }
 #endif
 
@@ -870,15 +862,15 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
 {
     tlv_ops_t *ops = tlv_ops(tlv);
     if (NULL==ops) {
-        return tlv_error(tlv, -EBADIDX, "not support tlv id:%d", tlv->id);
+        return xp_error(parse, tlv, -EBADIDX, "not support tlv id:%d", tlv->id);
     }
     else if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
-        return tlv_error(tlv, -ETOOSMALL, "tlv check too small");
+        return xp_error(parse, tlv, -ETOOSMALL, "tlv check too small");
     }
     
     if (tlv_extend(tlv)) {
         if (tlv_len(tlv) < 4096 && is_option(OPT_STRICT)) {
-            return tlv_error(tlv, -EPROTOCOL, "tlv[extend] too small len:%d", tlv_len(tlv));
+            return xp_error(parse, tlv, -EPROTOCOL, "tlv[extend] too small len:%d", tlv_len(tlv));
         }
     }
 
@@ -886,7 +878,7 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
         case TLV_T_string:
         case TLV_T_binary:
             if (tlv_datalen(tlv) < tlv->pad) {
-                return tlv_error(tlv, -EPROTOCOL, "tlv[extend] datalen:%d < pad:%d", tlv_datalen(tlv), tlv->pad);
+                return xp_error(parse, tlv, -EPROTOCOL, "tlv[extend] datalen:%d < pad:%d", tlv_datalen(tlv), tlv->pad);
             }
     }
 
@@ -899,9 +891,9 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
 
     if (TLV_F_FIXED & ops->flag) {
         // use default checker
-        return tlv_check_fixed(tlv);
+        return tlv_check_fixed(parse, tlv);
     } else {
-        return tlv_check_dynamic(tlv);
+        return tlv_check_dynamic(parse, tlv);
     }
 }
 
@@ -1301,7 +1293,7 @@ tlv_dump_rtsp(struct tlv *tlv)
 }
 
 static inline int
-tlv_check_session(struct tlv *tlv)
+tlv_check_session(struct xparse *parse, struct tlv *tlv)
 {
     tlv_session_t *obj = tlv_session(tlv);
     
@@ -1321,14 +1313,14 @@ tlv_check_session(struct tlv *tlv)
     }
 
     int err = -ENOSUPPORT;
-    tlv_error(tlv, err, "no support ip proto:%d", obj->proto);
+    xp_error(parse, tlv, err, "no support ip proto:%d", obj->proto);
     tlv_dump_session(tlv);
 
     return err;
 }
 
 static inline int
-tlv_cache_save(tlv_cache_t *cache, struct tlv *tlv)
+tlv_cache_save(struct xparse *parse, tlv_cache_t *cache, struct tlv *tlv)
 {
     tlv_dprint("tlv_cache_save ...");
     if (cache->count < TLV_CACHE_MULTI) {
@@ -1341,12 +1333,12 @@ tlv_cache_save(tlv_cache_t *cache, struct tlv *tlv)
         else {
             tlv_dprint("tlv_cache_save ENOSUPPORT.");
             
-            return tlv_error(tlv, -ENOSUPPORT, "not support cache multi");
+            return xp_error(parse, tlv, -ENOSUPPORT, "not support cache multi");
         }
     }
     else {
         tlv_dprint("tlv_cache_save ENOSPACE.");
-        return tlv_error(tlv, -ENOSPACE, "too more cache multi");
+        return xp_error(parse, tlv, -ENOSPACE, "too more cache multi");
     }
     
     tlv_dprint("tlv_cache_save ok.");
@@ -1359,7 +1351,7 @@ tlv_record_save(tlv_record_t *r, struct tlv *tlv)
 {
     tlv_cache_t *cache = &r->cache[tlv->id];
 
-    int err = tlv_trace(tlv_cache_save(cache, tlv), "tlv_record_save");
+    int err = tlv_trace(tlv_cache_save(r->parse, cache, tlv), "tlv_record_save");
     if (err<0) {
         return err;
     }
