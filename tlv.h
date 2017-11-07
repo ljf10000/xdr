@@ -328,6 +328,13 @@ enum { TLV_MAPPER(__TLV_ENUM) tlv_id_end };
 #define tlv_id_dns_ip6         tlv_id_dns_ip6
 #define tlv_id_end             tlv_id_end
 
+static inline bool
+is_good_tlv_id(int id)
+{
+    return is_good_value(id, 0, tlv_id_low_end) 
+        || is_good_value(id, tlv_id_high_begin, tlv_id_end);
+}
+
 #define __TLV_STRUCT(_name, _id, _type, _flag, _minsize, _maxsize, _dump, _check, _toxdr) [_id] = { \
     .type   = _type,    \
     .flag   = _flag,    \
@@ -343,13 +350,6 @@ enum { TLV_MAPPER(__TLV_ENUM) tlv_id_end };
     os_fake_declare /* end */
 
 extern tlv_ops_t __tlv_ops[];
-
-static inline bool
-is_good_tlv_id(int id)
-{
-    return is_good_value(id, 0, tlv_id_low_end) 
-        || is_good_value(id, tlv_id_high_begin, tlv_id_end);
-}
 
 #define TLV_OPS(_id)    (is_good_tlv_id(_id)?&__tlv_ops[_id]:NULL)
 
