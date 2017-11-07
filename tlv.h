@@ -1190,6 +1190,7 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         va_end(args);
     }
 
+    tlv_dprint("xp_error xp_close");
     xp_close(parse);
 
     fullname = parse->xdr.fullname;
