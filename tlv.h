@@ -63,6 +63,10 @@
 #define ERR_SUFFIX      "err"
 #endif
 
+#ifndef OK_SUFFIX
+#define OK_SUFFIX       "ok\x00"
+#endif
+
 #ifndef XDR_VERSION
 #define XDR_VERSION     0
 #endif
@@ -1134,6 +1138,7 @@ xp_ok(struct xparse *parse)
 {
     if (is_option(OPT_DUMP_OK)) {
         xpath_t *path = xp_path(parse, PATH_BAD);
+        xpath_change(path, OK_SUFFIX);
         
         FILE *stream = fopen(path->fullname, "w+");
         os_fclose(stream);
