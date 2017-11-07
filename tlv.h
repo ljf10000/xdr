@@ -1222,26 +1222,27 @@ tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
     int err = 0;
 
     if (left > TLV_MAXDATA) {
+        os_println("tlv walk break 1");
         return xp_error(parse, tlv, -ETOOBIG, "too big:%d", left);
     }
     
     while(left>0) {
         if (parse->count > TLV_MAXCOUNT) {
-            os_println("tlv walk break 1");
+            os_println("tlv walk break 2");
             return xp_error(parse, tlv, -ETOOMORE, "too more tlv:%d", parse->count);
         }
         else if (left < tlv_hdrlen(tlv)) {
-            os_println("tlv walk break 2");
+            os_println("tlv walk break 3");
             return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv hdrlen:%d", left, tlv_hdrlen(tlv));
         }
         else if (left < tlv_len(tlv)) {
-            os_println("tlv walk break 3");
+            os_println("tlv walk break 4");
             return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv len:%d", left, tlv_len(tlv));
         }
         
         err = (*walk)(parse, tlv);
         if (err<0) {
-            os_println("tlv walk break 4");
+            os_println("tlv walk break 5");
             return err;
         }
 
