@@ -710,7 +710,11 @@ ERROR:
         os_println("%s %s error:%d", action, file, -errno);
     }
 
-    os_munmap(mem, len);
+    int ret = os_munmap(mem, len);
+    if (ret<0) {
+        os_println("munmap %s error:%d ...", file, -errno);
+    }
+    
     os_close(fd);
 
     return err;
@@ -760,7 +764,11 @@ ERROR:
         os_println("%s %s error:%d", action, file, -errno);
     }
 
-    os_munmap(mem, size);
+    int ret = os_munmap(mem, size);
+    if (ret<0) {
+        os_println("munmap %s error:%d ...", file, -errno);
+    }
+    
     os_close(fd);
 
     return err;
