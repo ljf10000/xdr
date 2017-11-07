@@ -153,20 +153,7 @@ struct tlv {
 #define tlv_data_e(_tlv)        ((_tlv)->body + sizeof(uint32))
 #define tlv_data(_tlv)          (tlv_extend(_tlv)?tlv_data_e(_tlv):tlv_data_n(_tlv))
 
-#if 0
-static inline uint32
-tlv_len_n(struct tlv *tlv)
-{
-    if (is_option(OPT_STRICT)) {
-        
-    } else {
-        return tlv->len;
-    }
-}
-#else
 #define tlv_len_n(_tlv)         (_tlv)->len
-#endif
-
 #define tlv_len_e(_tlv)         (*(uint32 *)(_tlv)->body)
 #define tlv_len(_tlv)           (tlv_extend(_tlv)?tlv_len_e(_tlv):tlv_len_n(_tlv))
 
@@ -247,6 +234,8 @@ tlv_ops(struct tlv *tlv)
 #define tlv_ops_flag(_tlv)              tlv_ops_var(_tlv, flag)
 #define tlv_ops_fixed(_tlv)             tlv_ops_var(_tlv, maxsize)
 #define tlv_ops_name(_tlv)              tlv_ops_string(_tlv, name)
+
+static inline int xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...);
 
 #define TLV_DUMP( _fmt, _args...)       os_println(__tab  _fmt, ##_args)
 #define TLV_DUMP2(_fmt, _args...)       os_println(__tab2 _fmt, ##_args)
@@ -337,17 +326,363 @@ tlv_dump_ip6(struct tlv *tlv)
     TLV_DUMP("id: %d, %s: ipv6 address", tlv->id, tlv_ops_name(tlv));
 }
 
-static inline void tlv_dump_session(struct tlv *tlv);
-static inline void tlv_dump_session_st(struct tlv *tlv);
-#define tlv_dump_service_st    tlv_dump_session_st
-static inline void tlv_dump_session_time(struct tlv *tlv);
-static inline void tlv_dump_tcp(struct tlv *tlv);
-static inline void tlv_dump_L7(struct tlv *tlv);
-static inline void tlv_dump_http(struct tlv *tlv);
-static inline void tlv_dump_sip(struct tlv *tlv);
-static inline void tlv_dump_rtsp(struct tlv *tlv);
+enum { XDR_IPV4 = 0, XDR_IPV6 = 1 };
 
-static inline int tlv_check_session(struct xparse *parse, struct tlv *tlv);
+#ifndef sizeof_session
+#define sizeof_session  40
+#endif
+
+typedef struct {
+    byte ver;
+    byte dir;
+    byte proto;
+    byte _;
+    
+    uint16 sport;
+    uint16 dport;
+    
+    xdr_ipaddr_t sip;
+    xdr_ipaddr_t dip;
+} tlv_session_t, xdr_session6_t;
+
+enum { XDR_SESSION_HSIZE = sizeof(tlv_session_t) - 2*sizeof(xdr_ipaddr_t) };
+
+static inline void 
+tlv_dump_session(struct tlv *tlv)
+{
+    tlv_session_t *obj = tlv_session(tlv);
+    
+    TLV_DUMP("id: %d, session:", tlv->id);
+    
+    TLV_DUMP2("version: %d", obj->ver);
+    TLV_DUMP2("dir    : %d", obj->dir);
+    TLV_DUMP2("proto  : %d", obj->proto);
+    TLV_DUMP2("sport  : %d", obj->sport);
+    TLV_DUMP2("dport  : %d", obj->dport);
+
+    if (XDR_IPV4==obj->ver) {
+        uint32 ip;
+
+        ip = XDR_IP(&obj->sip); // ip = htonl(ip);
+        TLV_DUMP2("sip    : %s", unsafe_ipstring(ip));
+        
+        ip = XDR_IP(&obj->dip); // ip = htonl(ip);
+        TLV_DUMP2("dip    : %s", unsafe_ipstring(ip));
+    } else {
+        TLV_DUMP2("sip    : ipv6 address");
+        TLV_DUMP2("dip    : ipv6 addres");
+    }
+}
+
+#ifndef sizeof_session_st
+#define sizeof_session_st   44
+#endif
+
+#ifndef sizeof_service_st
+#define sizeof_service_st   sizeof_session_st
+#endif
+
+typedef struct {
+    uint32 flow[2];
+    uint32 ip_packet[2];
+    uint32 tcp_disorder[2];
+    uint32 tcp_retransmit[2];
+    uint32 ip_frag[2];
+    
+    uint16 duration[2];
+} tlv_session_st_t, tlv_service_st_t, xdr_session_st_t, xdr_service_st_t;
+
+static inline void 
+tlv_dump_session_st(struct tlv *tlv)
+{
+    tlv_session_st_t *obj = tlv_session_st(tlv);
+    int i;
+    
+    TLV_DUMP("id: %d, %s:", tlv->id, tlv_ops_name(tlv));
+
+    for (i=0; i<2; i++) {
+        char c = (0==i)?'u':'d';
+        
+        TLV_DUMP2("[%c]flow            : %d", c, obj->flow[i]);
+        TLV_DUMP2("[%c]ip_packet       : %d", c, obj->ip_packet[i]);
+        TLV_DUMP2("[%c]tcp_disorder    : %d", c, obj->tcp_disorder[i]);
+        TLV_DUMP2("[%c]tcp_retransmit  : %d", c, obj->tcp_retransmit[i]);
+        TLV_DUMP2("[%c]ip_frag         : %d", c, obj->ip_frag[i]);
+        TLV_DUMP2("[%c]duration        : %d", c, obj->duration[i]);
+    }
+}
+#define tlv_dump_service_st    tlv_dump_session_st
+
+#ifndef sizeof_session_time
+#define sizeof_session_time 24
+#endif
+
+typedef struct {
+    tlv_time_t create;
+    tlv_time_t start;
+    tlv_time_t stop;
+} tlv_session_time_t, xdr_session_time_t;
+
+static inline void 
+tlv_dump_session_time(struct tlv *tlv)
+{
+    tlv_session_time_t *obj = tlv_session_time(tlv);
+    
+    TLV_DUMP("id: %d, session_time:", tlv->id);
+    
+    TLV_DUMP2("create: %s", unsafe_time_string(XDR_SECOND(obj->create)));
+    TLV_DUMP2("start : %s", unsafe_time_string(XDR_SECOND(obj->start)));
+    TLV_DUMP2("stop  : %s", unsafe_time_string(XDR_SECOND(obj->stop)));
+}
+
+#ifndef sizeof_tcp
+#define sizeof_tcp      28
+#endif
+
+typedef struct {
+    uint16 synack_to_syn_time;
+    uint16 ack_to_syn_time;
+    
+    byte complete;
+    byte close_reason;
+    byte _[2];
+
+    uint32 first_request_delay;
+    uint32 first_response_delay;
+    uint32 window;
+
+    uint16 mss;
+    byte count_retry;
+    byte count_retry_ack;
+    
+    byte count_ack;
+    byte connect_status;
+    byte handshake12;
+    byte handshake23;
+} 
+tlv_tcp_t, xdr_tcp_t;
+
+enum { XDR_TCP_COMPLETE = 1 };
+
+static inline void 
+tlv_dump_tcp(struct tlv *tlv)
+{
+    tlv_tcp_t *obj = tlv_tcp(tlv);
+    
+    TLV_DUMP("id: %d, tcp:", tlv->id);
+    
+    TLV_DUMP2("synack_to_syn_time  : %u us", obj->synack_to_syn_time);
+    TLV_DUMP2("ack_to_syn_time     : %u us", obj->ack_to_syn_time);
+    TLV_DUMP2("complete            : %s", bool_string(XDR_TCP_COMPLETE==obj->complete));
+    TLV_DUMP2("close_reason        : %d", obj->close_reason);
+    TLV_DUMP2("first_request_delay : %u ms", obj->first_request_delay);
+    TLV_DUMP2("first_response_delay: %u ms", obj->first_response_delay);
+    TLV_DUMP2("window              : %u", obj->window);
+    TLV_DUMP2("mss                 : %u", obj->mss);
+    TLV_DUMP2("count_retry         : %u", obj->count_retry);
+    TLV_DUMP2("count_retry_ack     : %u", obj->count_retry_ack);
+    TLV_DUMP2("count_ack           : %u", obj->count_ack);
+    TLV_DUMP2("connect_status      : %u", obj->connect_status);
+    TLV_DUMP2("handshake12         : %s", success_string(0==obj->handshake12));
+    TLV_DUMP2("handshake23         : %s", success_string(0==obj->handshake23));
+}
+
+#ifndef sizeof_L7
+#define sizeof_L7   4
+#endif
+
+typedef struct {
+    byte status;
+    byte class;
+    uint16 protocol;
+} tlv_L7_t, xdr_L7_t;
+
+static inline void 
+tlv_dump_L7(struct tlv *tlv)
+{
+    tlv_L7_t *obj = tlv_L7(tlv);
+    
+    TLV_DUMP("id: %d, L7:", tlv->id);
+    
+    TLV_DUMP2("status  : %u", obj->status);
+    TLV_DUMP2("class   : %u", obj->class);
+    TLV_DUMP2("protocol: %u", obj->protocol);
+}
+
+#ifndef sizeof_http
+#define sizeof_http     44
+#endif
+
+typedef struct {
+    xdr_time_t time_request;
+    xdr_time_t time_first_response;
+    xdr_time_t time_last_content;
+    xdr_duration_t service_delay;
+    
+    uint32 content_length;
+    
+    uint16 status_code;
+    byte method;
+    byte version;
+
+    byte _0:2;
+    byte head:1;
+    byte flag:3;
+    byte first:2;
+    byte ie;
+    byte portal;
+    byte _1;
+}
+tlv_http_t;
+
+#if 0 // little endian
+ 00 01 02 03 04 05 06 07
++--+--+--+--+--+--+--+--+
+|  R  |H |  flag  |first|
++--+--+--+--+--+--+--+--+
+R: resv
+H: head
+
+#define TLV_MASK_HTTP_FIRST     0xc0
+#define TLV_MASK_HTTP_FLAG      0x38
+#define TLV_MASK_HTTP_HEAD      0x04
+
+static inline int
+tlv_http_first(tlv_http_t *obj)
+{
+    return (obj->v & TLV_MASK_HTTP_FIRST) >> 6;
+}
+
+static inline int
+tlv_http_flag(tlv_http_t *obj)
+{
+    return (obj->v & TLV_MASK_HTTP_FLAG) >> 3;
+}
+
+static inline int
+tlv_http_head(tlv_http_t *obj)
+{
+    return (obj->v & TLV_MASK_HTTP_HEAD) >> 2;
+}
+#endif
+
+static inline void 
+tlv_dump_http(struct tlv *tlv)
+{
+    tlv_http_t *obj = tlv_http(tlv);
+    
+    TLV_DUMP("id: %d, http:", tlv->id);
+    
+    TLV_DUMP2("time_request        : %s", unsafe_time_string(XDR_SECOND(obj->time_request)));
+    TLV_DUMP2("time_first_response : %s", unsafe_time_string(XDR_SECOND(obj->time_first_response)));
+    TLV_DUMP2("time_last_content   : %s", unsafe_time_string(XDR_SECOND(obj->time_last_content)));
+    TLV_DUMP2("service_delay       : %llu us", obj->service_delay);
+    TLV_DUMP2("content_length      : %u", obj->content_length);
+    TLV_DUMP2("status_code         : %u", obj->status_code);
+    TLV_DUMP2("method              : %u", obj->method);
+    TLV_DUMP2("version             : %u", obj->version);
+
+    TLV_DUMP2("first               : %s", bool_string(obj->first));
+    TLV_DUMP2("flag                : %u", obj->flag);
+    TLV_DUMP2("head                : %s", bool_string(obj->head));
+    TLV_DUMP2("ie                  : %u", obj->ie);
+    TLV_DUMP2("portal              : %u", obj->portal);
+}
+
+enum { XDR_SIP_INVITE = 1 };
+enum { XDR_SIP_BYE = 1 };
+
+#ifndef sizeof_sip
+#define sizeof_sip      8
+#endif
+
+typedef struct {
+    byte call_direction;
+    byte call_type;
+    byte hangup_reason;
+    byte signal_type;
+    
+    uint16 dataflow_count;
+    uint16 _:13;
+    uint16 malloc:1;
+    uint16 bye:1;
+    uint16 invite:1;
+} tlv_sip_t;
+
+static inline void 
+tlv_dump_sip(struct tlv *tlv)
+{
+    tlv_sip_t *obj = tlv_sip(tlv);
+
+    TLV_DUMP("id: %d, http:", tlv->id);
+
+    TLV_DUMP2("call_direction  : %u", obj->call_direction);
+    TLV_DUMP2("call_type       : %u", obj->call_type);
+    TLV_DUMP2("hangup_reason   : %u", obj->hangup_reason);
+    TLV_DUMP2("signal_type     : %u", obj->signal_type);
+    TLV_DUMP2("dataflow_count  : %u", obj->dataflow_count);
+    TLV_DUMP2("invite          : %s", bool_string(XDR_SIP_INVITE==obj->invite));
+    TLV_DUMP2("bye             : %s", bool_string(XDR_SIP_BYE==obj->bye));
+    TLV_DUMP2("malloc          : %s", bool_string(obj->malloc));
+}
+
+#ifndef sizeof_rtsp
+#define sizeof_rtsp     16
+#endif
+
+typedef struct {
+    uint16 port_client_start;
+    uint16 port_client_end;
+    uint16 port_server_start;
+    uint16 port_server_end;
+    uint16 count_video;
+    uint16 count_audio;
+    
+    uint32 describe_delay;
+} tlv_rtsp_t;
+
+static inline void 
+tlv_dump_rtsp(struct tlv *tlv)
+{
+    tlv_rtsp_t *obj = tlv_rtsp(tlv);
+    
+    TLV_DUMP("id: %d, http:", tlv->id);
+    
+    TLV_DUMP2("port_client_start   : %u", obj->port_client_start);
+    TLV_DUMP2("port_client_end     : %u", obj->port_client_end);
+    TLV_DUMP2("port_server_start   : %u", obj->port_server_start);
+    TLV_DUMP2("port_server_end     : %u", obj->port_server_end);
+    TLV_DUMP2("count_video         : %u", obj->count_video);
+    TLV_DUMP2("count_audio         : %u", obj->count_audio);
+    TLV_DUMP2("describe_delay      : %u", obj->describe_delay);
+}
+
+static inline int
+tlv_check_session(struct xparse *parse, struct tlv *tlv)
+{
+    tlv_session_t *obj = tlv_session(tlv);
+    
+    switch (obj->proto) {
+        case IPPROTO_TCP:
+        case IPPROTO_UDP:
+            return 0;
+        case IPPROTO_ICMP:
+        case IPPROTO_IGMP:
+        case IPPROTO_IPIP:
+        case IPPROTO_GRE:
+        case IPPROTO_ESP:
+        case IPPROTO_AH:
+            if (!is_option(OPT_STRICT)) {
+                return 0;
+            }
+    }
+
+    int err = -ENOSUPPORT;
+    xp_error(parse, tlv, err, "no support ip proto:%d", obj->proto);
+    tlv_dump_session(tlv);
+
+    return err;
+}
 
 static inline int to_xdr_session_state(struct xb *x, struct tlv *tlv);
 static inline int to_xdr_appid(struct xb *x, struct tlv *tlv);
@@ -972,363 +1307,6 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
     } else {
         return tlv_check_dynamic(parse, tlv);
     }
-}
-
-enum { XDR_IPV4 = 0, XDR_IPV6 = 1 };
-
-#ifndef sizeof_session
-#define sizeof_session  40
-#endif
-
-typedef struct {
-    byte ver;
-    byte dir;
-    byte proto;
-    byte _;
-    
-    uint16 sport;
-    uint16 dport;
-    
-    xdr_ipaddr_t sip;
-    xdr_ipaddr_t dip;
-} tlv_session_t, xdr_session6_t;
-
-enum { XDR_SESSION_HSIZE = sizeof(tlv_session_t) - 2*sizeof(xdr_ipaddr_t) };
-
-static inline void 
-tlv_dump_session(struct tlv *tlv)
-{
-    tlv_session_t *obj = tlv_session(tlv);
-    
-    TLV_DUMP("id: %d, session:", tlv->id);
-    
-    TLV_DUMP2("version: %d", obj->ver);
-    TLV_DUMP2("dir    : %d", obj->dir);
-    TLV_DUMP2("proto  : %d", obj->proto);
-    TLV_DUMP2("sport  : %d", obj->sport);
-    TLV_DUMP2("dport  : %d", obj->dport);
-
-    if (XDR_IPV4==obj->ver) {
-        uint32 ip;
-
-        ip = XDR_IP(&obj->sip); // ip = htonl(ip);
-        TLV_DUMP2("sip    : %s", unsafe_ipstring(ip));
-        
-        ip = XDR_IP(&obj->dip); // ip = htonl(ip);
-        TLV_DUMP2("dip    : %s", unsafe_ipstring(ip));
-    } else {
-        TLV_DUMP2("sip    : ipv6 address");
-        TLV_DUMP2("dip    : ipv6 addres");
-    }
-}
-
-#ifndef sizeof_session_st
-#define sizeof_session_st   44
-#endif
-
-#ifndef sizeof_service_st
-#define sizeof_service_st   sizeof_session_st
-#endif
-
-typedef struct {
-    uint32 flow[2];
-    uint32 ip_packet[2];
-    uint32 tcp_disorder[2];
-    uint32 tcp_retransmit[2];
-    uint32 ip_frag[2];
-    
-    uint16 duration[2];
-} tlv_session_st_t, tlv_service_st_t, xdr_session_st_t, xdr_service_st_t;
-
-static inline void 
-tlv_dump_session_st(struct tlv *tlv)
-{
-    tlv_session_st_t *obj = tlv_session_st(tlv);
-    int i;
-    
-    TLV_DUMP("id: %d, %s:", tlv->id, tlv_ops_name(tlv));
-
-    for (i=0; i<2; i++) {
-        char c = (0==i)?'u':'d';
-        
-        TLV_DUMP2("[%c]flow            : %d", c, obj->flow[i]);
-        TLV_DUMP2("[%c]ip_packet       : %d", c, obj->ip_packet[i]);
-        TLV_DUMP2("[%c]tcp_disorder    : %d", c, obj->tcp_disorder[i]);
-        TLV_DUMP2("[%c]tcp_retransmit  : %d", c, obj->tcp_retransmit[i]);
-        TLV_DUMP2("[%c]ip_frag         : %d", c, obj->ip_frag[i]);
-        TLV_DUMP2("[%c]duration        : %d", c, obj->duration[i]);
-    }
-}
-
-#ifndef sizeof_session_time
-#define sizeof_session_time 24
-#endif
-
-typedef struct {
-    tlv_time_t create;
-    tlv_time_t start;
-    tlv_time_t stop;
-} tlv_session_time_t, xdr_session_time_t;
-
-static inline void 
-tlv_dump_session_time(struct tlv *tlv)
-{
-    tlv_session_time_t *obj = tlv_session_time(tlv);
-    
-    TLV_DUMP("id: %d, session_time:", tlv->id);
-    
-    TLV_DUMP2("create: %s", unsafe_time_string(XDR_SECOND(obj->create)));
-    TLV_DUMP2("start : %s", unsafe_time_string(XDR_SECOND(obj->start)));
-    TLV_DUMP2("stop  : %s", unsafe_time_string(XDR_SECOND(obj->stop)));
-}
-
-#ifndef sizeof_tcp
-#define sizeof_tcp      28
-#endif
-
-typedef struct {
-    uint16 synack_to_syn_time;
-    uint16 ack_to_syn_time;
-    
-    byte complete;
-    byte close_reason;
-    byte _[2];
-
-    uint32 first_request_delay;
-    uint32 first_response_delay;
-    uint32 window;
-
-    uint16 mss;
-    byte count_retry;
-    byte count_retry_ack;
-    
-    byte count_ack;
-    byte connect_status;
-    byte handshake12;
-    byte handshake23;
-} 
-tlv_tcp_t, xdr_tcp_t;
-
-enum { XDR_TCP_COMPLETE = 1 };
-
-static inline void 
-tlv_dump_tcp(struct tlv *tlv)
-{
-    tlv_tcp_t *obj = tlv_tcp(tlv);
-    
-    TLV_DUMP("id: %d, tcp:", tlv->id);
-    
-    TLV_DUMP2("synack_to_syn_time  : %u us", obj->synack_to_syn_time);
-    TLV_DUMP2("ack_to_syn_time     : %u us", obj->ack_to_syn_time);
-    TLV_DUMP2("complete            : %s", bool_string(XDR_TCP_COMPLETE==obj->complete));
-    TLV_DUMP2("close_reason        : %d", obj->close_reason);
-    TLV_DUMP2("first_request_delay : %u ms", obj->first_request_delay);
-    TLV_DUMP2("first_response_delay: %u ms", obj->first_response_delay);
-    TLV_DUMP2("window              : %u", obj->window);
-    TLV_DUMP2("mss                 : %u", obj->mss);
-    TLV_DUMP2("count_retry         : %u", obj->count_retry);
-    TLV_DUMP2("count_retry_ack     : %u", obj->count_retry_ack);
-    TLV_DUMP2("count_ack           : %u", obj->count_ack);
-    TLV_DUMP2("connect_status      : %u", obj->connect_status);
-    TLV_DUMP2("handshake12         : %s", success_string(0==obj->handshake12));
-    TLV_DUMP2("handshake23         : %s", success_string(0==obj->handshake23));
-}
-
-#ifndef sizeof_L7
-#define sizeof_L7   4
-#endif
-
-typedef struct {
-    byte status;
-    byte class;
-    uint16 protocol;
-} tlv_L7_t, xdr_L7_t;
-
-static inline void 
-tlv_dump_L7(struct tlv *tlv)
-{
-    tlv_L7_t *obj = tlv_L7(tlv);
-    
-    TLV_DUMP("id: %d, L7:", tlv->id);
-    
-    TLV_DUMP2("status  : %u", obj->status);
-    TLV_DUMP2("class   : %u", obj->class);
-    TLV_DUMP2("protocol: %u", obj->protocol);
-}
-
-#ifndef sizeof_http
-#define sizeof_http     44
-#endif
-
-typedef struct {
-    xdr_time_t time_request;
-    xdr_time_t time_first_response;
-    xdr_time_t time_last_content;
-    xdr_duration_t service_delay;
-    
-    uint32 content_length;
-    
-    uint16 status_code;
-    byte method;
-    byte version;
-
-    byte _0:2;
-    byte head:1;
-    byte flag:3;
-    byte first:2;
-    byte ie;
-    byte portal;
-    byte _1;
-}
-tlv_http_t;
-
-#if 0 // little endian
- 00 01 02 03 04 05 06 07
-+--+--+--+--+--+--+--+--+
-|  R  |H |  flag  |first|
-+--+--+--+--+--+--+--+--+
-R: resv
-H: head
-
-#define TLV_MASK_HTTP_FIRST     0xc0
-#define TLV_MASK_HTTP_FLAG      0x38
-#define TLV_MASK_HTTP_HEAD      0x04
-
-static inline int
-tlv_http_first(tlv_http_t *obj)
-{
-    return (obj->v & TLV_MASK_HTTP_FIRST) >> 6;
-}
-
-static inline int
-tlv_http_flag(tlv_http_t *obj)
-{
-    return (obj->v & TLV_MASK_HTTP_FLAG) >> 3;
-}
-
-static inline int
-tlv_http_head(tlv_http_t *obj)
-{
-    return (obj->v & TLV_MASK_HTTP_HEAD) >> 2;
-}
-#endif
-
-static inline void 
-tlv_dump_http(struct tlv *tlv)
-{
-    tlv_http_t *obj = tlv_http(tlv);
-    
-    TLV_DUMP("id: %d, http:", tlv->id);
-    
-    TLV_DUMP2("time_request        : %s", unsafe_time_string(XDR_SECOND(obj->time_request)));
-    TLV_DUMP2("time_first_response : %s", unsafe_time_string(XDR_SECOND(obj->time_first_response)));
-    TLV_DUMP2("time_last_content   : %s", unsafe_time_string(XDR_SECOND(obj->time_last_content)));
-    TLV_DUMP2("service_delay       : %llu us", obj->service_delay);
-    TLV_DUMP2("content_length      : %u", obj->content_length);
-    TLV_DUMP2("status_code         : %u", obj->status_code);
-    TLV_DUMP2("method              : %u", obj->method);
-    TLV_DUMP2("version             : %u", obj->version);
-
-    TLV_DUMP2("first               : %s", bool_string(obj->first));
-    TLV_DUMP2("flag                : %u", obj->flag);
-    TLV_DUMP2("head                : %s", bool_string(obj->head));
-    TLV_DUMP2("ie                  : %u", obj->ie);
-    TLV_DUMP2("portal              : %u", obj->portal);
-}
-
-enum { XDR_SIP_INVITE = 1 };
-enum { XDR_SIP_BYE = 1 };
-
-#ifndef sizeof_sip
-#define sizeof_sip      8
-#endif
-
-typedef struct {
-    byte call_direction;
-    byte call_type;
-    byte hangup_reason;
-    byte signal_type;
-    
-    uint16 dataflow_count;
-    uint16 _:13;
-    uint16 malloc:1;
-    uint16 bye:1;
-    uint16 invite:1;
-} tlv_sip_t;
-
-static inline void 
-tlv_dump_sip(struct tlv *tlv)
-{
-    tlv_sip_t *obj = tlv_sip(tlv);
-
-    TLV_DUMP("id: %d, http:", tlv->id);
-
-    TLV_DUMP2("call_direction  : %u", obj->call_direction);
-    TLV_DUMP2("call_type       : %u", obj->call_type);
-    TLV_DUMP2("hangup_reason   : %u", obj->hangup_reason);
-    TLV_DUMP2("signal_type     : %u", obj->signal_type);
-    TLV_DUMP2("dataflow_count  : %u", obj->dataflow_count);
-    TLV_DUMP2("invite          : %s", bool_string(XDR_SIP_INVITE==obj->invite));
-    TLV_DUMP2("bye             : %s", bool_string(XDR_SIP_BYE==obj->bye));
-    TLV_DUMP2("malloc          : %s", bool_string(obj->malloc));
-}
-
-#ifndef sizeof_rtsp
-#define sizeof_rtsp     16
-#endif
-
-typedef struct {
-    uint16 port_client_start;
-    uint16 port_client_end;
-    uint16 port_server_start;
-    uint16 port_server_end;
-    uint16 count_video;
-    uint16 count_audio;
-    
-    uint32 describe_delay;
-} tlv_rtsp_t;
-
-static inline void 
-tlv_dump_rtsp(struct tlv *tlv)
-{
-    tlv_rtsp_t *obj = tlv_rtsp(tlv);
-    
-    TLV_DUMP("id: %d, http:", tlv->id);
-    
-    TLV_DUMP2("port_client_start   : %u", obj->port_client_start);
-    TLV_DUMP2("port_client_end     : %u", obj->port_client_end);
-    TLV_DUMP2("port_server_start   : %u", obj->port_server_start);
-    TLV_DUMP2("port_server_end     : %u", obj->port_server_end);
-    TLV_DUMP2("count_video         : %u", obj->count_video);
-    TLV_DUMP2("count_audio         : %u", obj->count_audio);
-    TLV_DUMP2("describe_delay      : %u", obj->describe_delay);
-}
-
-static inline int
-tlv_check_session(struct xparse *parse, struct tlv *tlv)
-{
-    tlv_session_t *obj = tlv_session(tlv);
-    
-    switch (obj->proto) {
-        case IPPROTO_TCP:
-        case IPPROTO_UDP:
-            return 0;
-        case IPPROTO_ICMP:
-        case IPPROTO_IGMP:
-        case IPPROTO_IPIP:
-        case IPPROTO_GRE:
-        case IPPROTO_ESP:
-        case IPPROTO_AH:
-            if (!is_option(OPT_STRICT)) {
-                return 0;
-            }
-    }
-
-    int err = -ENOSUPPORT;
-    xp_error(parse, tlv, err, "no support ip proto:%d", obj->proto);
-    tlv_dump_session(tlv);
-
-    return err;
 }
 
 static inline int
