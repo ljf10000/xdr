@@ -1031,12 +1031,16 @@ static inline int
 xb_munmap(struct xb *x)
 {
     if (x->u.header) {
-        int err = os_munmap(x->u.header, x->size);
-        if (err<0) {
-            os_println("munmap %s error:%d ...", x->fullname, -errno);
-            
-            return -errno;
+        int i, err = 0;
+
+        for (i=0; i<3; i++) {
+            err = os_munmap(x->fullname, x->u.header, x->size);
+            if (0==err) {
+                return 0;
+            }
         }
+
+        return err;
     }
 
     return 0;

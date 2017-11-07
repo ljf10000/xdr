@@ -663,12 +663,17 @@ os_fhandle(const char *file, int (*handle)(const char *file, int fd))
 }
 
 #ifndef os_munmap
-#define os_munmap(_mem, _size)  ({  \
+#define os_munmap(_file, _mem, _size)  ({  \
     int m_err = 0;                  \
                                     \
     if (_mem) {                     \
         m_err = munmap(_mem, _size);\
-        _mem = NULL;                \
+        if (m_err<0) {              \
+            m_err = -errno;         \
+            os_println("munmap %s error:%d ...", _file, m_err); \
+        } else {                    \
+            _mem = NULL;            \
+        }                           \
     }                               \
                                     \
     m_err;                          \
@@ -710,11 +715,7 @@ ERROR:
         os_println("%s %s error:%d", action, file, -errno);
     }
 
-    int ret = os_munmap(mem, len);
-    if (ret<0) {
-        os_println("munmap %s error:%d ...", file, -errno);
-    }
-    
+    os_munmap(file, mem, len);
     os_close(fd);
 
     return err;
@@ -764,11 +765,7 @@ ERROR:
         os_println("%s %s error:%d", action, file, -errno);
     }
 
-    int ret = os_munmap(mem, size);
-    if (ret<0) {
-        os_println("munmap %s error:%d ...", file, -errno);
-    }
-    
+    os_munmap(file, mem, size);
     os_close(fd);
 
     return err;
