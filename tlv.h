@@ -542,32 +542,8 @@ tlv_close(struct xb *x)
     return xb_close(x);
 }
 
-static inline void xdr_init(struct xdr *xdr);
-
-static inline int
-xdr_open(struct xb *x, int size)
-{
-    int err = xb_open(x, false, size);
-    if (0==err) {
-        xdr_init(x->u.xdr);
-    }
-
-    return err;
-}
-
-static inline int
-xdr_close(struct xb *x)
-{
-    if (x->u.xdr) {
-        x->u.xdr->total = x->current;
-    }
-
-    if (x->fd<0) {
-        ftruncate(x->fd, x->current);
-    }
-
-    return xb_close(x);
-}
+static inline int xdr_open(struct xb *x, int size);
+static inline int xdr_close(struct xb *x);
 
 static inline void
 xp_init(struct xparse *parse)
