@@ -63,6 +63,10 @@
 #define ERR_SUFFIX      "err"
 #endif
 
+#ifndef OK_SUFFIX
+#define OK_SUFFIX       "ok\x00"
+#endif
+
 #ifndef XDR_VERSION
 #define XDR_VERSION     0
 #endif
@@ -104,9 +108,11 @@ enum {
     OPT_IP6         = 0x02,
     OPT_SPLIT       = 0x04,
     OPT_STRICT      = 0x08,
+    
     OPT_DUMP        = 0x10,
     OPT_DUMP_SIMPLE = 0x20 | OPT_DUMP,
     OPT_DUMP_PRE    = 0x40 | OPT_DUMP,
+    OPT_DUMP_GOOD   = 0x80 | OPT_DUMP,
 };
 
 enum {
@@ -1060,7 +1066,7 @@ xb_open(struct xb *x, bool readonly, int size)
 }
 
 struct xparse {
-    FILE *stream;   // tmp for bad file
+    FILE *ferr;     // bad file
     char *filename; // just filename, not include path
     int namelen;    // just filename, not include path
     
@@ -1111,14 +1117,28 @@ xp_init(struct xparse *parse)
     xpath_fill(xp_path(parse, PATH_BAD), parse->filename, parse->namelen);
 }
 
+static inline void
+xp_ok(struct xparse *parse)
+{
+    xpath_t *path = xp_path(parse, PATH_BAD);
+    
+    xpath_change(path, OK_SUFFIX);
+    
+    FILE *stream = fopen(path->fullname, "a+");
+    if (stream) {
+        fprintf("%s" __crlf, parse->filename);
+        fclose(stream);
+    }
+}
+
 static inline int
 xp_close(struct xparse *parse)
 {
     tlv_trace(tlv_close(&parse->tlv), "tlv_close");
     tlv_trace(xdr_close(&parse->xdr), "xdr_close");
 
-    os_fclose(parse->stream);
-
+    os_fclose(parse->ferr);
+    
     return 0;
 }
 
@@ -1183,16 +1203,16 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
     if (tlv) {
         xpath_change(path, ERR_SUFFIX);
 
-        if (NULL==parse->stream) {
-            parse->stream = fopen(path->fullname, "a+");
+        if (NULL==parse->ferr) {
+            parse->ferr = fopen(path->fullname, "a+");
         }
         
-        if (NULL==parse->stream) {
+        if (NULL==parse->ferr) {
             os_println("open %s error", path->fullname);
         } else {
             // write to err
             va_start(args, fmt);
-            xp_verror(parse->stream, parse, tlv, err, fmt, args);
+            xp_verror(parse->ferr, parse, tlv, err, fmt, args);
             va_end(args);
         }
         

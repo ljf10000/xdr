@@ -29,7 +29,8 @@ static nameflag_t opt[] = {
     { .flag = OPT_STRICT,       .name = "--strict",     .help = "strict check"},
     { .flag = OPT_DUMP,         .name = "--dump",       .help = "dump all"},
     { .flag = OPT_DUMP_SIMPLE,  .name = "--dump-simple",.help = "dump with simple format"},
-    { .flag = OPT_DUMP_PRE,     .name = "--dump-pre",   .help = "dump pre check"},
+    { .flag = OPT_DUMP_PRE,     .name = "--dump-pre",   .help = "dump before check"},
+    { .flag = OPT_DUMP_GOOD,    .name = "--dump-pre",   .help = "dump good"},
     { .flag = OPT_SPLIT,        .name = "--file-split", .help = "dpi file split from xdr"},
 };
 
@@ -73,7 +74,10 @@ xdr_handle(xpath_t path[], char *filename, int namelen)
 
 ERROR:
     xp_close(&parse);
-
+    if (0==err) {
+        xp_ok(&parse);
+    }
+    
     return err;
 }
 
