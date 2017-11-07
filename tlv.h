@@ -1159,42 +1159,10 @@ xp_open(struct xparse *parse)
 static inline void
 xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const char *fmt, va_list args)
 {
-    tlv_dprint("1:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
-        stream, parse, tlv, err, fmt, args);
-
     vfprintf(stream, fmt, args);
     
-    tlv_dprint("2:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
-        stream, parse, tlv, err, fmt, args);
-
-    fprintf(stream, __crlf);
-
-    tlv_dprint("3:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
-        stream, parse, tlv, err, fmt, args);
-
-#define mfprintf(_stream, _fmt, _args...) do{ \
-    fprintf(DUMP_STREAM,__tab _fmt __crlf, ##_args); \
-    fprintf(_stream,__tab _fmt __crlf, ##_args); \
-    fflush(_stream); \
-}while(0)
-    tlv_ops_t *ops = tlv_ops(tlv);
-    
-    mfprintf(stream, __tab "ERROR:%d"     __crlf, err);
-    mfprintf(stream, __tab "tlv:%p"     __crlf, tlv); 
-    mfprintf(stream, __tab "tlv ops:%p"  __crlf, ops); 
-    mfprintf(stream, __tab "tlv name:%p"  __crlf, tlv_ops_name(tlv)); 
-    mfprintf(stream, __tab "tlv name:%s"  __crlf, tlv_ops_name(tlv)); 
-    mfprintf(stream, __tab "id:%d"        __crlf, tlv->id); 
-    mfprintf(stream, __tab "extend:%d"    __crlf, tlv_extend(tlv));
-    mfprintf(stream, __tab "fixed:%d"     __crlf, tlv_ops_fixed(tlv));
-    mfprintf(stream, __tab "pad:%d"       __crlf, tlv->pad);
-    mfprintf(stream, __tab "alen:%u"      __crlf, tlv_len(tlv)); 
-    mfprintf(stream, __tab "hlen:%u"      __crlf, tlv_hdrlen(tlv));
-    mfprintf(stream, __tab "dlen:%u"      __crlf, tlv_datalen(tlv));
-#undef mfprintf
-
     fprintf(stream, __crlf __tab
-            "ERROR:%d tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u" __crlf, 
+            "ERROR:%d tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u offset:%u" __crlf, 
             err,
             tlv_ops_name(tlv), 
             tlv->id, 
@@ -1203,22 +1171,16 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
             tlv->pad, 
             tlv_len(tlv),
             tlv_hdrlen(tlv),
-            tlv_datalen(tlv));
-
-    tlv_dprint("4:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
-        stream, parse, tlv, err, fmt, args);
+            tlv_datalen(tlv),
+            (uint32)((byte *)tlv - (byte *)parse->tlv.u.header));
 
     tlv_dump_binary(stream, tlv);
-    tlv_dprint("5:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
-        stream, parse, tlv, err, fmt, args);
 }
 
 static inline int
 xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
 {
     va_list args;
-
-    tlv_dprint("xp_error ...");
     
     if (tlv) {
         va_start(args, fmt);
@@ -1236,13 +1198,10 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
     if (tlv) {
         xpath_change(path, ERR_SUFFIX);
         
-        tlv_dprint("open %s ...", path->fullname);
         FILE *stream = fopen(path->fullname, "a+");
         if (NULL==stream) {
-            tlv_dprint("open %s error", path->fullname);
+            os_println("open %s error", path->fullname);
         } else {
-            tlv_dprint("open %s ok:%p", path->fullname, stream);
-            
             va_start(args, fmt);
             xp_verror(stream, parse, tlv, err, fmt, args);
             va_end(args);
@@ -1255,8 +1214,6 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
     xpath_change(path, XDR_SUFFIX);
     tlv_close(&parse->tlv);
     rename(parse->tlv.fullname, path->fullname);
-
-    tlv_dprint("xp_error ok.");
     
     return err;
 }
