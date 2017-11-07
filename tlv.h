@@ -1208,7 +1208,7 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
     fprintf(stream, __tab "ERROR:%d, ", err);
     vfprintf(stream, fmt, args);
     fprintf(stream,
-        ", %s offset:%d" __crlf,
+        ", %s, offset:%d" __crlf,
         parse->filename,
         (uint32)((byte *)tlv - (byte *)parse->tlv.u.header));
 
