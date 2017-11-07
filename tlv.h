@@ -795,7 +795,7 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
         tlv_datalen(tlv));
 }
 
-static inline void
+static inline int
 xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
 {
     va_list args;
@@ -830,6 +830,8 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         xpath_change(path, XDR_SUFFIX);
         rename(fullname, path->fullname);
     }
+
+    return err;
 }
 
 typedef int tlv_walk_t(struct xparse *parse, struct tlv *tlv);
