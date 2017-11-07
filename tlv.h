@@ -106,10 +106,10 @@ enum {
     OPT_STRICT      = 0x0008,
     
     OPT_DUMP        = 0x0010,
-    OPT_DUMP_SIMPLE = 0x0020 | OPT_DUMP,
+    OPT_DUMP_SHORT  = 0x0020 | OPT_DUMP,
     OPT_DUMP_PRE    = 0x0040 | OPT_DUMP,
-    OPT_DUMP_OK     = 0x0080 | OPT_DUMP,
-    OPT_DUMP_ST     = 0x0100 | OPT_DUMP,
+    OPT_DUMP_OK     = 0x0080,
+    OPT_DUMP_ST     = 0x0100,
 };
 
 enum {
@@ -303,8 +303,8 @@ tlv_dump_string(FILE *stream, struct tlv *tlv)
     TLV_DUMP_BY(stream, tlv, "%s", string); 
 }
 
-#ifndef XDR_DUMP_SIMPLE
-#define XDR_DUMP_SIMPLE     128
+#ifndef XDR_DUMP_SHORT
+#define XDR_DUMP_SHORT     128
 #endif
 
 static inline void 
@@ -316,8 +316,8 @@ tlv_dump_binary(FILE *stream, struct tlv *tlv)
         TLV_DUMP(stream, "id: %d, %s:", tlv->id, tlv_ops_name(tlv));
 
         int size = tlv_datalen(tlv);
-        if (is_option(OPT_DUMP_SIMPLE)) {
-            size = os_min(size, XDR_DUMP_SIMPLE);
+        if (is_option(OPT_DUMP_SHORT)) {
+            size = os_min(size, XDR_DUMP_SHORT);
         }
 
         os_dump_buffer(stream, tlv_binary(tlv), size);
@@ -1356,13 +1356,7 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
     tlv_ops_t *ops = tlv_ops(tlv);
     if (NULL==ops) {
         return xp_error(parse, tlv, -EBADIDX, "not support tlv id:%d", tlv->id);
-    }
-
-    if (is_option(OPT_DUMP_PRE)) {
-        tlv_dump(DUMP_STREAM, tlv);
-    }
-
-    if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
+    } else if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
         return xp_error(parse, tlv, -ETOOSMALL, 
             "tlv alen[%d] < hdrlen[%d]", tlv_len(tlv), tlv_hdrlen(tlv));
     }
@@ -1438,6 +1432,10 @@ tlv_record_parse(tlv_record_t *r)
     int walk(struct xparse *parse, struct tlv *tlv) 
     {
         int err;
+        
+        if (is_option(OPT_DUMP_PRE)) {
+            tlv_dump(DUMP_STREAM, tlv);
+        }
 
         err = tlv_trace(tlv_check(parse, tlv), "tlv_check %d:%d", parse->count, r->count);
         if (err<0) {

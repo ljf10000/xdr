@@ -28,7 +28,7 @@ static nameflag_t opt[] = {
     { .flag = OPT_IP6,          .name = "--ip6",        .help = "ipv6[not support now]"},
     { .flag = OPT_STRICT,       .name = "--strict",     .help = "strict check"},
     { .flag = OPT_DUMP,         .name = "--dump",       .help = "dump all"},
-    { .flag = OPT_DUMP_SIMPLE,  .name = "--dump-simple",.help = "dump with simple format"},
+    { .flag = OPT_DUMP_SHORT,   .name = "--dump-short", .help = "dump binary short"},
     { .flag = OPT_DUMP_PRE,     .name = "--dump-pre",   .help = "dump before check"},
     { .flag = OPT_DUMP_OK,      .name = "--dump-ok",    .help = "dump success file to xxx.ok"},
     { .flag = OPT_DUMP_ST,      .name = "--dump-st",    .help = "dump statistic"},
