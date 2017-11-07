@@ -405,7 +405,7 @@ tlv_dump_session(FILE *stream, struct tlv *tlv)
 {
     tlv_session_t *obj = tlv_session(tlv);
     
-    TLV_DUMP("id: %d, session:", tlv->id);
+    TLV_DUMP(stream, "id: %d, session:", tlv->id);
     
     TLV_DUMP2(stream, "version: %d", obj->ver);
     TLV_DUMP2(stream, "dir    : %d", obj->dir);
@@ -451,7 +451,7 @@ tlv_dump_session_st(FILE *stream, struct tlv *tlv)
     tlv_session_st_t *obj = tlv_session_st(tlv);
     int i;
     
-    TLV_DUMP("id: %d, %s:", tlv->id, tlv_ops_name(tlv));
+    TLV_DUMP(stream, "id: %d, %s:", tlv->id, tlv_ops_name(tlv));
 
     for (i=0; i<2; i++) {
         char c = (0==i)?'u':'d';
@@ -624,7 +624,7 @@ tlv_dump_http(FILE *stream, struct tlv *tlv)
 {
     tlv_http_t *obj = tlv_http(tlv);
     
-    TLV_DUMP("id: %d, http:", tlv->id);
+    TLV_DUMP(stream, "id: %d, http:", tlv->id);
     
     TLV_DUMP2(stream, "time_request        : %s", unsafe_time_string(XDR_SECOND(obj->time_request)));
     TLV_DUMP2(stream, "time_first_response : %s", unsafe_time_string(XDR_SECOND(obj->time_first_response)));
