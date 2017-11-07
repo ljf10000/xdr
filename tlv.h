@@ -1071,7 +1071,7 @@ xb_open(struct xb *x, bool readonly, int size)
 }
 
 struct xparse {
-    char *name;     // just filename, not include path
+    char *filename; // just filename, not include path
     int namelen;    // just filename, not include path
     
     xpath_t *path;  // xpath_t path[PATH_END];
@@ -1081,10 +1081,10 @@ struct xparse {
     struct xb xdr;
 };
 
-#define XPARSE_INITER(_path, _name, _namelen) { \
-    .name       = _name,                        \
-    .namelen    = _namelen,                     \
-    .path       = _path,                        \
+#define XPARSE_INITER(_path, _filename, _namelen) { \
+    .filename   = _filename,                        \
+    .namelen    = _namelen,                         \
+    .path       = _path,                            \
     .tlv        = XBUFFER_INITER((_path)[PATH_TLV].fullname),   \
     .xdr        = XBUFFER_INITER((_path)[PATH_XDR].fullname),   \
 }   /* end */
@@ -1116,8 +1116,8 @@ xp_init(struct xparse *parse)
     parse->tlv.parse = parse;
     parse->xdr.parse = parse;
 
-    xpath_fill(xp_path(parse, PATH_TLV), parse->name, parse->namelen);
-    xpath_fill(xp_path(parse, PATH_XDR), parse->name, parse->namelen);
+    xpath_fill(xp_path(parse, PATH_TLV), parse->filename, parse->namelen);
+    xpath_fill(xp_path(parse, PATH_XDR), parse->filename, parse->namelen);
 }
 
 static inline int
@@ -1191,7 +1191,7 @@ static inline int
 xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
 {
     va_list args;
-    char *fullname;
+
     tlv_dprint("xp_error ...");
     
     if (tlv) {
@@ -1201,40 +1201,33 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
     }
 
     xp_close(parse);
+    remove(parse->xdr.fullname);
 
-    fullname = parse->xdr.fullname;
-    {
-        remove(fullname);
-    }
-
-    fullname = parse->tlv.fullname;
-    {
-        xpath_t *path = xp_path(parse, PATH_BAD);
+    xpath_t *path = xp_path(parse, PATH_BAD);
+    xpath_fill(path, parse->filename, parse->namelen);
+    
+    // log
+    if (tlv) {
+        xpath_change(path, ERR_SUFFIX);
         
-        xpath_fill(path, parse->name, parse->namelen);
-        
-        // log
-        if (tlv) {
-            xpath_change(path, ERR_SUFFIX);
-            tlv_dprint("open %s ...", path->fullname);
-            FILE *stream = fopen(path->fullname, "a+");
-            if (NULL==stream) {
-                tlv_dprint("open %s error", path->fullname);
-            } else {
-                tlv_dprint("open %s ok.", path->fullname);
-                
-                va_start(args, fmt);
-                xp_verror(stream, parse, tlv, err, fmt, args);
-                va_end(args);
-                
-                fclose(stream);
-            }
+        tlv_dprint("open %s ...", path->fullname);
+        FILE *stream = fopen(path->fullname, "a+");
+        if (NULL==stream) {
+            tlv_dprint("open %s error", path->fullname);
+        } else {
+            tlv_dprint("open %s ok:%p", path->fullname, stream);
+            
+            va_start(args, fmt);
+            xp_verror(stream, parse, tlv, err, fmt, args);
+            va_end(args);
+            
+            fclose(stream);
         }
-
-        // move tlvs/xxx.xdr ==> bad/xxx.err
-        xpath_change(path, XDR_SUFFIX);
-        rename(fullname, path->fullname);
     }
+
+    // move tlvs/xxx.xdr ==> bad/xxx.err
+    xpath_change(path, XDR_SUFFIX);
+    rename(parse->tlv.fullname, path->fullname);
 
     tlv_dprint("xp_error ok.");
     
