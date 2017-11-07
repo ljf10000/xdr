@@ -4,19 +4,19 @@
 #include "os.h"
 /******************************************************************************/
 #ifndef D_tlv_dprint
-#define D_tlv_dprint    0
+#define D_tlv_dprint    1
 #endif
 
 #ifndef D_xdr_dprint
-#define D_xdr_dprint    0
+#define D_xdr_dprint    1
 #endif
 
 #ifndef D_tlv_trace
-#define D_tlv_trace     0
+#define D_tlv_trace     1
 #endif
 
 #ifndef D_xdr_trace
-#define D_xdr_trace     0
+#define D_xdr_trace     1
 #endif
 
 #if D_tlv_dprint
