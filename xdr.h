@@ -1476,14 +1476,14 @@ xp_run(struct xparse *parse)
     int walk(struct xparse *parse, struct tlv *header)
     {
         tlv_record_t r = TLV_RECORD_INITER(parse);
-        int err, count = parse->count+1;
+        int err;
 
-        err = tlv_trace(tlv_record_parse(&r), "tlv_record_parse:%d", count);
+        err = tlv_trace(tlv_record_parse(&r), "tlv_record_parse:%d", parse->count);
         if (err<0) {
             return err;
         }
 
-        err = tlv_trace(to_xdr(&r, &parse->xdr), "to_xdr:%d", count);
+        err = tlv_trace(to_xdr(&r, &parse->xdr), "to_xdr:%d", parse->count);
         if (err<0) {
             return err;
         }

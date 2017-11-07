@@ -1384,12 +1384,12 @@ tlv_record_parse(tlv_record_t *r)
     {
         int err;
 
-        err = tlv_trace(tlv_check(parse, tlv), "tlv_check %d", parse->count);
+        err = tlv_trace(tlv_check(parse, tlv), "tlv_check %d:%d", parse->count, r->count);
         if (err<0) {
             return err;
         }
 
-        err = tlv_trace(tlv_record_save(r, tlv), "tlv_record_save %d", parse->count);
+        err = tlv_trace(tlv_record_save(r, tlv), "tlv_record_save %d:%d", parse->count, r->count);
         if (err<0) {
             return err;
         }
