@@ -4,11 +4,11 @@
 #include "os.h"
 /******************************************************************************/
 #ifndef D_tlv_dprint
-#define D_tlv_dprint    1
+#define D_tlv_dprint    0
 #endif
 
 #ifndef D_xdr_dprint
-#define D_xdr_dprint    1
+#define D_xdr_dprint    0
 #endif
 
 #ifndef D_tlv_trace
@@ -32,13 +32,13 @@
 #endif
 
 #if D_tlv_trace
-#define tlv_trace(_call, _fmt, _args...)    os_trace(tlv_dprint, _call, _fmt, ##_args)
+#define tlv_trace(_call, _fmt, _args...)    os_trace_by(OPT_TRACE_TLV, _call, _fmt, ##_args)
 #else
 #define tlv_trace(_call, _fmt, _args...)    (_call)
 #endif
 
 #if D_xdr_trace
-#define xdr_trace(_call, _fmt, _args...)    os_trace(xdr_dprint, _call, _fmt, ##_args)
+#define xdr_trace(_call, _fmt, _args...)    os_trace_by(OPT_TRACE_XDR, _call, _fmt, ##_args)
 #else
 #define xdr_trace(_call, _fmt, _args...)    (_call)
 #endif
@@ -104,6 +104,15 @@ typedef struct {
 #define XDR_IP(_addr)   (_addr)->ip[0]
 
 enum {
+    PATH_TLV = 0,
+    PATH_XDR = 1,
+    PATH_SHA = 2,
+    PATH_BAD = 3,
+    
+    PATH_END
+};
+
+enum {
     OPT_CLI         = 0x0001,
     OPT_IP6         = 0x0002,
     OPT_SPLIT       = 0x0004,
@@ -113,15 +122,9 @@ enum {
     OPT_DUMP_SHORT  = 0x0020 | OPT_DUMP,
     OPT_DUMP_PRE    = 0x0040 | OPT_DUMP,
     OPT_DUMP_ST     = 0x0080,
-};
-
-enum {
-    PATH_TLV = 0,
-    PATH_XDR = 1,
-    PATH_SHA = 2,
-    PATH_BAD = 3,
     
-    PATH_END
+    OPT_TRACE_TLV   = 0x1000,
+    OPT_TRACE_XDR   = 0x2000,
 };
 
 enum {
@@ -1272,27 +1275,22 @@ tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
     int err = 0;
 
     if (left > TLV_MAXDATA) {
-        tlv_dprint("break tlv walk by ETOOBIG");
         return xp_error(parse, tlv, -ETOOBIG, "too big:%d", left);
     }
     
     while(left>0) {
         if (parse->count > TLV_MAXCOUNT) {
-            tlv_dprint("break tlv walk by ETOOMORE");
             return xp_error(parse, tlv, -ETOOMORE, "too more tlv:%d", parse->count);
         }
         else if (left < tlv_hdrlen(tlv)) {
-            tlv_dprint("break tlv walk by ETOOSMALL");
             return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv hdrlen:%d", left, tlv_hdrlen(tlv));
         }
         else if (left < tlv_len(tlv)) {
-            tlv_dprint("break tlv walk by ETOOSMALL2");
             return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv len:%d", left, tlv_len(tlv));
         }
         
         err = (*walk)(parse, tlv);
         if (err<0) {
-            tlv_dprint("break tlv walk");
             return err;
         }
 

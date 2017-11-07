@@ -1107,6 +1107,18 @@ env_geti(char *envname, int deft)
 })  /* end */
 #endif
 
+#define os_trace_by(_opt, _call, _fmt, _args...) ({  \
+    int m_err = 0;                              \
+                                                \
+    if (is_option(_opt)) {                      \
+        m_err = os_trace(os_println, _call, _fmt, ##_args); \
+    } else {                                    \
+        m_err = (_call);                        \
+    }                                           \
+                                                \
+    m_err;                                      \
+})  /* end */
+
 #include "log.h"
 /******************************************************************************/
 #endif
