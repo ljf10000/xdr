@@ -381,28 +381,46 @@ enum { XDR_SESSION_HSIZE = sizeof(tlv_session_t) - 2*sizeof(xdr_ipaddr_t) };
 static inline void 
 tlv_dump_session(FILE *stream, struct tlv *tlv)
 {
+    tlv_dprint("tlv_dump_session 1");
     tlv_session_t *obj = tlv_session(tlv);
-    
+
+    tlv_dprint("tlv_dump_session 2");
     TLV_DUMP(stream, "id: %d, session:", tlv->id);
+    tlv_dprint("tlv_dump_session 3");
     
     TLV_DUMP2(stream, "version: %d", obj->ver);
+    tlv_dprint("tlv_dump_session 4");
     TLV_DUMP2(stream, "dir    : %d", obj->dir);
+    tlv_dprint("tlv_dump_session 5");
     TLV_DUMP2(stream, "proto  : %d", obj->proto);
+    tlv_dprint("tlv_dump_session 6");
     TLV_DUMP2(stream, "sport  : %d", obj->sport);
+    tlv_dprint("tlv_dump_session 7");
     TLV_DUMP2(stream, "dport  : %d", obj->dport);
+    tlv_dprint("tlv_dump_session 8");
 
     if (XDR_IPV4==obj->ver) {
         uint32 ip;
+        
+        tlv_dprint("tlv_dump_session 8.1.1");
 
         ip = XDR_IP(&obj->sip); // ip = htonl(ip);
+        tlv_dprint("tlv_dump_session 8.1.2");
         TLV_DUMP2(stream, "sip    : %s", unsafe_ipstring(ip));
+        tlv_dprint("tlv_dump_session 8.1.3");
         
         ip = XDR_IP(&obj->dip); // ip = htonl(ip);
+        tlv_dprint("tlv_dump_session 8.1.4");
         TLV_DUMP2(stream, "dip    : %s", unsafe_ipstring(ip));
+        tlv_dprint("tlv_dump_session 8.1.5");
     } else {
+        tlv_dprint("tlv_dump_session 8.2.1");
         TLV_DUMP2(stream, "sip    : ipv6 address");
+        tlv_dprint("tlv_dump_session 8.2.2");
         TLV_DUMP2(stream, "dip    : ipv6 addres");
+        tlv_dprint("tlv_dump_session 8.2.3");
     }
+    tlv_dprint("tlv_dump_session 9");
 }
 
 #ifndef sizeof_session_st
@@ -711,8 +729,9 @@ tlv_check_session(struct xparse *parse, struct tlv *tlv)
     int err = -ENOSUPPORT;
     xp_error(parse, tlv, err, "no support ip proto:%d", obj->proto);
 
-    // tmp
+    tlv_dprint("tlv check session error:%d ...", err);
     tlv_dump_session(DUMP_STREAM, tlv);
+    tlv_dprint("tlv check session error:%d", err);
 
     return err;
 }
