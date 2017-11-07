@@ -1227,7 +1227,7 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
             xpath_change(path, ERR_SUFFIX);
             FILE *stream = fopen(fullname, "a+");
             if (NULL==stream) {
-                os_println("open %s error");
+                os_println("open %s error", fullname);
             } else {
         tlv_dprint("xp_error 6.2");
                 va_start(args, fmt);
