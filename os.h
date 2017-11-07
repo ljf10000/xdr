@@ -652,13 +652,14 @@ os_fhandle(const char *file, int (*handle)(const char *file, int fd))
 
 #ifndef os_munmap
 #define os_munmap(_mem, _size)  ({  \
-    int __err = 0;                  \
+    int m_err = 0;                  \
+                                    \
     if (_mem) {                     \
-        __err = munmap(_mem, _size);\
+        m_err = munmap(_mem, _size);\
         _mem = NULL;                \
     }                               \
                                     \
-    __err;                          \
+    m_err;                          \
 })  /* end */
 #endif
 
