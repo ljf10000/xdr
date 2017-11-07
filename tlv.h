@@ -533,6 +533,8 @@ tlv_close(struct xb *x)
     return xb_close(x);
 }
 
+static inline void xdr_init(struct xdr *xdr);
+
 static inline int
 xdr_open(struct xb *x, int size)
 {
