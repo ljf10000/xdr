@@ -1067,8 +1067,8 @@ struct xparse {
     .name       = _name,                        \
     .namelen    = _namelen,                     \
     .path       = _path,                        \
-    .tlv        = XBUFFER_INITER(xpath_fullname(_path, PATH_TLV)),  \
-    .xdr        = XBUFFER_INITER(xpath_fullname(_path, PATH_XDR)),  \
+    .tlv        = XBUFFER_INITER((_path)[PATH_TLV].fullname),   \
+    .xdr        = XBUFFER_INITER((_path)[PATH_XDR].fullname),   \
 }   /* end */
 
 static inline int
