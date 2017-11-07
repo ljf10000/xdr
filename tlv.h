@@ -1372,8 +1372,6 @@ tlv_record_save(tlv_record_t *r, struct tlv *tlv)
         return err;
     }
     
-    r->count++;
-    
     return 0;
 }
 
@@ -1397,7 +1395,9 @@ tlv_record_parse(tlv_record_t *r)
         if (is_option(OPT_DUMP)) {
             tlv_dump(tlv);
         }
-        
+
+        r->count++;
+
         return 0;
     }
 
