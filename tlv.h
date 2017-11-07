@@ -726,14 +726,11 @@ tlv_check_session(struct xparse *parse, struct tlv *tlv)
             }
     }
 
-    int err = -ENOSUPPORT;
-    xp_error(parse, tlv, err, "no support ip proto:%d", obj->proto);
-
-    tlv_dprint("tlv check session error:%d ...", err);
+    tlv_dprint("tlv check session error ENOSUPPORT ...");
     tlv_dump_session(DUMP_STREAM, tlv);
-    tlv_dprint("tlv check session error:%d", err);
-
-    return err;
+    tlv_dprint("tlv check session error ENOSUPPORT");
+    
+    return xp_error(parse, tlv, -ENOSUPPORT, "no support ip proto:%d", obj->proto);
 }
 
 static inline int to_xdr_session_state(struct xb *x, struct tlv *tlv);
