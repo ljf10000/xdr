@@ -1198,7 +1198,7 @@ typedef int tlv_walk_t(struct xparse *parse, struct tlv *tlv);
 static inline int
 tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
 {
-    int err;
+    int err = 0;
 
     if (left > TLV_MAXDATA) {
         return xp_error(parse, tlv, -ETOOBIG, "too big:%d", left);
@@ -1206,25 +1206,30 @@ tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
     
     while(left>0) {
         if (parse->count > TLV_MAXCOUNT) {
-            return xp_error(parse, tlv, -ETOOMORE, "too more tlv:%d", parse->count);
+            err = xp_error(parse, tlv, -ETOOMORE, "too more tlv:%d", parse->count);
+            goto ERROR;
         }
         else if (left < tlv_hdrlen(tlv)) {
-            return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv hdrlen:%d", left, tlv_hdrlen(tlv));
+            err = xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv hdrlen:%d", left, tlv_hdrlen(tlv));
+            goto ERROR;
         }
         else if (left < tlv_len(tlv)) {
-            return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv len:%d", left, tlv_len(tlv));
+            err = xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv len:%d", left, tlv_len(tlv));
+            goto ERROR;
         }
         
         err = (*walk)(parse, tlv);
         if (err<0) {
-            os_println("break walk!!!");
-            return err;
+            goto ERROR;
         }
 
         left -= tlv_len(tlv); tlv = tlv_next(tlv);
     }
 
-    return 0;
+ERROR:
+    os_println("break walk!!!");
+    
+    return err;
 }
 
 static inline void
