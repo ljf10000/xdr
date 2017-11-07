@@ -1401,7 +1401,7 @@ tlv_record_parse(tlv_record_t *r)
         return 0;
     }
 
-    struct tlv *header = r->parse->tlv.u.header;
+    struct tlv *header = r->parse->tlv.u.tlv;
     
     return tlv_walk(r->parse, tlv_first(header), tlv_datalen(header), walk);
 }
