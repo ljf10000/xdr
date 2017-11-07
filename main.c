@@ -72,7 +72,6 @@ xdr_handle(xpath_t path[], char *filename, int namelen)
     }
 
 ERROR:
-    tlv_dprint("xdr_handle xp_close");
     xp_close(&parse);
 
     return err;
