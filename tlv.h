@@ -732,7 +732,9 @@ tlv_check_session(struct xparse *parse, struct tlv *tlv)
 
     int err = -ENOSUPPORT;
     xp_error(parse, tlv, err, "no support ip proto:%d", obj->proto);
-    tlv_dump_session(tlv);
+
+    // tmp
+    tlv_dump_session(DUMP_STREAM, tlv);
 
     return err;
 }
