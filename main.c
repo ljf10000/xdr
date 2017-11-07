@@ -30,7 +30,7 @@ static nameflag_t opt[] = {
     { .flag = OPT_DUMP,         .name = "--dump",       .help = "dump all"},
     { .flag = OPT_DUMP_SIMPLE,  .name = "--dump-simple",.help = "dump with simple format"},
     { .flag = OPT_DUMP_PRE,     .name = "--dump-pre",   .help = "dump before check"},
-    { .flag = OPT_DUMP_GOOD,    .name = "--dump-pre",   .help = "dump good"},
+    { .flag = OPT_DUMP_OK,      .name = "--dump-ok",    .help = "dump success file to xxx.ok"},
     { .flag = OPT_SPLIT,        .name = "--file-split", .help = "dpi file split from xdr"},
 };
 

@@ -63,10 +63,6 @@
 #define ERR_SUFFIX      "err"
 #endif
 
-#ifndef OK_SUFFIX
-#define OK_SUFFIX       "ok\x00"
-#endif
-
 #ifndef XDR_VERSION
 #define XDR_VERSION     0
 #endif
@@ -112,7 +108,7 @@ enum {
     OPT_DUMP        = 0x10,
     OPT_DUMP_SIMPLE = 0x20 | OPT_DUMP,
     OPT_DUMP_PRE    = 0x40 | OPT_DUMP,
-    OPT_DUMP_GOOD   = 0x80 | OPT_DUMP,
+    OPT_DUMP_OK     = 0x80 | OPT_DUMP,
 };
 
 enum {
@@ -1120,15 +1116,11 @@ xp_init(struct xparse *parse)
 static inline void
 xp_ok(struct xparse *parse)
 {
-    if (is_option(OPT_DUMP_GOOD)) {
+    if (is_option(OPT_DUMP_OK)) {
         xpath_t *path = xp_path(parse, PATH_BAD);
-        xpath_change(path, OK_SUFFIX);
         
-        FILE *stream = fopen(path->fullname, "a+");
-        if (stream) {
-            fprintf("%s" __crlf, parse->filename);
-            fclose(stream);
-        }
+        FILE *stream = fopen(path->fullname, "w+");
+        os_fclose(stream);
     }
 }
 
