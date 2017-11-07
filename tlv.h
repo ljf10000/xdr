@@ -1140,7 +1140,7 @@ xp_ok(struct xparse *parse)
         xpath_t *path = xp_path(parse, PATH_BAD);
         xpath_change(path, OK_SUFFIX);
         
-        FILE *stream = fopen(path->fullname, "w+");
+        FILE *stream = fopen(path->fullname, "a+");
         os_fclose(stream);
     }
 }
