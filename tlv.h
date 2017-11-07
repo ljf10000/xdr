@@ -1335,7 +1335,7 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
     }
 
     if (is_option(OPT_DUMP_PRE)) {
-        
+        tlv_dump(DUMP_STREAM, tlv);
     }
 
     if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
@@ -1428,7 +1428,7 @@ tlv_record_parse(tlv_record_t *r)
             return err;
         }
 
-        if (is_option(OPT_DUMP)) {
+        if (is_option(OPT_DUMP) && !is_option(OPT_DUMP_PRE)) {
             tlv_dump(DUMP_STREAM, tlv);
         }
 
