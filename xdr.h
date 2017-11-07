@@ -43,7 +43,6 @@ enum {
     
     PATH_END
 };
-#define PATH_END  (PATH_END-1)
 
 #if 1
 #define XDR_ARRAY_MAPPER(_) \
