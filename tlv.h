@@ -32,13 +32,13 @@
 #endif
 
 #if D_tlv_trace
-#define tlv_trace(_call, _fmt, _args...)    os_trace_by(OPT_TRACE_TLV, _call, _fmt, ##_args)
+#define tlv_trace(_call, _fmt, _args...)    os_trace_by(is_option(OPT_TRACE_TLV), os_println, _call, _fmt, ##_args)
 #else
 #define tlv_trace(_call, _fmt, _args...)    (_call)
 #endif
 
 #if D_xdr_trace
-#define xdr_trace(_call, _fmt, _args...)    os_trace_by(OPT_TRACE_XDR, _call, _fmt, ##_args)
+#define xdr_trace(_call, _fmt, _args...)    os_trace_by(is_option(OPT_TRACE_XDR), os_println, _call, _fmt, ##_args)
 #else
 #define xdr_trace(_call, _fmt, _args...)    (_call)
 #endif

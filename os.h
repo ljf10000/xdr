@@ -1099,25 +1099,34 @@ env_geti(char *envname, int deft)
 
 #ifndef os_trace
 #define os_trace(_print, _call, _fmt, _args...) ({  \
-    int __err;                                  \
+    int m_err;                                  \
+                                                \
     _print("try " _fmt " ...", ##_args);        \
-    __err = (_call);                            \
-    _print(__tab "%s:%d " _fmt, ok_string(__err), __err, ##_args); \
-    __err;                                      \
+    m_err = (_call);                            \
+    _print(__tab "%s:%d " _fmt, ok_string(m_err), m_err, ##_args); \
+                                                \
+    m_err;                                      \
 })  /* end */
 #endif
 
-#define os_trace_by(_opt, _call, _fmt, _args...) ({  \
-    int m_err = 0;                              \
+#ifndef os_trace_by
+#define os_trace_by(_is_trace, _print, _call, _fmt, _args...) ({  \
+    int m_err;                                  \
+    bool m_is_trace = _is_trace;                \
                                                 \
-    if (is_option(_opt)) {                      \
-        m_err = os_trace(os_println, _call, _fmt, ##_args); \
-    } else {                                    \
-        m_err = (_call);                        \
+    if (m_is_trace) {                           \
+        _print("try " _fmt " ...", ##_args);    \
+    }                                           \
+                                                \
+    m_err = (_call);                            \
+                                                \
+    if (m_is_trace) {                           \
+        _print(__tab "%s:%d " _fmt, ok_string(m_err), m_err, ##_args); \
     }                                           \
                                                 \
     m_err;                                      \
 })  /* end */
+#endif
 
 #include "log.h"
 /******************************************************************************/
