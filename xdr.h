@@ -23,18 +23,6 @@
 #define xdr_trace(_call, _fmt, _args...)    (_call)
 #endif
 
-#ifndef XDR_VERSION
-#define XDR_VERSION     0
-#endif
-
-#ifndef XDR_EXPAND
-#define XDR_EXPAND      (32*1024)
-#endif
-
-#define XDR_ALIGN(x)        OS_ALIGN(x, 4)
-#define XDR_EXPAND_ALIGN(x) OS_ALIGN(x + XDR_EXPAND, XDR_EXPAND)
-#define XDR_DIGEST_SIZE     SHA256_DIGEST_SIZE
-
 #if 1
 #define XDR_ARRAY_MAPPER(_) \
     _(XDR_ARRAY, string,0)  \

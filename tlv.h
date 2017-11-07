@@ -39,6 +39,18 @@
 #define ERR_SUFFIX      "err"
 #endif
 
+#ifndef XDR_VERSION
+#define XDR_VERSION     0
+#endif
+
+#ifndef XDR_EXPAND
+#define XDR_EXPAND      (32*1024)
+#endif
+
+#define XDR_ALIGN(x)        OS_ALIGN(x, 4)
+#define XDR_EXPAND_ALIGN(x) OS_ALIGN(x + XDR_EXPAND, XDR_EXPAND)
+#define XDR_DIGEST_SIZE     SHA256_DIGEST_SIZE
+
 struct xb;
 struct tlv;
 struct xdr;
@@ -1360,16 +1372,16 @@ tlv_record_save(tlv_record_t *r, struct tlv *tlv)
 static inline int
 tlv_record_parse(tlv_record_t *r)
 {
-    int walk(struct xparse *parse, struct tlv *tlv, int count) 
+    int walk(struct xparse *parse, struct tlv *tlv) 
     {
         int err;
 
-        err = tlv_trace(tlv_check(parse, tlv), "tlv_check %d", count);
+        err = tlv_trace(tlv_check(parse, tlv), "tlv_check %d", parse->count);
         if (err<0) {
             return err;
         }
 
-        err = tlv_trace(tlv_record_save(r, tlv), "tlv_record_save %d", count);
+        err = tlv_trace(tlv_record_save(r, tlv), "tlv_record_save %d", parse->count);
         if (err<0) {
             return err;
         }
