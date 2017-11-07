@@ -1187,10 +1187,11 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
 static inline int
 xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
 {
-    va_list args;
     char *fullname;
 
     if (tlv) {
+        va_list args;
+    
         va_start(args, fmt);
         xp_verror(DUMP_STREAM, parse, tlv, err, fmt, args);
         va_end(args);
@@ -1220,6 +1221,8 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
 
         // log
         if (tlv) {
+            va_list args;
+        
         tlv_dprint("xp_error 6.1");
             xpath_change(path, ERR_SUFFIX);
             FILE *stream = fopen(fullname, "a+");
