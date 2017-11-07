@@ -274,8 +274,8 @@ static inline int xp_error(struct xparse *parse, struct tlv *tlv, int err, const
 #define TLV_DUMP3(_stream, _fmt, _args...)  TLV_DUMP2(_stream, __tab _fmt, ##_args)
 #define TLV_DUMP4(_stream, _fmt, _args...)  TLV_DUMP3(_stream, __tab _fmt, ##_args)
 
-#define TLV_DUMP_BY(_tlv, _format, _type) \
-    TLV_DUMP("id: %d, %s: " _format, (_tlv)->id, tlv_ops_name(_tlv), tlv_##_type(_tlv))
+#define TLV_DUMP_BY(_stream, _tlv, _format, _type) \
+    TLV_DUMP(_stream, "id: %d, %s: " _format, (_tlv)->id, tlv_ops_name(_tlv), tlv_##_type(_tlv))
 
 static inline void
 tlv_dump_u8(FILE *stream, struct tlv *tlv)
