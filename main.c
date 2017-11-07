@@ -31,6 +31,7 @@ static nameflag_t opt[] = {
     { .flag = OPT_DUMP_SIMPLE,  .name = "--dump-simple",.help = "dump with simple format"},
     { .flag = OPT_DUMP_PRE,     .name = "--dump-pre",   .help = "dump before check"},
     { .flag = OPT_DUMP_OK,      .name = "--dump-ok",    .help = "dump success file to xxx.ok"},
+    { .flag = OPT_DUMP_ST,      .name = "--dump-st",    .help = "dump statistic"},
     { .flag = OPT_SPLIT,        .name = "--file-split", .help = "dpi file split from xdr"},
 };
 
@@ -43,21 +44,22 @@ usage(void)
 }
 
 static xpath_t Path[PATH_END];
+static xst_t St;
 
 static void
-init_xpath(xpath_t path[PATH_END], char *dir[PATH_END])
+init_xpath(char *path[PATH_END])
 {
     int i;
 
     for (i=0; i<PATH_END; i++) {
-        xpath_init(&path[i], dir[i]);
+        xpath_init(&Path[i], path[i]);
     }
 }
 
 static int
-xdr_handle(xpath_t path[], char *filename, int namelen)
+xdr_handle(char *filename, int namelen)
 {
-    struct xparse parse = XPARSE_INITER(path, filename, namelen);
+    struct xparse parse = XPARSE_INITER(Path, &St, filename, namelen);
     int err;
     
     xp_init(&parse);
@@ -74,6 +76,7 @@ xdr_handle(xpath_t path[], char *filename, int namelen)
 
 ERROR:
     xp_close(&parse);
+    xp_st(&parse);
     if (0==err) {
         xp_ok(&parse);
     }
@@ -82,9 +85,9 @@ ERROR:
 }
 
 static int
-tlv_remove(xpath_t path[], char *filename, int namelen)
+tlv_remove(char *filename, int namelen)
 {
-    char *fullname = xpath_fill(&path[PATH_TLV], filename, namelen);
+    char *fullname = xpath_fill(&Path[PATH_TLV], filename, namelen);
     
     remove(fullname);
     
@@ -94,7 +97,7 @@ tlv_remove(xpath_t path[], char *filename, int namelen)
 }
 
 static int
-monitor(const char *watch, xpath_t path[])
+monitor(const char *watch)
 {
     static char EV_BUFFER[EVCOUNT * INOTIFY_EVSIZE];
     int fd, len, err;
@@ -125,12 +128,12 @@ monitor(const char *watch, xpath_t path[])
                 ev_debug(ev);
 
                 if (ISXDR(ev->name, len)) {
-                    err = xdr_handle(path, ev->name, len);
+                    err = xdr_handle(ev->name, len);
                     if (err<0) {
                         // log
                     }
                 } else {
-                    tlv_remove(path, ev->name, len);
+                    tlv_remove(ev->name, len);
                 }
             }
         }
@@ -142,7 +145,7 @@ monitor(const char *watch, xpath_t path[])
 #endif
 
 static int
-cli(xpath_t path[])
+cli(void)
 {
     char *filename = env_gets(ENV_TLV_FILE, NULL);
     if (NULL==filename) {
@@ -151,7 +154,7 @@ cli(xpath_t path[])
         return -EBADENV;
     }
     
-    return xdr_handle(path, filename, strlen(filename));
+    return xdr_handle(filename, strlen(filename));
 }
 
 static int
@@ -199,12 +202,12 @@ int main(int argc, char *argv[])
         return usage();
     }
     
-    init_xpath(Path, argv);
+    init_xpath(argv);
 
     if (is_option(OPT_CLI)) {
-        return cli(Path);
+        return cli();
     } else {
-        return monitor(argv[PATH_TLV], Path);
+        return monitor(argv[PATH_TLV]);
     }
 }
 

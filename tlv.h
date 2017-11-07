@@ -100,15 +100,16 @@ typedef struct {
 #define XDR_IP(_addr)   (_addr)->ip[0]
 
 enum {
-    OPT_CLI         = 0x01,
-    OPT_IP6         = 0x02,
-    OPT_SPLIT       = 0x04,
-    OPT_STRICT      = 0x08,
+    OPT_CLI         = 0x0001,
+    OPT_IP6         = 0x0002,
+    OPT_SPLIT       = 0x0004,
+    OPT_STRICT      = 0x0008,
     
-    OPT_DUMP        = 0x10,
-    OPT_DUMP_SIMPLE = 0x20 | OPT_DUMP,
-    OPT_DUMP_PRE    = 0x40 | OPT_DUMP,
-    OPT_DUMP_OK     = 0x80 | OPT_DUMP,
+    OPT_DUMP        = 0x0010,
+    OPT_DUMP_SIMPLE = 0x0020 | OPT_DUMP,
+    OPT_DUMP_PRE    = 0x0040 | OPT_DUMP,
+    OPT_DUMP_OK     = 0x0080 | OPT_DUMP,
+    OPT_DUMP_ST     = 0x0100 | OPT_DUMP,
 };
 
 enum {
@@ -911,6 +912,11 @@ is_good_tlv_id(int id)
 #define DECLARE_TLV_VARS \
     tlv_ops_t __tlv_ops[tlv_id_end] = { TLV_MAPPER(__TLV_STRUCT) }; \
     os_fake_declare /* end */
+    
+typedef struct {
+    uint64 ok;
+    uint64 error;
+} xst_t;
 
 #if 0
       |<-filename    |<-suffix
@@ -1067,16 +1073,18 @@ struct xparse {
     int namelen;    // just filename, not include path
     
     xpath_t *path;  // xpath_t path[PATH_END];
+    xst_t   *st;
     
     int count;      // tlv count
     struct xb tlv;
     struct xb xdr;
 };
 
-#define XPARSE_INITER(_path, _filename, _namelen) { \
-    .filename   = _filename,                        \
-    .namelen    = _namelen,                         \
-    .path       = _path,                            \
+#define XPARSE_INITER(_path, _st, _filename, _namelen) { \
+    .filename   = _filename,    \
+    .namelen    = _namelen,     \
+    .path       = _path,        \
+    .st         = _st,          \
     .tlv        = XBUFFER_INITER((_path)[PATH_TLV].fullname),   \
     .xdr        = XBUFFER_INITER((_path)[PATH_XDR].fullname),   \
 }   /* end */
@@ -1111,6 +1119,14 @@ xp_init(struct xparse *parse)
     xpath_fill(xp_path(parse, PATH_TLV), parse->filename, parse->namelen);
     xpath_fill(xp_path(parse, PATH_XDR), parse->filename, parse->namelen);
     xpath_fill(xp_path(parse, PATH_BAD), parse->filename, parse->namelen);
+}
+
+static inline void
+xp_st(struct xparse *parse)
+{
+    if (is_option(OPT_DUMP_ST)) {
+        os_println("ok:%llu, error:%llu", parse->st->ok, parse->st->error);
+    }
 }
 
 static inline void
@@ -1235,27 +1251,22 @@ tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
     int err = 0;
 
     if (left > TLV_MAXDATA) {
-        os_println("tlv walk break 1");
         return xp_error(parse, tlv, -ETOOBIG, "too big:%d", left);
     }
     
     while(left>0) {
         if (parse->count > TLV_MAXCOUNT) {
-            os_println("tlv walk break 2");
             return xp_error(parse, tlv, -ETOOMORE, "too more tlv:%d", parse->count);
         }
         else if (left < tlv_hdrlen(tlv)) {
-            os_println("tlv walk break 3");
             return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv hdrlen:%d", left, tlv_hdrlen(tlv));
         }
         else if (left < tlv_len(tlv)) {
-            os_println("tlv walk break 4");
             return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv len:%d", left, tlv_len(tlv));
         }
         
         err = (*walk)(parse, tlv);
         if (err<0) {
-            os_println("tlv walk break 5");
             return err;
         }
 
@@ -1430,11 +1441,15 @@ tlv_record_parse(tlv_record_t *r)
 
         err = tlv_trace(tlv_check(parse, tlv), "tlv_check %d:%d", parse->count, r->count);
         if (err<0) {
+            parse->st->error++;
+            
             return err;
         }
 
         err = tlv_trace(tlv_record_save(r, tlv), "tlv_record_save %d:%d", parse->count, r->count);
         if (err<0) {
+            parse->st->error++;
+            
             return err;
         }
 
@@ -1443,7 +1458,8 @@ tlv_record_parse(tlv_record_t *r)
         }
 
         r->count++;
-
+        parse->st->ok++;
+        
         return 0;
     }
 
