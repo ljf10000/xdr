@@ -1077,7 +1077,8 @@ struct xparse {
     int namelen;    // just filename, not include path
     
     xpath_t *path;  // xpath_t path[PATH_END];
-    xst_t   *st;
+    xst_t   *tlvst;
+    xst_t   *xdrst;
     
     int count;      // tlv count
     struct xb tlv;
@@ -1088,7 +1089,8 @@ struct xparse {
     .filename   = _filename,    \
     .namelen    = _namelen,     \
     .path       = _path,        \
-    .st         = _st,          \
+    .tlvst      = &(_st)[0],    \
+    .xdrst      = &(_st)[1],    \
     .tlv        = XBUFFER_INITER((_path)[PATH_TLV].fullname),   \
     .xdr        = XBUFFER_INITER((_path)[PATH_XDR].fullname),   \
 }   /* end */
@@ -1129,7 +1131,9 @@ static inline void
 xp_st(struct xparse *parse)
 {
     if (is_option(OPT_DUMP_ST)) {
-        os_println("ok:%llu, error:%llu", parse->st->ok, parse->st->error);
+        os_println("tlv ok:%llu error:%llu; xdr ok:%llu error %llu", 
+            parse->tlvst->ok, parse->tlvst->error,
+            parse->xdrst->ok, parse->xdrst->error);
     }
 }
 
@@ -1444,14 +1448,14 @@ tlv_record_parse(tlv_record_t *r)
 
         err = tlv_trace(tlv_check(parse, tlv), "tlv_check %d:%d", parse->count, r->count);
         if (err<0) {
-            parse->st->error++;
+            parse->tlvst->error++;
             
             return err;
         }
 
         err = tlv_trace(tlv_record_save(r, tlv), "tlv_record_save %d:%d", parse->count, r->count);
         if (err<0) {
-            parse->st->error++;
+            parse->tlvst->error++;
             
             return err;
         }
@@ -1461,7 +1465,7 @@ tlv_record_parse(tlv_record_t *r)
         }
 
         r->count++;
-        parse->st->ok++;
+        parse->tlvst->ok++;
         
         return 0;
     }

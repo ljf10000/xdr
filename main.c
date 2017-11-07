@@ -44,7 +44,7 @@ usage(void)
 }
 
 static xpath_t Path[PATH_END];
-static xst_t St;
+static xst_t St[2];
 
 static void
 init_xpath(char *path[PATH_END])
@@ -59,7 +59,7 @@ init_xpath(char *path[PATH_END])
 static int
 xdr_handle(char *filename, int namelen)
 {
-    struct xparse parse = XPARSE_INITER(Path, &St, filename, namelen);
+    struct xparse parse = XPARSE_INITER(Path, St, filename, namelen);
     int err;
     
     xp_init(&parse);

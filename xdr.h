@@ -1444,6 +1444,7 @@ to_xdr(tlv_record_t *r, struct xb *x)
     for (i=tlv_id_header; i<tlv_id_low_end; i++) {
         err = to_xdr_helper(&r->cache[i], x);
         if (err<0) {
+            r->parse->xdrst->error++;
             return err;
         }
     }
@@ -1451,21 +1452,25 @@ to_xdr(tlv_record_t *r, struct xb *x)
     for (i=tlv_id_high_begin; i<tlv_id_end; i++) {
         err = to_xdr_helper(&r->cache[i], x);
         if (err<0) {
+            r->parse->xdrst->error++;
             return err;
         }
     }
     
     err = to_xdr_ssl(r, x);
     if (err<0) {
+        r->parse->xdrst->error++;
         return err;
     }
 
     err = to_xdr_dns(r, x);
     if (err<0) {
+        r->parse->xdrst->error++;
         return err;
     }
 
     r->parse->count++;
+    r->parse->xdrst->ok++;
     
     return 0;
 }
