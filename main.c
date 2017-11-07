@@ -26,9 +26,10 @@ ev_debug(inotify_ev_t *ev)
 static nameflag_t opt[] = {
     { .flag = OPT_CLI,          .name = "--cli",        .help = "cli mode. must support env: ENV_TLV_FILE"},
     { .flag = OPT_IP6,          .name = "--ip6",        .help = "ipv6[not support now]"},
-    { .flag = OPT_DUMP,         .name = "--dump",       .help = "dump all"},
     { .flag = OPT_STRICT,       .name = "--strict",     .help = "strict check"},
+    { .flag = OPT_DUMP,         .name = "--dump",       .help = "dump all"},
     { .flag = OPT_DUMP_SIMPLE,  .name = "--dump-simple",.help = "dump with simple format"},
+    { .flag = OPT_DUMP_PRE,     .name = "--dump-pre",   .help = "dump pre check"},
     { .flag = OPT_SPLIT,        .name = "--file-split", .help = "dpi file split from xdr"},
 };
 

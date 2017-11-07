@@ -64,12 +64,12 @@ enum {
 "        :                                     ;"                 __crlf
 #endif
 
-typedef void os_dump_line_f(char *line);
+typedef void os_dump_line_f(FILE *stream, char *line);
 
-#define os_dump_printf(_fmt, _args...)      printf(_fmt, ##_args)
+#define os_dump_printf(_stream, _fmt, _args...)     fprintf(_stream, _fmt, ##_args)
 
 static inline void
-__os_dump_line(int line, byte *raw, int len, os_dump_line_f *dump_line)
+__os_dump_line(FILE *stream, int line, byte *raw, int len, os_dump_line_f *dump_line)
 {
     int i, offset = 0;
     char buf[1 + __DUMP_LINE_MAX] = {0};
@@ -101,14 +101,14 @@ __os_dump_line(int line, byte *raw, int len, os_dump_line_f *dump_line)
     offset += os_soprintf(buf, offset, __crlf);
 
     if (dump_line) {
-        (*dump_line)(buf);
+        (*dump_line)(stream, buf);
     } else {
-        os_dump_printf("%s", buf);
+        os_dump_printf(stream, "%s", buf);
     }
 }
 
 static inline void
-__os_dump_buffer(void *buffer, int len, os_dump_line_f *dump_line)
+__os_dump_buffer(FILE *stream, void *buffer, int len, os_dump_line_f *dump_line)
 {
     int i, line, tail;
     byte *raw = (byte *)buffer;
@@ -124,24 +124,17 @@ __os_dump_buffer(void *buffer, int len, os_dump_line_f *dump_line)
     tail = tail?tail:__DUMP_LINE_BYTES;
     
     if (dump_line) {
-        (*dump_line)(__DUMP_LINE_HEADER);
+        (*dump_line)(stream, __DUMP_LINE_HEADER);
     } else {
-        os_dump_printf(__DUMP_LINE_HEADER);
+        os_dump_printf(stream, __DUMP_LINE_HEADER);
     }
     
     for (i=0; i<(line-1); i++) {
-        __os_dump_line(i, raw + i * __DUMP_LINE_BYTES, __DUMP_LINE_BYTES, dump_line);
+        __os_dump_line(stream, i, raw + i * __DUMP_LINE_BYTES, __DUMP_LINE_BYTES, dump_line);
     }
-    __os_dump_line(line, raw + i * __DUMP_LINE_BYTES, tail, dump_line);
+    __os_dump_line(stream, line, raw + i * __DUMP_LINE_BYTES, tail, dump_line);
 }
 
-
-#define os_dump_buffer(_buf, _len)      __os_dump_buffer(_buf, _len, NULL)
-
-#define os_dump_buffer_by(_is_dump, _buf, _len) do{ \
-    if (_is_dump) {                                 \
-        os_dump_buffer(_buf, _len);                 \
-    }                                               \
-}while(0)
+#define os_dump_buffer(_stream, _buf, _len)      __os_dump_buffer(_stream, _buf, _len, NULL)
 /******************************************************************************/
 #endif /* __DUMP_H_96bec2f065cb4415a8327409eae6d67c__ */
