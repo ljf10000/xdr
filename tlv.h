@@ -112,8 +112,7 @@ enum {
     OPT_DUMP        = 0x0010,
     OPT_DUMP_SHORT  = 0x0020 | OPT_DUMP,
     OPT_DUMP_PRE    = 0x0040 | OPT_DUMP,
-    OPT_DUMP_OK     = 0x0080,
-    OPT_DUMP_ST     = 0x0100,
+    OPT_DUMP_ST     = 0x0080,
 };
 
 enum {
@@ -1165,18 +1164,6 @@ xp_st(struct xparse *parse)
             parse->st_ssl_client->ok,
             parse->st_http_request->ok,
             parse->st_http_response->ok);
-    }
-}
-
-static inline void
-xp_ok(struct xparse *parse)
-{
-    if (is_option(OPT_DUMP_OK)) {
-        xpath_t *path = xp_path(parse, PATH_BAD);
-        xpath_change(path, OK_SUFFIX);
-        
-        FILE *stream = fopen(path->fullname, "a+");
-        os_fclose(stream);
     }
 }
 

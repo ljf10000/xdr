@@ -30,7 +30,6 @@ static nameflag_t opt[] = {
     { .flag = OPT_DUMP,         .name = "--dump",       .help = "dump all"},
     { .flag = OPT_DUMP_SHORT,   .name = "--dump-short", .help = "dump binary short"},
     { .flag = OPT_DUMP_PRE,     .name = "--dump-pre",   .help = "dump before check"},
-    { .flag = OPT_DUMP_OK,      .name = "--dump-ok",    .help = "dump success file to xxx.ok"},
     { .flag = OPT_DUMP_ST,      .name = "--dump-st",    .help = "dump statistic"},
     { .flag = OPT_SPLIT,        .name = "--file-split", .help = "dpi file split from xdr"},
 };
@@ -80,8 +79,6 @@ ERROR:
         parse.st_raw->error++;
     } else {
         parse.st_raw->ok++;
-        
-        xp_ok(&parse);
     }
     xp_st(&parse);
     
