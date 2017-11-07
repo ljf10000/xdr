@@ -65,10 +65,6 @@ static inline int xdr_array_getidbyname(const char *name);
 #define XDR_ARRAY_END       XDR_ARRAY_END
 #endif
 
-typedef uint32 xdr_offset_t;
-typedef uint32 xdr_size_t;
-typedef uint32 xdr_delay_t;
-
 static inline void *
 xdr_strcpy(void *dst, void *src, xdr_size_t size)
 {

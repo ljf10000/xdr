@@ -43,6 +43,10 @@ struct tlv;
 struct xdr;
 struct xparse;
 
+typedef uint32 xdr_offset_t;
+typedef uint32 xdr_size_t;
+typedef uint32 xdr_delay_t;
+
 #if 0
       |<-filename    |<-suffix
 /path/xxxxxxxxxxxxxx.xdr
