@@ -1176,6 +1176,9 @@ xp_open(struct xparse *parse)
 static inline void
 xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const char *fmt, va_list args)
 {
+    tlv_dprint("stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
+        stream, parse, tlv, err, fmt, args);
+
     vfprintf(stream, fmt, args);
 
     fprintf(stream, __crlf __tab 
@@ -1187,14 +1190,11 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
 static inline int
 xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
 {
+    va_list args;
     char *fullname;
 
     if (tlv) {
-        va_list args;
-    
         va_start(args, fmt);
-        tlv_dprint("stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
-            DUMP_STREAM, parse, tlv, err, fmt, args);
         xp_verror(DUMP_STREAM, parse, tlv, err, fmt, args);
         va_end(args);
     }
@@ -1216,8 +1216,6 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
 
         // log
         if (tlv) {
-            va_list args;
-        
         tlv_dprint("xp_error 6.1");
             xpath_change(path, ERR_SUFFIX);
             FILE *stream = fopen(fullname, "a+");
@@ -1227,8 +1225,6 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         tlv_dprint("xp_error 6.2");
                 va_start(args, fmt);
         tlv_dprint("xp_error 6.3");
-        tlv_dprint("stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
-            stream, parse, tlv, err, fmt, args);
                 xp_verror(stream, parse, tlv, err, fmt, args);
         tlv_dprint("xp_error 6.4");
                 va_end(args);
