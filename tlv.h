@@ -332,23 +332,6 @@ tlv_dump_binary(FILE *stream, struct tlv *tlv)
     }
 }
 
-static inline void
-tlv_dump_header(FILE *stream, struct tlv *tlv)
-{
-    fprintf(stream,
-            "tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u" __crlf, 
-            tlv_ops_name(tlv), 
-            tlv->id, 
-            tlv_extend(tlv),
-            tlv_ops_fixed(tlv),
-            tlv->pad, 
-            tlv_len(tlv),
-            tlv_hdrlen(tlv),
-            tlv_datalen(tlv));
-
-    tlv_dump_binary(stream, tlv);
-}
-
 static inline void 
 tlv_dump_time(FILE *stream, struct tlv *tlv)
 {
@@ -1181,10 +1164,19 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
 
     vfprintf(stream, fmt, args);
 
-    fprintf(stream, __crlf __tab 
-        "ERROR:%d ", 
-        err);
-    tlv_dump_header(stream, tlv);
+    fprintf(stream, __crlf __tab
+            "ERROR:%d tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u" __crlf, 
+            err,
+            tlv_ops_name(tlv), 
+            tlv->id, 
+            tlv_extend(tlv),
+            tlv_ops_fixed(tlv),
+            tlv->pad, 
+            tlv_len(tlv),
+            tlv_hdrlen(tlv),
+            tlv_datalen(tlv));
+
+    tlv_dump_binary(stream, tlv);
 }
 
 static inline int
