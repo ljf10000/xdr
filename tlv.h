@@ -1127,7 +1127,7 @@ xp_open(struct xparse *parse)
 
     size = os_fsize(tlv->fullname);
     if (size<0) {
-        tlv_dprint("get size %s error:%d", tlv->fullname, size);
+        os_println("get size %s error:%d", tlv->fullname, size);
         return size;
     }
 
@@ -1362,7 +1362,6 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
 static inline int
 tlv_cache_save(struct xparse *parse, tlv_cache_t *cache, struct tlv *tlv)
 {
-    tlv_dprint("tlv_cache_save ...");
     if (cache->count < TLV_CACHE_MULTI) {
         if (0==cache->count) {
             cache->multi[cache->count++] = tlv;
@@ -1371,18 +1370,13 @@ tlv_cache_save(struct xparse *parse, tlv_cache_t *cache, struct tlv *tlv)
             cache->multi[cache->count++] = tlv;
         }
         else {
-            tlv_dprint("tlv_cache_save ENOSUPPORT.");
-            
             return xp_error(parse, tlv, -ENOSUPPORT, "not support cache multi");
         }
     }
     else {
-        tlv_dprint("tlv_cache_save ENOSPACE.");
         return xp_error(parse, tlv, -ENOSPACE, "too more cache multi");
     }
     
-    tlv_dprint("tlv_cache_save ok.");
-
     return 0;
 }
 
