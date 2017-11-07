@@ -223,12 +223,12 @@ typedef struct {
 } tlv_ops_t;
 
 #define tlv_mapper_fixed(_mapper, _id, _name, _type, _check, _flag) \
-    _mapper(_name, _id, TLV_T_##_type, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_type##_t), tlv_dump_##_type, _check, tlv_to_xdr_##_name)
+    _mapper(_name, _id, TLV_T_##_type, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_type##_t), tlv_dump_##_type, _check, to_xdr_##_name)
 #define tlv_mapper_dynamic(_mapper, _id, _name, _type, _check, _flag) \
     _mapper(_name, _id, TLV_T_##_type, _flag, 0, 0, tlv_dump_##_type, _check, to_xdr_##_name)
 
 #define tlv_mapper_object(_mapper, _id, _name, _check, _flag) \
-    _mapper(_name, _id, TLV_T_object, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_name##_t), tlv_dump_##_name, _check, tlv_to_xdr_##_name)
+    _mapper(_name, _id, TLV_T_object, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_name##_t), tlv_dump_##_name, _check, to_xdr_##_name)
 #define tlv_mapper_nothing(_mapper, _id, _name, _check, _flag) \
     _mapper(_name, _id, TLV_T_string, _flag, 0, 0, NULL, _check, NULL)
 
