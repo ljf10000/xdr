@@ -4,19 +4,19 @@
 #include "os.h"
 /******************************************************************************/
 #ifndef D_tlv_dprint
-#define D_tlv_dprint    1
+#define D_tlv_dprint    0
 #endif
 
 #ifndef D_xdr_dprint
-#define D_xdr_dprint    1
+#define D_xdr_dprint    0
 #endif
 
 #ifndef D_tlv_trace
-#define D_tlv_trace     1
+#define D_tlv_trace     0
 #endif
 
 #ifndef D_xdr_trace
-#define D_xdr_trace     1
+#define D_xdr_trace     0
 #endif
 
 #if D_tlv_dprint
@@ -262,14 +262,7 @@ tlv_ops(struct tlv *tlv)
 
 static inline int xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...);
 
-#define TLV_DUMP( _stream, _fmt, _args...)      do{ \
-    fprintf(_stream, __tab  _fmt __crlf, ##_args);  \
-                                                    \
-    if (DUMP_STREAM != (_stream)) {                 \
-        fflush(_stream);                            \
-    }                                               \
-}while(0)
-
+#define TLV_DUMP( _stream, _fmt, _args...)  fprintf(_stream, __tab  _fmt __crlf, ##_args)
 #define TLV_DUMP2(_stream, _fmt, _args...)  TLV_DUMP( _stream, __tab _fmt, ##_args)
 #define TLV_DUMP3(_stream, _fmt, _args...)  TLV_DUMP2(_stream, __tab _fmt, ##_args)
 #define TLV_DUMP4(_stream, _fmt, _args...)  TLV_DUMP3(_stream, __tab _fmt, ##_args)
@@ -325,10 +318,6 @@ tlv_dump_binary(FILE *stream, struct tlv *tlv)
         }
 
         os_dump_buffer(stream, tlv_binary(tlv), size);
-
-        if (DUMP_STREAM != stream) {
-            fflush(stream);
-        }
     }
 }
 
@@ -1168,7 +1157,7 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
             tlv->id, 
             tlv_extend(tlv),
             tlv_ops_fixed(tlv),
-            tlv->pad, 
+            tlv->pad,
             tlv_len(tlv),
             tlv_hdrlen(tlv),
             tlv_datalen(tlv),
