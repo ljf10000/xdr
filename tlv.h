@@ -73,6 +73,15 @@ enum {
 };
 
 enum {
+    PATH_TLV = 0,
+    PATH_XDR = 1,
+    PATH_SHA = 2,
+    PATH_BAD = 3,
+    
+    PATH_END
+};
+
+enum {
     TLV_F_MULTI             = 0x1000,
     TLV_F_FIXED             = 0x2000,
     

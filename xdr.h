@@ -35,15 +35,6 @@
 #define XDR_EXPAND_ALIGN(x) OS_ALIGN(x + XDR_EXPAND, XDR_EXPAND)
 #define XDR_DIGEST_SIZE     SHA256_DIGEST_SIZE
 
-enum {
-    PATH_TLV = 0,
-    PATH_XDR = 1,
-    PATH_SHA = 2,
-    PATH_BAD = 3,
-    
-    PATH_END
-};
-
 #if 1
 #define XDR_ARRAY_MAPPER(_) \
     _(XDR_ARRAY, string,0)  \
@@ -552,31 +543,31 @@ xdr_L7(struct xdr *xdr)
 }
 
 static inline void *
-xb_current(xbuffer_t *x)
+xb_current(struct xb *x)
 {
     return x->u.header + x->current;
 }
 
 static inline xdr_offset_t
-xb_offset(xbuffer_t *x, void *pointer)
+xb_offset(struct xb *x, void *pointer)
 {
     return pointer - x->u.header;
 }
 
 static inline xdr_size_t
-xb_left(xbuffer_t *x)
+xb_left(struct xb *x)
 {
     return (x->size > x->current)?(x->size - x->current):0;
 }
 
 static inline bool
-xb_enought(xbuffer_t *x, xdr_size_t size)
+xb_enought(struct xb *x, xdr_size_t size)
 {
     return xb_left(x) >= XDR_ALIGN(size);
 }
 
 static inline void *
-xb_put(xbuffer_t *x, xdr_size_t size)
+xb_put(struct xb *x, xdr_size_t size)
 {
     void *current = xb_current(x);
     
@@ -588,7 +579,7 @@ xb_put(xbuffer_t *x, xdr_size_t size)
 }
 
 static inline int
-xb_expand(xbuffer_t *x, xdr_size_t size)
+xb_expand(struct xb *x, xdr_size_t size)
 {
     if (false==xb_enought(x, size)) {
         int err;
@@ -607,19 +598,19 @@ xb_expand(xbuffer_t *x, xdr_size_t size)
 }
 
 static inline byte *
-xb_obj(xbuffer_t *x, xdr_offset_t offset)
+xb_obj(struct xb *x, xdr_offset_t offset)
 {
     return XDR_OBJ(x->u.xdr, offset);
 }
 
 static inline void *
-xb_pre(xbuffer_t *x, xdr_size_t size)
+xb_pre(struct xb *x, xdr_size_t size)
 {
     return (0==xb_expand(x, size))?xb_put(x, size):NULL;
 }
 
 static inline void *
-xb_pre_obj(xbuffer_t *x, xdr_size_t size, xdr_offset_t *poffset)
+xb_pre_obj(struct xb *x, xdr_size_t size, xdr_offset_t *poffset)
 {
     xdr_offset_t offset = *poffset;
     if (offset) {
@@ -635,7 +626,7 @@ xb_pre_obj(xbuffer_t *x, xdr_size_t size, xdr_offset_t *poffset)
 }
 
 static inline xdr_array_t *
-xb_pre_array(xbuffer_t *x, xdr_array_t *a, int type, xdr_size_t size, int count)
+xb_pre_array(struct xb *x, xdr_array_t *a, int type, xdr_size_t size, int count)
 {
     xdr_size_t allsize = count * XDR_ALIGN(size);
     void *p = xb_pre(x, allsize);
@@ -651,7 +642,7 @@ xb_pre_array(xbuffer_t *x, xdr_array_t *a, int type, xdr_size_t size, int count)
 }
 
 static inline xdr_string_t *
-xb_pre_string(xbuffer_t *x, xdr_string_t *obj, void *buf, xdr_size_t size)
+xb_pre_string(struct xb *x, xdr_string_t *obj, void *buf, xdr_size_t size)
 {
     void *p = xb_pre(x, XDR_ALIGN(1+size));
     if (NULL==p) {
@@ -667,13 +658,13 @@ xb_pre_string(xbuffer_t *x, xdr_string_t *obj, void *buf, xdr_size_t size)
 }
 
 static inline int
-xb_pre_string_ex(xbuffer_t *x, xdr_string_t *obj, struct tlv *tlv)
+xb_pre_string_ex(struct xb *x, xdr_string_t *obj, struct tlv *tlv)
 {
     return xb_pre_string(x, obj, tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
 }
 
 static inline xdr_binary_t *
-xb_pre_binnary(xbuffer_t *x, xdr_binary_t *obj, void *buf, xdr_size_t size)
+xb_pre_binnary(struct xb *x, xdr_binary_t *obj, void *buf, xdr_size_t size)
 {
     void *p = xb_pre(x, XDR_ALIGN(size));
     if (NULL==p) {
@@ -688,7 +679,7 @@ xb_pre_binnary(xbuffer_t *x, xdr_binary_t *obj, void *buf, xdr_size_t size)
 }
 
 static inline int
-xb_pre_binary_ex(xbuffer_t *x, xdr_binary_t *obj, struct tlv *tlv)
+xb_pre_binary_ex(struct xb *x, xdr_binary_t *obj, struct tlv *tlv)
 {
     return xb_pre_binnary(x, obj, tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
 }
@@ -720,7 +711,7 @@ getshafilename(xpath_t *path, const char *dir, char *sha)
 }
 
 static inline int
-xb_pre_file_bybuffer(xbuffer_t *x, xdr_file_t *file, struct tlv *tlv)
+xb_pre_file_bybuffer(struct xb *x, xdr_file_t *file, struct tlv *tlv)
 {
     const char *dir = getdirbyflag(tlv_ops_flag(tlv));
     if (NULL==dir) {
@@ -748,7 +739,7 @@ xb_pre_file_bybuffer(xbuffer_t *x, xdr_file_t *file, struct tlv *tlv)
 }
 
 static inline int
-xb_pre_file_bypath(xbuffer_t *x, xdr_file_t *file, struct tlv *tlv)
+xb_pre_file_bypath(struct xb *x, xdr_file_t *file, struct tlv *tlv)
 {
     char fullname[1+OS_FILENAME_LEN];
     
@@ -764,7 +755,7 @@ xb_pre_file_bypath(xbuffer_t *x, xdr_file_t *file, struct tlv *tlv)
 }
 
 static inline int
-xb_pre_file(xbuffer_t *x, xdr_file_t *file, struct tlv *tlv)
+xb_pre_file(struct xb *x, xdr_file_t *file, struct tlv *tlv)
 {
     int err;
     
@@ -784,7 +775,7 @@ xb_pre_file(xbuffer_t *x, xdr_file_t *file, struct tlv *tlv)
 }
 
 static inline int
-xb_pre_file_ex(xbuffer_t *x, xdr_offset_t *poffset, struct tlv *tlv)
+xb_pre_file_ex(struct xb *x, xdr_offset_t *poffset, struct tlv *tlv)
 {
     xdr_file_t *file = (xdr_file_t *)xb_pre(x, sizeof(xdr_file_t));
     if (NULL==file) {
@@ -809,73 +800,73 @@ xb_pre_file_ex(xbuffer_t *x, xdr_offset_t *poffset, struct tlv *tlv)
 #define xb_pre_L6(_x, _type)    xb_pre_by(_x, _type, offsetof_L6)
 
 static inline xdr_session4_t *
-xb_pre_session4(xbuffer_t *x)
+xb_pre_session4(struct xb *x)
 {
     return xb_pre_by(x, xdr_session4_t, offsetof_session);
 }
 
 static inline xdr_session6_t *
-xb_pre_session6(xbuffer_t *x)
+xb_pre_session6(struct xb *x)
 {
     return xb_pre_by(x, xdr_session6_t, offsetof_session);
 }
 
 static inline xdr_session_st_t *
-xb_pre_session_st(xbuffer_t *x)
+xb_pre_session_st(struct xb *x)
 {
     return xb_pre_by(x, xdr_session_st_t, offsetof_session_st);
 }
 
 static inline xdr_service_st_t *
-xb_pre_service_st(xbuffer_t *x)
+xb_pre_service_st(struct xb *x)
 {
     return xb_pre_by(x, xdr_service_st_t, offsetof_service_st);
 }
 
 static inline xdr_tcp_t *
-xb_pre_tcp(xbuffer_t *x)
+xb_pre_tcp(struct xb *x)
 {
     return xb_pre_L4(x, xdr_tcp_t);
 }
 
 static inline xdr_http_t *
-xb_pre_http(xbuffer_t *x)
+xb_pre_http(struct xb *x)
 {
     return xb_pre_L5(x, xdr_http_t);
 }
 
 static inline xdr_sip_t *
-xb_pre_sip(xbuffer_t *x)
+xb_pre_sip(struct xb *x)
 {
     return xb_pre_L5(x, xdr_sip_t);
 }
 
 static inline xdr_rtsp_t *
-xb_pre_rtsp(xbuffer_t *x)
+xb_pre_rtsp(struct xb *x)
 {
     return xb_pre_L5(x, xdr_rtsp_t);
 }
 
 static inline xdr_ftp_t *
-xb_pre_ftp(xbuffer_t *x)
+xb_pre_ftp(struct xb *x)
 {
     return xb_pre_L5(x, xdr_ftp_t);
 }
 
 static inline xdr_mail_t *
-xb_pre_mail(xbuffer_t *x)
+xb_pre_mail(struct xb *x)
 {
     return xb_pre_L5(x, xdr_mail_t);
 }
 
 static inline xdr_dns_t *
-xb_pre_dns(xbuffer_t *x)
+xb_pre_dns(struct xb *x)
 {
     return xb_pre_L5(x, xdr_dns_t);
 }
 
 static inline xdr_ssl_t *
-xb_pre_ssl(xbuffer_t *x)
+xb_pre_ssl(struct xb *x)
 {
     return xb_pre_L6(x, xdr_ssl_t);
 }
@@ -892,19 +883,19 @@ xb_pre_ssl(xbuffer_t *x)
 
 
 static inline int
-to_xdr_session_state(xbuffer_t *x, struct tlv *tlv)
+to_xdr_session_state(struct xb *x, struct tlv *tlv)
 {
     return to_xdr_by(x, tlv, session_state, u8);
 }
 
 static inline int
-to_xdr_appid(xbuffer_t *x, struct tlv *tlv)
+to_xdr_appid(struct xb *x, struct tlv *tlv)
 {
     return to_xdr_by(x, tlv, appid, u8);
 }
 
 static inline int
-to_xdr_session(xbuffer_t *x, struct tlv *tlv)
+to_xdr_session(struct xb *x, struct tlv *tlv)
 {
     tlv_session_t *src = tlv_session(tlv);
     
@@ -937,19 +928,19 @@ to_xdr_session(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_session_st(xbuffer_t *x, struct tlv *tlv)
+to_xdr_session_st(struct xb *x, struct tlv *tlv)
 {
     return to_xdr_obj(x, tlv, session_st);
 }
 
 static inline int
-to_xdr_service_st(xbuffer_t *x, struct tlv *tlv)
+to_xdr_service_st(struct xb *x, struct tlv *tlv)
 {
     return to_xdr_obj(x, tlv, service_st);
 }
 
 static inline int
-to_xdr_session_time(xbuffer_t *x, struct tlv *tlv)
+to_xdr_session_time(struct xb *x, struct tlv *tlv)
 {
     tlv_session_time_t *tm = tlv_session_time(tlv);
     
@@ -961,19 +952,19 @@ to_xdr_session_time(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_tcp(xbuffer_t *x, struct tlv *tlv)
+to_xdr_tcp(struct xb *x, struct tlv *tlv)
 {
     return to_xdr_obj(x, tlv, tcp);
 }
 
 static inline int
-to_xdr_first_response_delay(xbuffer_t *x, struct tlv *tlv)
+to_xdr_first_response_delay(struct xb *x, struct tlv *tlv)
 {
     return to_xdr_by(x, tlv, first_response_delay, u32);
 }
 
 static inline int
-to_xdr_L7(xbuffer_t *x, struct tlv *tlv)
+to_xdr_L7(struct xb *x, struct tlv *tlv)
 {
     os_objcpy(&x->u.xdr->L7, tlv_L7(tlv));
     
@@ -981,127 +972,127 @@ to_xdr_L7(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_http(xbuffer_t *x, struct tlv *tlv)
+to_xdr_http(struct xb *x, struct tlv *tlv)
 {
     return to_xdr_obj(x, tlv, http);
 }
 
 static inline int
-to_xdr_http_host(xbuffer_t *x, struct tlv *tlv)
+to_xdr_http_host(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->host, tlv);
 }
 
 static inline int
-to_xdr_http_url(xbuffer_t *x, struct tlv *tlv)
+to_xdr_http_url(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->url, tlv);
 }
 
 static inline int
-to_xdr_http_host_xonline(xbuffer_t *x, struct tlv *tlv)
+to_xdr_http_host_xonline(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->host_xonline, tlv);
 }
 
 static inline int
-to_xdr_http_user_agent(xbuffer_t *x, struct tlv *tlv)
+to_xdr_http_user_agent(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->user_agent, tlv);
 }
 
 static inline int
-to_xdr_http_content(xbuffer_t *x, struct tlv *tlv)
+to_xdr_http_content(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->content, tlv);
 }
 
 static inline int
-to_xdr_http_refer(xbuffer_t *x, struct tlv *tlv)
+to_xdr_http_refer(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->refer, tlv);
 }
 
 static inline int
-to_xdr_http_cookie(xbuffer_t *x, struct tlv *tlv)
+to_xdr_http_cookie(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->cookie, tlv);
 }
 
 static inline int
-to_xdr_http_location(xbuffer_t *x, struct tlv *tlv)
+to_xdr_http_location(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_http(x)->location, tlv);
 }
 
 static inline int
-to_xdr_sip(xbuffer_t *x, struct tlv *tlv)
+to_xdr_sip(struct xb *x, struct tlv *tlv)
 {
     return to_xdr_obj(x, tlv, sip);
 }
 
 static inline int
-to_xdr_sip_calling_number(xbuffer_t *x, struct tlv *tlv)
+to_xdr_sip_calling_number(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_sip(x)->calling_number, tlv);
 }
 
 static inline int
-to_xdr_sip_called_number(xbuffer_t *x, struct tlv *tlv)
+to_xdr_sip_called_number(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_sip(x)->called_number, tlv);
 }
 
 static inline int
-to_xdr_sip_session_id(xbuffer_t *x, struct tlv *tlv)
+to_xdr_sip_session_id(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_sip(x)->session_id, tlv);
 }
 
 static inline int
-to_xdr_rtsp(xbuffer_t *x, struct tlv *tlv)
+to_xdr_rtsp(struct xb *x, struct tlv *tlv)
 {
     return to_xdr_obj(x, tlv, rtsp);
 }
 
 static inline int
-to_xdr_rtsp_url(xbuffer_t *x, struct tlv *tlv)
+to_xdr_rtsp_url(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_rtsp(x)->url, tlv);
 }
 
 static inline int
-to_xdr_rtsp_user_agent(xbuffer_t *x, struct tlv *tlv)
+to_xdr_rtsp_user_agent(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_rtsp(x)->user_agent, tlv);
 }
 
 static inline int
-to_xdr_rtsp_server_ip(xbuffer_t *x, struct tlv *tlv)
+to_xdr_rtsp_server_ip(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_rtsp(x)->server_ip, tlv);
 }
 
 static inline int
-to_xdr_ftp_status(xbuffer_t *x, struct tlv *tlv)
+to_xdr_ftp_status(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_ftp(x)->status, tlv);
 }
 
 static inline int
-to_xdr_ftp_user(xbuffer_t *x, struct tlv *tlv)
+to_xdr_ftp_user(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_ftp(x)->user, tlv);
 }
 
 static inline int
-to_xdr_ftp_pwd(xbuffer_t *x, struct tlv *tlv)
+to_xdr_ftp_pwd(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_ftp(x)->pwd, tlv);
 }
 
 static inline int
-to_xdr_ftp_trans_mode(xbuffer_t *x, struct tlv *tlv)
+to_xdr_ftp_trans_mode(struct xb *x, struct tlv *tlv)
 {
     xb_pre_ftp(x)->trans_mode = tlv_u8(tlv);
     
@@ -1109,7 +1100,7 @@ to_xdr_ftp_trans_mode(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_ftp_trans_type(xbuffer_t *x, struct tlv *tlv)
+to_xdr_ftp_trans_type(struct xb *x, struct tlv *tlv)
 {
     xb_pre_ftp(x)->trans_type = tlv_u8(tlv);
     
@@ -1117,13 +1108,13 @@ to_xdr_ftp_trans_type(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_ftp_filename(xbuffer_t *x, struct tlv *tlv)
+to_xdr_ftp_filename(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_ftp(x)->filename, tlv);
 }
 
 static inline int
-to_xdr_ftp_filesize(xbuffer_t *x, struct tlv *tlv)
+to_xdr_ftp_filesize(struct xb *x, struct tlv *tlv)
 {
     xb_pre_ftp(x)->filesize = tlv_u32(tlv);
     
@@ -1131,7 +1122,7 @@ to_xdr_ftp_filesize(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_ftp_response_delay(xbuffer_t *x, struct tlv *tlv)
+to_xdr_ftp_response_delay(struct xb *x, struct tlv *tlv)
 {
     xb_pre_ftp(x)->response_delay = tlv_duration(tlv);
     
@@ -1139,7 +1130,7 @@ to_xdr_ftp_response_delay(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_ftp_trans_duration(xbuffer_t *x, struct tlv *tlv)
+to_xdr_ftp_trans_duration(struct xb *x, struct tlv *tlv)
 {
     xb_pre_ftp(x)->trans_duration = tlv_duration(tlv);
     
@@ -1147,7 +1138,7 @@ to_xdr_ftp_trans_duration(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_mail_msg_type(xbuffer_t *x, struct tlv *tlv)
+to_xdr_mail_msg_type(struct xb *x, struct tlv *tlv)
 {
     xb_pre_mail(x)->msg_type = tlv_u16(tlv);
     
@@ -1155,7 +1146,7 @@ to_xdr_mail_msg_type(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_mail_status_code(xbuffer_t *x, struct tlv *tlv)
+to_xdr_mail_status_code(struct xb *x, struct tlv *tlv)
 {
     xb_pre_mail(x)->status_code = tlv_i16(tlv);
     
@@ -1163,19 +1154,19 @@ to_xdr_mail_status_code(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_mail_user(xbuffer_t *x, struct tlv *tlv)
+to_xdr_mail_user(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_mail(x)->user, tlv);
 }
 
 static inline int
-to_xdr_mail_sender(xbuffer_t *x, struct tlv *tlv)
+to_xdr_mail_sender(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_mail(x)->sender, tlv);
 }
 
 static inline int
-to_xdr_mail_length(xbuffer_t *x, struct tlv *tlv)
+to_xdr_mail_length(struct xb *x, struct tlv *tlv)
 {
     xb_pre_mail(x)->length = tlv_u32(tlv);
     
@@ -1183,25 +1174,25 @@ to_xdr_mail_length(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_mail_domain(xbuffer_t *x, struct tlv *tlv)
+to_xdr_mail_domain(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_mail(x)->domain, tlv);
 }
 
 static inline int
-to_xdr_mail_recver(xbuffer_t *x, struct tlv *tlv)
+to_xdr_mail_recver(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_mail(x)->recver, tlv);
 }
 
 static inline int
-to_xdr_mail_hdr(xbuffer_t *x, struct tlv *tlv)
+to_xdr_mail_hdr(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_mail(x)->hdr, tlv);
 }
 
 static inline int
-to_xdr_mail_acs_type(xbuffer_t *x, struct tlv *tlv)
+to_xdr_mail_acs_type(struct xb *x, struct tlv *tlv)
 {
     xb_pre_mail(x)->acs_type = tlv_u8(tlv);
     
@@ -1209,13 +1200,13 @@ to_xdr_mail_acs_type(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_dns_domain(xbuffer_t *x, struct tlv *tlv)
+to_xdr_dns_domain(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_string_ex(x, &xb_pre_dns(x)->domain, tlv);
 }
 
 static inline int
-to_xdr_dns_ip_count(xbuffer_t *x, struct tlv *tlv)
+to_xdr_dns_ip_count(struct xb *x, struct tlv *tlv)
 {
     xb_pre_dns(x)->ip_count = tlv_u8(tlv);
     
@@ -1223,7 +1214,7 @@ to_xdr_dns_ip_count(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_dns_ip4(xbuffer_t *x, struct tlv *tlv)
+to_xdr_dns_ip4(struct xb *x, struct tlv *tlv)
 {
     xb_pre_dns(x)->ip_version = XDR_IPV4;
     
@@ -1231,7 +1222,7 @@ to_xdr_dns_ip4(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_dns_ip6(xbuffer_t *x, struct tlv *tlv)
+to_xdr_dns_ip6(struct xb *x, struct tlv *tlv)
 {
     xb_pre_dns(x)->ip_version = XDR_IPV6;
     
@@ -1239,7 +1230,7 @@ to_xdr_dns_ip6(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_dns_response_code(xbuffer_t *x, struct tlv *tlv)
+to_xdr_dns_response_code(struct xb *x, struct tlv *tlv)
 {
     xb_pre_dns(x)->response_code = tlv_u8(tlv);
     
@@ -1247,7 +1238,7 @@ to_xdr_dns_response_code(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_dns_count_request(xbuffer_t *x, struct tlv *tlv)
+to_xdr_dns_count_request(struct xb *x, struct tlv *tlv)
 {
     xb_pre_dns(x)->count_request = tlv_u8(tlv);
     
@@ -1255,7 +1246,7 @@ to_xdr_dns_count_request(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_dns_count_response_record(xbuffer_t *x, struct tlv *tlv)
+to_xdr_dns_count_response_record(struct xb *x, struct tlv *tlv)
 {
     xb_pre_dns(x)->count_response_record = tlv_u8(tlv);
     
@@ -1263,7 +1254,7 @@ to_xdr_dns_count_response_record(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_dns_count_response_auth(xbuffer_t *x, struct tlv *tlv)
+to_xdr_dns_count_response_auth(struct xb *x, struct tlv *tlv)
 {
     xb_pre_dns(x)->count_response_auth = tlv_u8(tlv);
     
@@ -1271,7 +1262,7 @@ to_xdr_dns_count_response_auth(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_dns_count_response_extra(xbuffer_t *x, struct tlv *tlv)
+to_xdr_dns_count_response_extra(struct xb *x, struct tlv *tlv)
 {
     xb_pre_dns(x)->count_response_extra = tlv_u8(tlv);
     
@@ -1279,7 +1270,7 @@ to_xdr_dns_count_response_extra(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_dns_delay(xbuffer_t *x, struct tlv *tlv)
+to_xdr_dns_delay(struct xb *x, struct tlv *tlv)
 {
     xb_pre_dns(x)->delay = tlv_u32(tlv);
     
@@ -1287,37 +1278,37 @@ to_xdr_dns_delay(xbuffer_t *x, struct tlv *tlv)
 }
 
 static inline int
-to_xdr_http_request(xbuffer_t *x, struct tlv *tlv)
+to_xdr_http_request(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_file_ex(x, &xb_pre_http(x)->offsetof_request, tlv);
 }
 
 static inline int
-to_xdr_http_response(xbuffer_t *x, struct tlv *tlv)
+to_xdr_http_response(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_file_ex(x, &xb_pre_http(x)->offsetof_response, tlv);
 }
 
 static inline int
-to_xdr_file_content(xbuffer_t *x, struct tlv *tlv)
+to_xdr_file_content(struct xb *x, struct tlv *tlv)
 {
     return xb_pre_file_ex(x, &x->u.xdr->offsetof_file_content, tlv);
 }
 
 static inline int
-to_xdr_ssl_server_cert(xbuffer_t *x, struct tlv *tlv)
+to_xdr_ssl_server_cert(struct xb *x, struct tlv *tlv)
 {
     return 0; // do nothing
 }
 
 static inline int
-to_xdr_ssl_client_cert(xbuffer_t *x, struct tlv *tlv)
+to_xdr_ssl_client_cert(struct xb *x, struct tlv *tlv)
 {
     return 0; // do nothing
 }
 
 static inline int
-to_xdr_ssl_fail_reason(xbuffer_t *x, struct tlv *tlv)
+to_xdr_ssl_fail_reason(struct xb *x, struct tlv *tlv)
 {
     xb_pre_ssl(x)->reason = tlv_u8(tlv);
     
@@ -1326,7 +1317,7 @@ to_xdr_ssl_fail_reason(xbuffer_t *x, struct tlv *tlv)
 
 
 static inline int
-to_xdr_dns(tlv_record_t *r, xbuffer_t *x)
+to_xdr_dns(tlv_record_t *r, struct xb *x)
 {
     xdr_dns_t *dns = xdr_dns(x->u.xdr);
     if (NULL==dns) {
@@ -1374,7 +1365,7 @@ to_xdr_dns(tlv_record_t *r, xbuffer_t *x)
 }
 
 static inline int
-to_xdr_ssl_helper(tlv_record_t *r, xbuffer_t *x, xdr_array_t *certs, int id)
+to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_array_t *certs, int id)
 {
     tlv_cache_t *cache = &r->cache[id];
     if (0==cache->count) {
@@ -1402,7 +1393,7 @@ to_xdr_ssl_helper(tlv_record_t *r, xbuffer_t *x, xdr_array_t *certs, int id)
 }
 
 static inline int
-to_xdr_ssl(tlv_record_t *r, xbuffer_t *x)
+to_xdr_ssl(tlv_record_t *r, struct xb *x)
 {
     xdr_ssl_t *ssl = xdr_ssl(x->u.xdr);
     if (NULL==ssl) {
@@ -1425,7 +1416,7 @@ to_xdr_ssl(tlv_record_t *r, xbuffer_t *x)
 }
 
 static inline int
-to_xdr_helper(tlv_cache_t *cache, xbuffer_t *x)
+to_xdr_helper(tlv_cache_t *cache, struct xb *x)
 {
     tlv_ops_t *ops;
     struct tlv *tlv;
@@ -1453,7 +1444,7 @@ to_xdr_helper(tlv_cache_t *cache, xbuffer_t *x)
 }
 
 static inline int
-to_xdr(tlv_record_t *r, xbuffer_t *x)
+to_xdr(tlv_record_t *r, struct xb *x)
 {
     int i, err;
 
