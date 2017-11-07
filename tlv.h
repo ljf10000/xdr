@@ -778,9 +778,7 @@ xp_open(struct xparse *parse)
 static inline void
 xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const char *fmt, va_list args)
 {
-    va_start(args, fmt);
     vfprintf(stream, fmt, args);
-    va_end(args);
 
     fprintf(stream, __crlf __tab 
         "ERROR:%d tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u" __crlf, 
@@ -962,7 +960,7 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
     }
 
     if (ops->check) {
-        int err = (*ops->check)(tlv);
+        int err = (*ops->check)(parse, tlv);
         if (err<0) {
             return err;
         }
