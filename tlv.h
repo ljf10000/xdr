@@ -1217,7 +1217,7 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         if (tlv) {
             xpath_change(path, ERR_SUFFIX);
             tlv_dprint("open %s ...", fullname);
-            FILE *stream = fopen(fullname, "a+");
+            FILE *stream = fopen(fullname, "w+");
             if (NULL==stream) {
                 tlv_dprint("open %s error", fullname);
             } else {
@@ -1226,6 +1226,7 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
                 va_start(args, fmt);
                 xp_verror(stream, parse, tlv, err, fmt, args);
                 va_end(args);
+                
                 fclose(stream);
             }
         }
