@@ -44,7 +44,7 @@ usage(void)
 }
 
 static xpath_t Path[PATH_END];
-static xst_t St[2];
+static xst_t St[XB_STCOUNT];
 
 static void
 init_xpath(char *path[PATH_END])
@@ -76,10 +76,14 @@ xdr_handle(char *filename, int namelen)
 
 ERROR:
     xp_close(&parse);
-    xp_st(&parse);
-    if (0==err) {
+    if (err<0) {
+        parse.st_file->error++;
+    } else {
+        parse.st_file->ok++;
+        
         xp_ok(&parse);
     }
+    xp_st(&parse);
     
     return err;
 }

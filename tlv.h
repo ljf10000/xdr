@@ -1071,14 +1071,19 @@ xb_open(struct xb *x, bool readonly, int size)
     return xb_mmap(x, readonly);
 }
 
+#ifndef XB_STCOUNT
+#define XB_STCOUNT  3
+#endif
+
 struct xparse {
     FILE *ferr;     // bad file
     char *filename; // just filename, not include path
     int namelen;    // just filename, not include path
     
     xpath_t *path;  // xpath_t path[PATH_END];
-    xst_t   *tlvst;
-    xst_t   *xdrst;
+    xst_t   *st_tlv;
+    xst_t   *st_xdr;
+    xst_t   *st_file;
     
     int count;      // tlv count
     struct xb tlv;
@@ -1086,13 +1091,14 @@ struct xparse {
 };
 
 #define XPARSE_INITER(_path, _st, _filename, _namelen) { \
-    .filename   = _filename,    \
-    .namelen    = _namelen,     \
-    .path       = _path,        \
-    .tlvst      = &(_st)[0],    \
-    .xdrst      = &(_st)[1],    \
-    .tlv        = XBUFFER_INITER((_path)[PATH_TLV].fullname),   \
-    .xdr        = XBUFFER_INITER((_path)[PATH_XDR].fullname),   \
+    .filename       = _filename,    \
+    .namelen        = _namelen,     \
+    .path           = _path,        \
+    .st_tlv         = &(_st)[0],    \
+    .st_xdr         = &(_st)[1],    \
+    .st_file        = &(_st)[2],    \
+    .tlv            = XBUFFER_INITER((_path)[PATH_TLV].fullname),   \
+    .xdr            = XBUFFER_INITER((_path)[PATH_XDR].fullname),   \
 }   /* end */
 
 static inline xpath_t *
@@ -1131,9 +1137,10 @@ static inline void
 xp_st(struct xparse *parse)
 {
     if (is_option(OPT_DUMP_ST)) {
-        os_println("tlv ok:%llu error:%llu; xdr ok:%llu error %llu", 
-            parse->tlvst->ok, parse->tlvst->error,
-            parse->xdrst->ok, parse->xdrst->error);
+        os_printf("tlv %llu:%llu, xdr %llu:%llu, file %llu:%llu" __crlf, 
+            parse->st_tlv->ok, parse->st_tlv->error,
+            parse->st_xdr->ok, parse->st_xdr->error,
+            parse->st_file->ok, parse->st_file->error);
     }
 }
 
@@ -1448,14 +1455,14 @@ tlv_record_parse(tlv_record_t *r)
 
         err = tlv_trace(tlv_check(parse, tlv), "tlv_check %d:%d", parse->count, r->count);
         if (err<0) {
-            parse->tlvst->error++;
+            parse->st_tlv->error++;
             
             return err;
         }
 
         err = tlv_trace(tlv_record_save(r, tlv), "tlv_record_save %d:%d", parse->count, r->count);
         if (err<0) {
-            parse->tlvst->error++;
+            parse->st_tlv->error++;
             
             return err;
         }
@@ -1465,7 +1472,7 @@ tlv_record_parse(tlv_record_t *r)
         }
 
         r->count++;
-        parse->tlvst->ok++;
+        parse->st_tlv->ok++;
         
         return 0;
     }
