@@ -1205,13 +1205,14 @@ xp_open(struct xparse *parse)
 static inline void
 xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const char *fmt, va_list args)
 {
+    fprintf(stream, __tab "ERROR:%d ", err);
+    
     vfprintf(stream, fmt, args);
 
     fprintf(stream, __crlf __tab
-        "ERROR:%d offset:%d %s" __crlf,
-        err,
-        (uint32)((byte *)tlv - (byte *)parse->tlv.u.header),
-        parse->filename);
+        " %s offset:%d" __crlf,
+        parse->filename,
+        (uint32)((byte *)tlv - (byte *)parse->tlv.u.header));
 
     fprintf(stream, __tab
             "tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u" __crlf, 
