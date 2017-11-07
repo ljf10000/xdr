@@ -727,6 +727,7 @@ xb_pre_file_bybuffer(struct xb *x, xdr_file_t *file, struct tlv *tlv)
     if (os_fexist(filename)) {
         return 0;
     } else {
+        
         return os_mmap_w_async(filename, buf, len);
     }
 }
@@ -1273,19 +1274,34 @@ to_xdr_dns_delay(struct xb *x, struct tlv *tlv)
 static inline int
 to_xdr_http_request(struct xb *x, struct tlv *tlv)
 {
-    return xb_pre_file_ex(x, &xb_pre_http(x)->offsetof_request, tlv);
+    int err = xb_pre_file_ex(x, &xb_pre_http(x)->offsetof_request, tlv);
+    if (0==err) {
+        x->parse->st_http_request->ok++;
+    }
+
+    return err;
 }
 
 static inline int
 to_xdr_http_response(struct xb *x, struct tlv *tlv)
 {
-    return xb_pre_file_ex(x, &xb_pre_http(x)->offsetof_response, tlv);
+    int err = xb_pre_file_ex(x, &xb_pre_http(x)->offsetof_response, tlv);
+    if (0==err) {
+        x->parse->st_http_response->ok++;
+    }
+
+    return err;
 }
 
 static inline int
 to_xdr_file_content(struct xb *x, struct tlv *tlv)
 {
-    return xb_pre_file_ex(x, &x->u.xdr->offsetof_file_content, tlv);
+    int err = xb_pre_file_ex(x, &x->u.xdr->offsetof_file_content, tlv);
+    if (0==err) {
+        x->parse->st_file_content->ok++;
+    }
+
+    return err;
 }
 
 static inline int
@@ -1380,6 +1396,15 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_array_t *certs, int id)
         if (err<0) {
             return err;
         }
+    }
+
+    switch (id) {
+        case tlv_id_ssl_server_cert:
+            x->parse->st_ssl_server->ok += count;
+            break;
+        case tlv_id_ssl_client_cert:
+            x->parse->st_ssl_client->ok += count;
+            break;
     }
 
     return 0;

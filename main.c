@@ -77,9 +77,9 @@ xdr_handle(char *filename, int namelen)
 ERROR:
     xp_close(&parse);
     if (err<0) {
-        parse.st_file->error++;
+        parse.st_raw->error++;
     } else {
-        parse.st_file->ok++;
+        parse.st_raw->ok++;
         
         xp_ok(&parse);
     }

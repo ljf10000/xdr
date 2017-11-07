@@ -1072,7 +1072,7 @@ xb_open(struct xb *x, bool readonly, int size)
 }
 
 #ifndef XB_STCOUNT
-#define XB_STCOUNT  3
+#define XB_STCOUNT  8
 #endif
 
 struct xparse {
@@ -1083,7 +1083,12 @@ struct xparse {
     xpath_t *path;  // xpath_t path[PATH_END];
     xst_t   *st_tlv;
     xst_t   *st_xdr;
-    xst_t   *st_file;
+    xst_t   *st_raw;
+    xst_t   *st_http_request;
+    xst_t   *st_http_response;
+    xst_t   *st_file_content;
+    xst_t   *st_ssl_server;
+    xst_t   *st_ssl_client;
     
     int count;      // tlv count
     struct xb tlv;
@@ -1096,7 +1101,12 @@ struct xparse {
     .path           = _path,        \
     .st_tlv         = &(_st)[0],    \
     .st_xdr         = &(_st)[1],    \
-    .st_file        = &(_st)[2],    \
+    .st_raw         = &(_st)[2],    \
+    .st_http_request    = &(_st)[3],    \
+    .st_http_response   = &(_st)[4],    \
+    .st_file_content    = &(_st)[5],    \
+    .st_ssl_server      = &(_st)[6],    \
+    .st_ssl_client      = &(_st)[7],    \
     .tlv            = XBUFFER_INITER((_path)[PATH_TLV].fullname),   \
     .xdr            = XBUFFER_INITER((_path)[PATH_XDR].fullname),   \
 }   /* end */
@@ -1137,10 +1147,24 @@ static inline void
 xp_st(struct xparse *parse)
 {
     if (is_option(OPT_DUMP_ST)) {
-        os_printf("tlv %llu:%llu, xdr %llu:%llu, file %llu:%llu" __crlf, 
+        os_printf(
+            "tlv %llu:%llu, "
+            "xdr %llu:%llu, "
+            "raw %llu:%llu, "
+            "file %llu, "
+            "ssls %llu, "
+            "sslc %llu, "
+            "request %llu, "
+            "response %llu"
+            __crlf, 
             parse->st_tlv->ok, parse->st_tlv->error,
             parse->st_xdr->ok, parse->st_xdr->error,
-            parse->st_file->ok, parse->st_file->error);
+            parse->st_raw->ok, parse->st_raw->error,
+            parse->st_file_content->ok,
+            parse->st_ssl_server->ok,
+            parse->st_ssl_client->ok,
+            parse->st_http_request->ok,
+            parse->st_http_response->ok);
     }
 }
 
