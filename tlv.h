@@ -1193,7 +1193,7 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         va_list args;
     
         va_start(args, fmt);
-        tlv_dprint("stream:0x%x, parse=0x%x, tlv=0x%x, err=%d, fmt=0x%x, args=0x%x",
+        tlv_dprint("stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
             DUMP_STREAM, parse, tlv, err, fmt, args);
         xp_verror(DUMP_STREAM, parse, tlv, err, fmt, args);
         va_end(args);
@@ -1227,7 +1227,7 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         tlv_dprint("xp_error 6.2");
                 va_start(args, fmt);
         tlv_dprint("xp_error 6.3");
-        tlv_dprint("stream:0x%x, parse=0x%x, tlv=0x%x, err=%d, fmt=0x%x, args=0x%x",
+        tlv_dprint("stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
             stream, parse, tlv, err, fmt, args);
                 xp_verror(stream, parse, tlv, err, fmt, args);
         tlv_dprint("xp_error 6.4");
