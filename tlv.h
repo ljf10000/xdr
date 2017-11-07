@@ -1066,8 +1066,8 @@ struct xparse {
     .name       = _name,                                        \
     .namelen    = _namelen,                                     \
     .path       = _path,                                        \
-    .tlv        = XBUFFER_INITER((_path)[PATH_TLV].filename),   \
-    .xdr        = XBUFFER_INITER((_path)[PATH_XDR].filename),   \
+    .tlv        = XBUFFER_INITER((_path)[PATH_TLV].fullname),   \
+    .xdr        = XBUFFER_INITER((_path)[PATH_XDR].fullname),   \
 }   /* end */
 
 static inline int
@@ -1093,9 +1093,6 @@ xp_init(struct xparse *parse)
 
     xpath_fill(&parse->path[PATH_TLV], parse->name, parse->namelen);
     xpath_fill(&parse->path[PATH_XDR], parse->name, parse->namelen);
-
-    tlv_dprint("init %s", parse->tlv.fullname);
-    xdr_dprint("init %s", parse->xdr.fullname);
 }
 
 static inline int
