@@ -7,20 +7,40 @@
 #define D_tlv_dprint    1
 #endif
 
-#if D_tlv_dprint
-#define tlv_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
-#else
-#define tlv_dprint(_fmt, _args...)      os_do_nothing()
+#ifndef D_xdr_dprint
+#define D_xdr_dprint    1
 #endif
 
 #ifndef D_tlv_trace
 #define D_tlv_trace     1
 #endif
 
+#ifndef D_xdr_trace
+#define D_xdr_trace     1
+#endif
+
+#if D_tlv_dprint
+#define tlv_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
+#else
+#define tlv_dprint(_fmt, _args...)      os_do_nothing()
+#endif
+
+#if D_xdr_dprint
+#define xdr_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
+#else
+#define xdr_dprint(_fmt, _args...)      os_do_nothing()
+#endif
+
 #if D_tlv_trace
 #define tlv_trace(_call, _fmt, _args...)    os_trace(tlv_dprint, _call, _fmt, ##_args)
 #else
 #define tlv_trace(_call, _fmt, _args...)    (_call)
+#endif
+
+#if D_xdr_trace
+#define xdr_trace(_call, _fmt, _args...)    os_trace(xdr_dprint, _call, _fmt, ##_args)
+#else
+#define xdr_trace(_call, _fmt, _args...)    (_call)
 #endif
 
 #ifndef TLV_MAXDATA

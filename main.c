@@ -117,7 +117,7 @@ monitor(const char *watch, xpath_t path[])
         for (; ev<end; ev=EVNEXT(ev)) {
             if (ev->mask & EVMASK) {
                 len = inotify_ev_len(ev);
-                // ev_debug(ev);
+                ev_debug(ev);
 
                 if (ISXDR(ev->name, len)) {
                     err = xdr_handle(path, ev->name, len);

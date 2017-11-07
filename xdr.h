@@ -3,26 +3,6 @@
 /******************************************************************************/
 #include "tlv.h"
 /******************************************************************************/
-#ifndef D_xdr_dprint
-#define D_xdr_dprint    1
-#endif
-
-#if D_xdr_dprint
-#define xdr_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
-#else
-#define xdr_dprint(_fmt, _args...)      os_do_nothing()
-#endif
-
-#ifndef D_xdr_trace
-#define D_xdr_trace     1
-#endif
-
-#if D_xdr_trace
-#define xdr_trace(_call, _fmt, _args...)    os_trace(xdr_dprint, _call, _fmt, ##_args)
-#else
-#define xdr_trace(_call, _fmt, _args...)    (_call)
-#endif
-
 #if 1
 #define XDR_ARRAY_MAPPER(_) \
     _(XDR_ARRAY, string,0)  \
