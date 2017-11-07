@@ -1167,29 +1167,29 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
     tlv_dprint("2:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
         stream, parse, tlv, err, fmt, args);
         
-    fprintf(stream, "... test ..." __crlf);
+    fprintf(stream, "... test ..." __crlf); fflush(stream);
 
     tlv_dprint("3:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
         stream, parse, tlv, err, fmt, args);
 
     fprintf(DUMP_STREAM,__crlf __tab "ERROR:%d"     __crlf, err);
-    fprintf(stream,     __crlf __tab "ERROR:%d"     __crlf, err);
+    fprintf(stream,     __crlf __tab "ERROR:%d"     __crlf, err); fflush(stream);
     fprintf(DUMP_STREAM,__crlf __tab "tlv name:%s"  __crlf, tlv_ops_name(tlv));
-    fprintf(stream,     __crlf __tab "tlv name:%s"  __crlf, tlv_ops_name(tlv));
+    fprintf(stream,     __crlf __tab "tlv name:%s"  __crlf, tlv_ops_name(tlv)); fflush(stream);
     fprintf(DUMP_STREAM,__crlf __tab "id:%d"        __crlf, tlv->id);
-    fprintf(stream,     __crlf __tab "id:%d"        __crlf, tlv->id);
+    fprintf(stream,     __crlf __tab "id:%d"        __crlf, tlv->id); fflush(stream);
     fprintf(DUMP_STREAM,__crlf __tab "extend:%d"    __crlf, tlv_extend(tlv));
-    fprintf(stream,     __crlf __tab "extend:%d"    __crlf, tlv_extend(tlv));
+    fprintf(stream,     __crlf __tab "extend:%d"    __crlf, tlv_extend(tlv)); fflush(stream);
     fprintf(DUMP_STREAM,__crlf __tab "fixed:%d"     __crlf, tlv_ops_fixed(tlv));
-    fprintf(stream,     __crlf __tab "fixed:%d"     __crlf, tlv_ops_fixed(tlv));
+    fprintf(stream,     __crlf __tab "fixed:%d"     __crlf, tlv_ops_fixed(tlv)); fflush(stream);
     fprintf(DUMP_STREAM,__crlf __tab "pad:%d"       __crlf, tlv->pad);
-    fprintf(stream,     __crlf __tab "pad:%d"       __crlf, tlv->pad);
+    fprintf(stream,     __crlf __tab "pad:%d"       __crlf, tlv->pad); fflush(stream);
     fprintf(DUMP_STREAM,__crlf __tab "alen:%u"      __crlf, tlv_len(tlv));
-    fprintf(stream,     __crlf __tab "alen:%u"      __crlf, tlv_len(tlv));
+    fprintf(stream,     __crlf __tab "alen:%u"      __crlf, tlv_len(tlv)); fflush(stream);
     fprintf(DUMP_STREAM,__crlf __tab "hlen:%u"      __crlf, tlv_hdrlen(tlv));
-    fprintf(stream,     __crlf __tab "hlen:%u"      __crlf, tlv_hdrlen(tlv));
+    fprintf(stream,     __crlf __tab "hlen:%u"      __crlf, tlv_hdrlen(tlv)); fflush(stream);
     fprintf(DUMP_STREAM,__crlf __tab "dlen:%u"      __crlf, tlv_datalen(tlv));
-    fprintf(stream,     __crlf __tab "dlen:%u"      __crlf, tlv_datalen(tlv));
+    fprintf(stream,     __crlf __tab "dlen:%u"      __crlf, tlv_datalen(tlv)); fflush(stream);
 
     fprintf(stream, __crlf __tab
             "ERROR:%d tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u" __crlf, 
