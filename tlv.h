@@ -1169,7 +1169,7 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
         
     fprintf(stream, "... test ..." __crlf);
 
-    tlv_dprint("2:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
+    tlv_dprint("3:stream:%p, parse=%p, tlv=%p, err=%d, fmt=%p, args=%p",
         stream, parse, tlv, err, fmt, args);
 
     fprintf(stream, __crlf __tab
