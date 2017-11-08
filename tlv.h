@@ -117,14 +117,16 @@ enum {
     OPT_IP6         = 0x0002,
     OPT_SPLIT       = 0x0004,
     OPT_STRICT      = 0x0008,
-    
+
     OPT_DUMP        = 0x0010,
-    OPT_DUMP_SHORT  = 0x0020 | OPT_DUMP,
+    OPT_DUMP_SB     = 0x0020 | OPT_DUMP,
     OPT_DUMP_PRE    = 0x0040 | OPT_DUMP,
     OPT_DUMP_ST     = 0x0080,
     
     OPT_TRACE_TLV   = 0x1000,
     OPT_TRACE_XDR   = 0x2000,
+
+    OPT_MULTI       = 0x10000,
 };
 
 enum {
@@ -322,7 +324,7 @@ tlv_dump_binary(FILE *stream, struct tlv *tlv)
         TLV_DUMP(stream, "id: %d, %s:", tlv->id, tlv_ops_name(tlv));
 
         int size = tlv_datalen(tlv);
-        if (is_option(OPT_DUMP_SHORT)) {
+        if (is_option(OPT_DUMP_SB)) {
             size = os_min(size, XDR_DUMP_SHORT);
         }
 

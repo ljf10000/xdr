@@ -11,6 +11,8 @@ DECLARE_TLV_VARS;
 
 static char *self;
 
+static char EVCIRLE[][INOTIFY_EVSIZE];
+
 static inline void
 ev_debug(inotify_ev_t *ev)
 {
@@ -28,7 +30,7 @@ static nameflag_t opt[] = {
     { .flag = OPT_IP6,          .name = "--ip6",        .help = "ipv6[not support now]"},
     { .flag = OPT_STRICT,       .name = "--strict",     .help = "strict check"},
     { .flag = OPT_DUMP,         .name = "--dump",       .help = "dump all"},
-    { .flag = OPT_DUMP_SHORT,   .name = "--dump-short", .help = "dump binary short"},
+    { .flag = OPT_DUMP_SB,      .name = "--dump-sb",    .help = "dump short binary"},
     { .flag = OPT_DUMP_PRE,     .name = "--dump-pre",   .help = "dump before check"},
     { .flag = OPT_DUMP_ST,      .name = "--dump-st",    .help = "dump statistic"},
     { .flag = OPT_SPLIT,        .name = "--file-split", .help = "dpi file split from xdr"},
@@ -38,6 +40,7 @@ static nameflag_t opt[] = {
 #if D_xdr_trace
     { .flag = OPT_TRACE_XDR,    .name = "--trace-xdr",  .help = "trace xdr parse"},
 #endif
+    { .flag = OPT_MULTI,        .name = "--multi",      .help = "multi thread"},
 };
 
 static int
