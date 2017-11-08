@@ -1148,6 +1148,8 @@ __xw_get_publisher(xworker_t *w)
     
     xw_lock(w);
     if (xw_is_full(w)) {
+        os_println("worker:%d is full, cann't get publisher", w->wid);
+        
         goto ERROR;
     }
 
@@ -1155,6 +1157,8 @@ __xw_get_publisher(xworker_t *w)
     if (w->cache_count==id) {
         id = 0;
     }
+    
+    os_println("get worker:%d publisher:%d", w->wid, id);
 ERROR:
     xw_unlock(w);
     
@@ -1169,9 +1173,13 @@ __xw_put_publisher(xworker_t *w, int id)
     
     xw_lock(w);
     if (xw_is_full(w)) {
+        os_println("worker:%d is full, cann't put publisher:%d", w->wid, id);
+        
         goto ERROR;
     }
 
+    os_println("put worker:%d publisher:%d", w->wid, id);
+    
     w->publisher = id;
     w->count++;
     err = 0;
@@ -1188,6 +1196,8 @@ __xw_get_consumer(xworker_t *w)
    
     xw_lock(w);
     if (xw_is_empty(w)) {
+        os_println("worker:%d is empty, cann't get consumer", w->wid);
+        
         goto ERROR;
     }
 
@@ -1197,6 +1207,7 @@ __xw_get_consumer(xworker_t *w)
     }
 
     w->consumer = id;
+    os_println("get worker:%d consumer:%d", w->wid, id);
 ERROR:
     xw_unlock(w);
     
