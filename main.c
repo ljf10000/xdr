@@ -170,12 +170,12 @@ worker(void *args)
         if (len != sizeof(data)) {
             err = -errno;
             
-            os_println("worker[%d] recv error:%d", FdCount, err);
+            os_println("worker[%d] recv error:%d", wid, err);
 
             continue;
         }
 
-        os_println("worker[%d] recv data:%llu", FdCount, data);
+        os_println("worker[%d] recv data:%llu", wid, data);
         
         filename = (char *)data;
         common(wid, filename, strlen(filename));
