@@ -175,6 +175,8 @@ worker(void *args)
             continue;
         }
 
+        os_println("worker[%d] recv data:%llu", FdCount, data);
+        
         filename = (char *)data;
         common(wid, filename, strlen(filename));
         free(filename);
