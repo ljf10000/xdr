@@ -314,7 +314,7 @@ init_multi(void)
             return -errno;
         }
         
-        err = pthread_create(&tid, NULL, worker, (void *)i);
+        err = pthread_create(&tid, NULL, worker, (void *)(uint64)i);
         if (err<0) {
             return err;
         }
@@ -323,7 +323,7 @@ init_multi(void)
     return 0;
 }
 
-static void
+static int
 init(char *path[PATH_END])
 {
     int err;
