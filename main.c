@@ -25,7 +25,7 @@ DECLARE_TLV_VARS;
 static char *self;
 
 static xpath_t Path[PATH_END];
-static xst_t St[XB_STCOUNT];
+static xst_t St[WORKER_COUNT][XB_STCOUNT];
 
 static int Fd[WORKER_COUNT];
 static int FdCount;
@@ -100,7 +100,7 @@ statistic(struct xparse *parse)
 static int
 xdr_handle(int wid, char *filename, int namelen)
 {
-    struct xparse parse = XPARSE_INITER(Path, St, filename, namelen, wid);
+    struct xparse parse = XPARSE_INITER(Path, St[wid], filename, namelen, wid);
     int err;
     
     xp_init(&parse);
@@ -167,20 +167,16 @@ worker(void *args)
     
     while(1) {
         len = read(Fd[wid], &data, sizeof(data));
-        if (len != sizeof(data)) {
-            err = -errno;
+        if (len == sizeof(data)) {
+            filename = (char *)data;
+
+            os_println("worker[%d] recv data:%llu:%s", wid, data, filename);
             
-            os_println("worker[%d] recv error:%d", wid, err);
-
-            continue;
+            common(wid, filename, strlen(filename));
+            free(filename);
+        } else {
+            os_println("worker[%d] recv error:%d", wid, -errno);
         }
-
-        filename = (char *)data;
-
-        os_println("worker[%d] recv data:%llu:%s", wid, data, filename);
-        
-        common(wid, filename, strlen(filename));
-        free(filename);
     }
     
     return NULL;
