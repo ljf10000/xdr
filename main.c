@@ -181,7 +181,7 @@ tlv_remove(int wid, char *filename, int namelen)
 }
 
 static int
-handle(xworker_t *w)
+ev_handle(xworker_t *w)
 {
     int id = xw_get_consumer(w);
     xworker_cache_t *cache = xw_cache(w, id);
@@ -216,7 +216,7 @@ worker(void *args)
     xworker_t *w = xw_worker(wid);
 
     while(1) {
-        handle(w);
+        ev_handle(w);
     }
     
     return NULL;
@@ -252,7 +252,7 @@ monitor(const char *watch)
         if (is_option(OPT_MULTI)) {
             xw_put_publisher(w, id);
         } else {
-            handle(w);
+            ev_handle(w);
         }
     }
 }
