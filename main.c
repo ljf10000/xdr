@@ -173,7 +173,8 @@ worker(void *args)
             
             filename = (char *)data;
 
-            os_println("worker[%d] recv data:%llu:%s", wid, data, filename);
+            os_println("worker[%d] recv data:%llu", wid, data);
+            os_println("worker[%d] recv filename:%s", wid, filename);
             
             common(wid, filename, strlen(filename));
 
