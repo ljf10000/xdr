@@ -1228,6 +1228,8 @@ xw_get_consumer(xworker_t *w)
         while((id = __xw_get_consumer(w)) < 0) {
             sleep(1000);
         }
+
+        return id;
     } else {
         return 0;
     }
