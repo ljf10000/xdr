@@ -319,6 +319,7 @@ init_multi(void)
         if (fd<0) {
             return -errno;
         }
+        Fd[i] = fd;
         
         err = pthread_create(&tid, NULL, worker, (void *)(uint64)i);
         if (err<0) {
