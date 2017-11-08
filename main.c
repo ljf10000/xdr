@@ -5,15 +5,15 @@ DECLARE_OS_VARS;
 DECLARE_TLV_VARS;
 /******************************************************************************/
 #ifndef ENV_TLV_FILE
-#define ENV_TLV_FILE    "TLV_FILE"
+#define ENV_TLV_FILE        "TLV_FILE"
 #endif
 
 #ifndef ENV_WORKER
-#define ENV_WORKER      "WORKER"
+#define ENV_WORKER          "WORKER"
 #endif
 
 #ifndef WORKER_COUNT
-#define WORKER_COUNT    8
+#define WORKER_COUNT        8
 #endif
 
 #define EVMASK              (IN_CLOSE_WRITE|IN_MOVED_TO)
@@ -32,7 +32,7 @@ static int FdCount;
 static int FdWorker;
 
 static nameflag_t opt[] = {
-    { .flag = OPT_CLI,          .name = "--cli",        .help = "cli mode. must support env: ENV_TLV_FILE"},
+    { .flag = OPT_CLI,          .name = "--cli",        .help = "cli mode"},
     { .flag = OPT_IP6,          .name = "--ip6",        .help = "ipv6[not support now]"},
     { .flag = OPT_STRICT,       .name = "--strict",     .help = "strict check"},
     { .flag = OPT_DUMP,         .name = "--dump",       .help = "dump all"},
@@ -205,11 +205,13 @@ multi(inotify_ev_t *ev)
     if (len != sizeof(data)) {
         int err = -errno;
         
-        os_println("notify worker[%d] error:%d", FdWorker, err);
+        os_println("notify worker[%d] data:%llu error:%d", FdWorker, data, err);
 
         return err;
+    } else {
+        os_println("notify worker[%d] data:%llu ok", FdWorker, data);
     }
-
+    
     FdWorker = (FdWorker+1)%FdCount;
 
     return 0;
@@ -258,7 +260,7 @@ cli(void)
 {
     char *filename = env_gets(ENV_TLV_FILE, NULL);
     if (NULL==filename) {
-        os_println("not found env ENV_TLV_FILE");
+        os_println("not found env TLV_FILE");
 
         return -EBADENV;
     }
