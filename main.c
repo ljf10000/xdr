@@ -162,6 +162,8 @@ worker(void *args)
     int err, len, wid = (int)(uint32)(uint64)args;
     uint64 data;
     char *filename;
+
+    os_println("worker[%d] start", wid);
     
     while(1) {
         len = read(Fd[wid], &data, sizeof(data));
