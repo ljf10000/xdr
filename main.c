@@ -114,7 +114,7 @@ statistic(struct xparse *parse)
 {
     if (is_option(OPT_DUMP_ST)) {
         os_printf(
-            "worker[%d] "
+            "worker:%d "
             "tlv %llu:%llu, "
             "xdr %llu:%llu, "
             "raw %llu:%llu, "
@@ -173,7 +173,7 @@ tlv_remove(int wid, char *filename, int namelen)
     
     remove(fullname);
     
-    xdr_dprint("worker[%d] remove %s", wid, fullname);
+    xdr_dprint("worker:%d remove %s", wid, fullname);
     
     return 0;
 }
@@ -181,9 +181,9 @@ tlv_remove(int wid, char *filename, int namelen)
 static int
 ev_handle(xworker_t *w)
 {
-    os_println("get worker[%d] consumer ...", w->wid);
+    os_println("get worker:%d consumer ...", w->wid);
     int id = xw_get_consumer(w);
-    os_println("get worker[%d] consumer[%d]", w->wid, id);
+    os_println("get worker:%d consumer:%d", w->wid, id);
     
     xworker_cache_t *cache = xw_cache(w, id);
     inotify_ev_t *ev  = (inotify_ev_t *)(cache->buf);
@@ -218,7 +218,7 @@ worker(void *args)
     int wid = (int)(uint32)(uint64)args;
     xworker_t *w = xw_worker(wid);
 
-    os_println("start worker[%d]", wid);
+    os_println("start worker:%d", wid);
     
     while(1) {
         ev_handle(w);
@@ -245,9 +245,9 @@ monitor(const char *watch)
     }
 
     for (;;) {
-        os_println("get worker[%d] publisher ...", w->wid);
+        os_println("get worker:%d publisher ...", w->wid);
         id = xw_wait_publisher(&w);
-        os_println("get worker[%d] publisher[%d] ok.", w->wid, id);
+        os_println("get worker:%d publisher:%d ok.", w->wid, id);
         cache = xw_cache(w, id);
         
         cache->len = read(fd, cache->buf, EVBUFSIZE);
@@ -257,9 +257,9 @@ monitor(const char *watch)
         OS_VAR(time) = time(NULL);
 
         if (is_option(OPT_MULTI)) {
-            os_println("put worker[%d] publisher[%d] ...", w->wid, id);
+            os_println("put worker:%d publisher:%d ...", w->wid, id);
             xw_put_publisher(w, id);
-            os_println("put worker[%d] publisher[%d] ok.", w->wid, id);
+            os_println("put worker:%d publisher:%d ok.", w->wid, id);
         } else {
             ev_handle(w);
         }
@@ -364,7 +364,7 @@ xw_envi(char *env, int deft)
     if (v<=0 || v>deft) {
         v = deft;
     }
-
+    
     return v;
 }
 
@@ -373,6 +373,9 @@ init_env(void)
 {
     WorkerCount     = xw_envi(ENV_WORKER, WORKER_COUNT);
     WorkerCacheCount= xw_envi(ENV_CACHE,  CACHE_COUNT);
+
+    os_println("worker count %d",       WorkerCount);
+    os_println("worker cache count %d", WorkerCacheCount);
 }
 
 static int
