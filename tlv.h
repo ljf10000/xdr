@@ -125,7 +125,8 @@ enum {
     
     OPT_TRACE_TLV   = 0x1000,
     OPT_TRACE_XDR   = 0x2000,
-
+    OPT_TRACE_EV    = 0x4000,
+    
     OPT_MULTI       = 0x10000,
 };
 
@@ -1081,6 +1082,7 @@ struct xparse {
     FILE *ferr;     // bad file
     char *filename; // just filename, not include path
     int namelen;    // just filename, not include path
+    int wid;
     
     xpath_t *path;  // xpath_t path[PATH_END];
     xst_t   *st_tlv;
@@ -1097,9 +1099,10 @@ struct xparse {
     struct xb xdr;
 };
 
-#define XPARSE_INITER(_path, _st, _filename, _namelen) { \
+#define XPARSE_INITER(_path, _st, _filename, _namelen, _wid) { \
     .filename       = _filename,    \
     .namelen        = _namelen,     \
+    .wid            = _wid,         \
     .path           = _path,        \
     .st_tlv         = &(_st)[0],    \
     .st_xdr         = &(_st)[1],    \
@@ -1143,31 +1146,6 @@ xp_init(struct xparse *parse)
     xpath_fill(xp_path(parse, PATH_TLV), parse->filename, parse->namelen);
     xpath_fill(xp_path(parse, PATH_XDR), parse->filename, parse->namelen);
     xpath_fill(xp_path(parse, PATH_BAD), parse->filename, parse->namelen);
-}
-
-static inline void
-xp_st(struct xparse *parse)
-{
-    if (is_option(OPT_DUMP_ST)) {
-        os_printf(
-            "tlv %llu:%llu, "
-            "xdr %llu:%llu, "
-            "raw %llu:%llu, "
-            "file %llu, "
-            "ssls %llu, "
-            "sslc %llu, "
-            "request %llu, "
-            "response %llu"
-            __crlf, 
-            parse->st_tlv->ok, parse->st_tlv->error,
-            parse->st_xdr->ok, parse->st_xdr->error,
-            parse->st_raw->ok, parse->st_raw->error,
-            parse->st_file_content->ok,
-            parse->st_ssl_server->ok,
-            parse->st_ssl_client->ok,
-            parse->st_http_request->ok,
-            parse->st_http_response->ok);
-    }
 }
 
 static inline int

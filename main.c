@@ -1,8 +1,21 @@
 #include "xdr.h"
+#include <pthread.h>
 
 DECLARE_OS_VARS;
 DECLARE_TLV_VARS;
 /******************************************************************************/
+#ifndef ENV_TLV_FILE
+#define ENV_TLV_FILE    "TLV_FILE"
+#endif
+
+#ifndef ENV_WORKER
+#define ENV_WORKER      "WORKER"
+#endif
+
+#ifndef WORKER_COUNT
+#define WORKER_COUNT    8
+#endif
+
 #define EVMASK              (IN_CLOSE_WRITE|IN_MOVED_TO)
 #define EVCOUNT             128
 #define EVSIZE              INOTIFY_EVSIZE
@@ -11,19 +24,12 @@ DECLARE_TLV_VARS;
 
 static char *self;
 
-static char EVCIRLE[][INOTIFY_EVSIZE];
+static xpath_t Path[PATH_END];
+static xst_t St[XB_STCOUNT];
 
-static inline void
-ev_debug(inotify_ev_t *ev)
-{
-    if (ev->mask & IN_CLOSE_WRITE) {
-        xdr_dprint("event close write file:%s", ev->name);
-    }
-
-    if (ev->mask & IN_MOVED_TO) {
-        xdr_dprint("event move to file:%s", ev->name);
-    }
-}
+static int Fd[WORKER_COUNT];
+static int FdCount;
+static int FdWorker;
 
 static nameflag_t opt[] = {
     { .flag = OPT_CLI,          .name = "--cli",        .help = "cli mode. must support env: ENV_TLV_FILE"},
@@ -40,8 +46,21 @@ static nameflag_t opt[] = {
 #if D_xdr_trace
     { .flag = OPT_TRACE_XDR,    .name = "--trace-xdr",  .help = "trace xdr parse"},
 #endif
+    { .flag = OPT_TRACE_EV,     .name = "--trace-ev",   .help = "trace inotify event"},
     { .flag = OPT_MULTI,        .name = "--multi",      .help = "multi thread"},
 };
+
+static inline void
+ev_trace(inotify_ev_t *ev)
+{
+    if (ev->mask & IN_CLOSE_WRITE) {
+        os_println("event close write file:%s", ev->name);
+    }
+
+    if (ev->mask & IN_MOVED_TO) {
+        os_println("event move to file:%s", ev->name);
+    }
+}
 
 static int
 usage(void)
@@ -51,23 +70,37 @@ usage(void)
     return nameflag_usage(opt);
 }
 
-static xpath_t Path[PATH_END];
-static xst_t St[XB_STCOUNT];
-
 static void
-init_xpath(char *path[PATH_END])
+statistic(struct xparse *parse)
 {
-    int i;
-
-    for (i=0; i<PATH_END; i++) {
-        xpath_init(&Path[i], path[i]);
+    if (is_option(OPT_DUMP_ST)) {
+        os_printf(
+            "worker[%d] "
+            "tlv %llu:%llu, "
+            "xdr %llu:%llu, "
+            "raw %llu:%llu, "
+            "file %llu, "
+            "ssls %llu, "
+            "sslc %llu, "
+            "request %llu, "
+            "response %llu"
+            __crlf, 
+            parse->wid,
+            parse->st_tlv->ok, parse->st_tlv->error,
+            parse->st_xdr->ok, parse->st_xdr->error,
+            parse->st_raw->ok, parse->st_raw->error,
+            parse->st_file_content->ok,
+            parse->st_ssl_server->ok,
+            parse->st_ssl_client->ok,
+            parse->st_http_request->ok,
+            parse->st_http_response->ok);
     }
 }
 
 static int
-xdr_handle(char *filename, int namelen)
+xdr_handle(int wid, char *filename, int namelen)
 {
-    struct xparse parse = XPARSE_INITER(Path, St, filename, namelen);
+    struct xparse parse = XPARSE_INITER(Path, St, filename, namelen, wid);
     int err;
     
     xp_init(&parse);
@@ -89,20 +122,96 @@ ERROR:
     } else {
         parse.st_raw->ok++;
     }
-    xp_st(&parse);
+    statistic(&parse);
     
     return err;
 }
 
 static int
-tlv_remove(char *filename, int namelen)
+tlv_remove(int wid, char *filename, int namelen)
 {
     char *fullname = xpath_fill(&Path[PATH_TLV], filename, namelen);
     
     remove(fullname);
     
-    xdr_dprint("remove %s", fullname);
+    xdr_dprint("worker[%d] remove %s", wid, fullname);
     
+    return 0;
+}
+
+static int (*handle)(inotify_ev_t *ev);
+
+static int
+common(int wid, char *filename, int namelen)
+{
+    if (ISXDR(filename, namelen)) {
+        int err = xdr_handle(wid, filename, namelen);
+        if (err<0) {
+            // log
+        }
+    } else {
+        tlv_remove(wid, filename, namelen);
+    }
+
+    return 0;
+}
+
+static void *
+worker(void *args)
+{
+    int err, len, wid = (int)args;
+    uint64 data;
+    char *filename;
+    
+    while(1) {
+        len = read(Fd[wid], &data, sizeof(data));
+        if (len != sizeof(data)) {
+            err = -errno;
+            
+            os_println("worker[%d] recv error:%d", FdCount, err);
+
+            continue;
+        }
+
+        filename = (char *)data;
+        common(wid, filename, strlen(filename));
+        free(filename);
+    }
+    
+    return NULL;
+}
+
+static int
+single(inotify_ev_t *ev)
+{
+    int len = inotify_ev_len(ev);
+
+    return common(0, ev->name, len);
+}
+
+static int
+multi(inotify_ev_t *ev)
+{
+    char *filename = strcat(ev->name);
+    if (NULL==filename) {
+        os_println("notify worker[%d] NOMEM", FdWorker);
+
+        return -ENOMEM;
+    }
+    
+    uint64 data = (uint64)filename;
+
+    int len = write(Fd[FdWorker], &data, sizeof(data));
+    if (len != sizeof(data)) {
+        int err = -errno;
+        
+        os_println("notify worker[%d] error:%d", FdWorker, err);
+
+        return err;
+    }
+
+    FdWorker = (FdWorker+1)%FdCount;
+
     return 0;
 }
 
@@ -134,25 +243,15 @@ monitor(const char *watch)
         
         for (; ev<end; ev=EVNEXT(ev)) {
             if (ev->mask & EVMASK) {
-                len = inotify_ev_len(ev);
-                ev_debug(ev);
-
-                if (ISXDR(ev->name, len)) {
-                    err = xdr_handle(ev->name, len);
-                    if (err<0) {
-                        // log
-                    }
-                } else {
-                    tlv_remove(ev->name, len);
+                if (is_option(OPT_TRACE_EV)) {
+                    ev_trace(ev);
                 }
+
+                (*handle)(ev);
             }
         }
     }
 }
-
-#ifndef ENV_TLV_FILE
-#define ENV_TLV_FILE    "TLV_FILE"
-#endif
 
 static int
 cli(void)
@@ -185,8 +284,70 @@ check(int argc, char *argv[])
     return 0;
 }
 
+static int
+init_xpath(char *path[PATH_END])
+{
+    int i;
+
+    for (i=0; i<PATH_END; i++) {
+        xpath_init(&Path[i], path[i]);
+    }
+
+    return 0;
+}
+
+static int
+init_multi(void)
+{
+    int i, fd, err;
+
+    FdCount = env_geti(ENV_WORKER, 0);
+    if (FdCount<=0 || FdCount>WORKER_COUNT) {
+        FdCount = WORKER_COUNT;
+    }
+
+    for (i=0; i<FdCount; i++) {
+        pthread_t tid;
+        
+        fd = eventfd(0, EFD_CLOEXEC);
+        if (fd<0) {
+            return -errno;
+        }
+        
+        err = pthread_create(&tid, NULL, worker, (void *)i);
+        if (err<0) {
+            return err;
+        }
+    }
+
+    return 0;
+}
+
+static void
+init(char *path[PATH_END])
+{
+    int err;
+    
+    init_xpath(path);
+
+    if (is_option(OPT_MULTI)) {
+        err = init_multi();
+        if (err<0) {
+            return err;
+        }
+        
+        handle = multi;
+    } else {
+        handle = single;
+    }
+
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
+    int err;
+    
     self = argv[0];
 
     tlv_check_obj();
@@ -212,8 +373,11 @@ int main(int argc, char *argv[])
         return usage();
     }
     
-    init_xpath(argv);
-
+    err = init(argv);
+    if (err<0) {
+        return err;
+    }
+    
     if (is_option(OPT_CLI)) {
         return cli();
     } else {
