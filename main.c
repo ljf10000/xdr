@@ -3,16 +3,16 @@
 DECLARE_OS_VARS;
 DECLARE_TLV_VARS;
 /******************************************************************************/
-#ifndef ENV_TLV_FILE
-#define ENV_TLV_FILE        "TLV_FILE"
+#ifndef ENV_XDR_FILE
+#define ENV_XDR_FILE        "XDR_FILE"
 #endif
 
-#ifndef ENV_WORKER
-#define ENV_WORKER          "WORKER"
+#ifndef ENV_XDR_WORKER
+#define ENV_XDR_WORKER      "XDR_WORKER"
 #endif
 
-#ifndef ENV_CACHE
-#define ENV_CACHE           "CACHE"
+#ifndef ENV_XDR_CACHE
+#define ENV_XDR_CACHE       "XDR_CACHE"
 #endif
 
 #define EVMASK              (IN_CLOSE_WRITE|IN_MOVED_TO)
@@ -269,7 +269,7 @@ monitor(const char *watch)
 static int
 cli(void)
 {
-    char *filename = env_gets(ENV_TLV_FILE, NULL);
+    char *filename = env_gets(ENV_XDR_FILE, NULL);
     if (NULL==filename) {
         os_println("not found env TLV_FILE");
 
@@ -358,11 +358,11 @@ init_workers(void)
 }
 
 static int 
-xw_envi(char *env, int deft)
+xw_envi(char *env, int max)
 {
-    int v = env_geti(env, deft);
-    if (v<=0 || v>deft) {
-        v = deft;
+    int v = env_geti(env, max);
+    if (v<=0 || v>max) {
+        v = max;
     }
     
     return v;
@@ -371,8 +371,8 @@ xw_envi(char *env, int deft)
 static void
 init_env(void)
 {
-    WorkerCount     = xw_envi(ENV_WORKER, WORKER_COUNT);
-    WorkerCacheCount= xw_envi(ENV_CACHE,  CACHE_COUNT);
+    WorkerCount     = xw_envi(ENV_XDR_WORKER, WORKER_COUNT);
+    WorkerCacheCount= xw_envi(ENV_XDR_CACHE,  CACHE_COUNT);
 
     os_println("worker count %d",       WorkerCount);
     os_println("worker cache count %d", WorkerCacheCount);
