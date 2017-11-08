@@ -215,10 +215,9 @@ ev_handle(xworker_t *w)
 static void *
 worker(void *args)
 {
-    int wid = (int)(uint32)(uint64)args;
-    xworker_t *w = xw_worker(wid);
+    xworker_t *w = (xworker_t *)args;
 
-    os_println("start worker:%d", wid);
+    os_println("start worker:%d", w->wid);
     
     while(1) {
         ev_handle(w);
@@ -245,9 +244,9 @@ monitor(const char *watch)
     }
 
     for (;;) {
-        os_println("get worker:%d publisher ...", w->wid);
+        os_println("wait worker:%d publisher ...", w->wid);
         id = xw_wait_publisher(&w);
-        os_println("get worker:%d publisher:%d ok.", w->wid, id);
+        os_println("wait worker:%d publisher:%d ok.", w->wid, id);
         cache = xw_cache(w, id);
         
         cache->len = read(fd, cache->buf, EVBUFSIZE);
@@ -328,7 +327,7 @@ init_worker(int wid)
             return err;
         }
         
-        err = pthread_create(&w->tid, NULL, worker, (void *)(uint64)wid);
+        err = pthread_create(&w->tid, NULL, worker, w);
         if (err<0) {
             return err;
         }
