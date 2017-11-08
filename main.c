@@ -358,6 +358,7 @@ init(char *path[PATH_END])
 int main(int argc, char *argv[])
 {
     int err;
+    ringbuffer_create(1024, 1024);
     
     self = argv[0];
 
