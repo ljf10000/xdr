@@ -358,11 +358,9 @@ static int
 xw_envi(char *env, int max)
 {
     int v = env_geti(env, max);
-    os_println("get env:%s %d", env, v);
     if (v<=0 || v>max) {
         v = max;
     }
-    os_println("get env:%s %d", env, v);
     
     return v;
 }
@@ -370,9 +368,6 @@ xw_envi(char *env, int max)
 static void
 init_env(void)
 {
-    os_println("worker count %d",       WorkerCount);
-    os_println("worker cache count %d", WorkerCacheCount);
-    
     WorkerCount     = xw_envi(ENV_XDR_WORKER, WORKER_COUNT);
     WorkerCacheCount= xw_envi(ENV_XDR_CACHE,  CACHE_COUNT);
 
