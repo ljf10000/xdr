@@ -181,7 +181,10 @@ tlv_remove(int wid, char *filename, int namelen)
 static int
 ev_handle(xworker_t *w)
 {
+    os_println("get worker[%d] consumer ...", w->wid);
     int id = xw_get_consumer(w);
+    os_println("get worker[%d] consumer[%d]", w->wid, id);
+    
     xworker_cache_t *cache = xw_cache(w, id);
     inotify_ev_t *ev  = (inotify_ev_t *)(cache->buf);
     inotify_ev_t *end = (inotify_ev_t *)(cache->buf + cache->len);
@@ -215,6 +218,8 @@ worker(void *args)
     int wid = (int)(uint32)(uint64)args;
     xworker_t *w = xw_worker(wid);
 
+    os_println("start worker[%d]", wid);
+    
     while(1) {
         ev_handle(w);
     }
@@ -240,7 +245,9 @@ monitor(const char *watch)
     }
 
     for (;;) {
+        os_println("get worker[%d] publisher ...", w->wid);
         id = xw_wait_publisher(&w);
+        os_println("get worker[%d] publisher[%d] ok.", w->wid, id);
         cache = xw_cache(w, id);
         
         cache->len = read(fd, cache->buf, EVBUFSIZE);
@@ -250,7 +257,9 @@ monitor(const char *watch)
         OS_VAR(time) = time(NULL);
 
         if (is_option(OPT_MULTI)) {
+            os_println("put worker[%d] publisher[%d] ...", w->wid, id);
             xw_put_publisher(w, id);
+            os_println("put worker[%d] publisher[%d] ok.", w->wid, id);
         } else {
             ev_handle(w);
         }
