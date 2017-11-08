@@ -932,7 +932,7 @@ os_bin2hex(char *hex, int space, byte *bin, int size)
 
 typedef struct inotify_event inotify_ev_t;
 
-#define INOTIFY_EVSIZE  (sizeof(inotify_ev_t) + NAME_MAX + 1)
+#define INOTIFY_EVSIZE  (sizeof(inotify_ev_t) + NAME_MAX + 1)   // = 16 + 256 = 272
 
 static inline inotify_ev_t *
 inotify_ev_next(inotify_ev_t *ev)
@@ -970,6 +970,12 @@ static inline void
 set_option(int flag)
 {
     OS_VAR(option) |= flag;
+}
+
+static inline void
+clr_option(int flag)
+{
+    OS_VAR(option) &= ~flag;
 }
 
 static inline bool
@@ -1133,8 +1139,7 @@ env_geti(char *envname, int deft)
 })  /* end */
 #endif
 
-#define container_of(ptr, type, member) (type *)((char *)(ptr) - offsetof(type,member))
-
+#if 0
 #define likely(e)       __builtin_expect((e), 1)
 #define unlikely(e)     __builtin_expect((e), 0)
 #define rmb()           __atomic_thread_fence(__ATOMIC_ACQUIRE)
@@ -1152,143 +1157,11 @@ env_geti(char *envname, int deft)
 
 typedef uint64 __attribute__ ((aligned((CACHE_LINE_SIZE)))) aligned_size_t;
 
-struct item {
-    volatile  uint32 size;
-    char contents[];
-};
-
-struct ringbuffer {
-    size_t max;
-    size_t size;
-
-    volatile aligned_size_t end;
-    volatile aligned_size_t writer_cursor;
-    volatile aligned_size_t reader_cursor;
-
-    char buffer[0];
-};
-
-struct reader_result
-{
-    size_t beg;
-    size_t end;
-    size_t cur;
-
-    struct ringbuffer *ring;
-};
-
-static inline uint 
-min_power_of_2(unsigned int in)
-{
-    uint v = in, r = 1;
-    
-    while (v >>= 1) {
-        r <<= 1;
-    }
-    
-    return (r != in)?(r << 1):r;
-}
-
-static inline struct ringbuffer *
-ringbuffer_create(size_t size, size_t max)
-{
-    size = min_power_of_2(size);
-
-    struct ringbuffer *ring = calloc(1, sizeof(*ring) + size + max + sizeof(struct item));
-    if (NULL==ring) {
-        return NULL;
-    }
-
-    ring->max   = max;
-    ring->size  = size;
-
-    mb();
-    return ring;
-}
-
-static inline void
-ringbuffer_destroy(struct ringbuffer *ring)
-{
-    free(ring);
-}
-
-static inline void *
-ringbuffer_result_next(struct reader_result *res, size_t *size)
-{
-    struct item *item = NULL;
-    struct ringbuffer *ring = res->ring;
-    if (res->cur == res->end)
-        return NULL;
-
-    item = (struct item *)(ring->buffer + res->cur);
-    assert(item->size <= ring->max);
-
-    if (likely(size != NULL))
-        *size = item->size;
-
-    res->cur = (res->cur + item->size + sizeof(struct item)) & (~ring->size);
-    return item->contents;
-}
-
-static inline int
-ringbuffer_reader_parpare(struct ringbuffer *ring, struct reader_result *res)
-{
-    uint64_t beg, end;
-    rmb();
-    beg = ring->reader_cursor, end = ring->writer_cursor;
-    if (end == beg)
-        return 0;
-
-    res->beg  = beg;
-    res->end  = end;
-    res->cur  = beg;
-    res->ring = ring;
-
-    return 1;
-}
-
-static inline void
-ringbuffer_reader_commit(struct ringbuffer *ring, struct reader_result *res)
-{
-    assert(res->ring == ring);
-    assert(ring->reader_cursor == res->beg);
-
-    ring->reader_cursor = res->cur;
-    wmb();
-}
-
-static inline void *
-ringbuffer_writer_parpare(struct ringbuffer *ring, size_t size)
-{
-    struct item *item = NULL;
-    uint64_t incur, seq, left;
-
-    if (unlikely(size > ring->max))
-        return NULL;
-
-    rmb();
-    incur = ring->writer_cursor, seq = ring->reader_cursor;
-    left  = (seq + ring->size - incur - 1) & (~ring->size);
-    if (unlikely(size + ring->max + sizeof(struct item) > left))
-        return NULL;
-
-    item = (struct item *)(ring->buffer + incur);
-    item->size = size;
-
-    return item->contents;
-}
-
-static inline void
-ringbuffer_writer_commit(struct ringbuffer *ring, void *ptr)
-{
-    struct item *item = container_of(ptr, struct item, contents);
-    uint32 cursor = (char *)item - ring->buffer;
-    assert(ring->writer_cursor == cursor);
-
-    ring->writer_cursor = (cursor + item->size + sizeof(struct item)) & (~ring->size);
-
-    wmb();
-}
+#define CAS_V(addr, old, x)     __sync_val_compare_and_swap(addr, old, x)
+#define CAS(addr, old, x)       (CAS_V(addr, old, x) == old)
+#define ATOMIC_INC(addr)        __sync_fetch_and_add(addr, 1)
+#define ATOMIC_ADD(addr, n)     __sync_add_and_fetch(addr, n)
+#endif
 
 /******************************************************************************/
 #include "log.h"

@@ -75,6 +75,18 @@
 #define XDR_EXPAND      (32*1024)
 #endif
 
+#ifndef WORKER_COUNT
+#define WORKER_COUNT    8
+#endif
+
+#ifndef CACHE_COUNT
+#define CACHE_COUNT     16
+#endif
+
+#ifndef EVCOUNT
+#define EVCOUNT         128
+#endif
+
 #define XDR_ALIGN(x)        OS_ALIGN(x, 4)
 #define XDR_EXPAND_ALIGN(x) OS_ALIGN(x + XDR_EXPAND, XDR_EXPAND)
 #define XDR_DIGEST_SIZE     SHA256_DIGEST_SIZE
@@ -1074,15 +1086,158 @@ xb_open(struct xb *x, bool readonly, int size)
     return xb_mmap(x, readonly);
 }
 
+enum { EVBUFSIZE = (EVCOUNT * EVSIZE) };
+
+typedef struct {
+    byte buf[EVBUFSIZE];
+    int len;
+} xworker_cache_t;
+
+typedef struct {
+    pthread_mutex_t mutex;
+    pthread_t tid;
+    int publisher;
+    int consumer;
+    int count;  // ev count
+    int wid;
+
+    int cache_count;
+    xworker_cache_t *cache;
+
+    xst_t st[XB_STCOUNT];
+} xworker_t;
+
+static inline void
+xw_lock(xworker_t *w)
+{
+    pthread_mutex_lock(&w->mutex);
+}
+
+static inline void
+xw_unlock(xworker_t *w)
+{
+    pthread_mutex_unlock(&w->mutex);
+}
+
+static inline bool
+xw_is_full(xworker_t *w)
+{
+    return w->cache_count==w->count;
+}
+
+static inline bool
+xw_is_empty(xworker_t *w)
+{
+    return 0==w->count;
+}
+
+static inline xworker_cache_t *
+xw_cache(xworker_t *w, int id)
+{
+    return w->cache + id;
+}
+
+static inline int
+__xw_get_publisher(xworker_t *w)
+{
+    int id = -1;
+    
+    xw_lock(w);
+    if (xw_is_full(w)) {
+        goto ERROR;
+    }
+
+    id = w->publisher+1;
+    if (w->cache_count==id) {
+        id = 0;
+    }
+ERROR:
+    xw_unlock(w);
+    
+    return id;
+
+}
+
+static inline int
+__xw_put_publisher(xworker_t *w, int id)
+{
+    int err = -1;
+    
+    xw_lock(w);
+    if (xw_is_full(w)) {
+        goto ERROR;
+    }
+
+    w->publisher = id;
+    w->count++;
+    err = 0;
+ERROR:
+    xw_unlock(w);
+    
+    return err;
+}
+
+static inline int
+__xw_get_consumer(xworker_t *w)
+{
+    int id = -1;
+   
+    xw_lock(w);
+    if (xw_is_empty(w)) {
+        goto ERROR;
+    }
+
+    id = ++w->consumer;
+    if (id==w->cache_count) {
+        id = 0;
+    }
+
+    w->consumer = id;
+ERROR:
+    xw_unlock(w);
+    
+    return id;
+}
+
+static inline int
+xw_get_publisher(xworker_t *w)
+{
+    return is_option(OPT_MULTI)?__xw_get_publisher(w):0;
+}
+
+static inline void
+xw_put_publisher(xworker_t *w, int id)
+{
+    if (is_option(OPT_MULTI)) {
+        while(__xw_put_publisher(w, id) < 0) {
+            sleep(1000);
+        }
+    }
+}
+
+static inline int
+xw_get_consumer(xworker_t *w)
+{
+    if (is_option(OPT_MULTI)) {
+        int id;
+        
+        while((id = __xw_get_consumer(w)) < 0) {
+            sleep(1000);
+        }
+    } else {
+        return 0;
+    }
+}
+
 #ifndef XB_STCOUNT
 #define XB_STCOUNT  8
 #endif
 
 struct xparse {
+    xworker_t *worker;
     FILE *ferr;     // bad file
     char *filename; // just filename, not include path
     int namelen;    // just filename, not include path
-    int wid;
     
     xpath_t *path;  // xpath_t path[PATH_END];
     xst_t   *st_tlv;
@@ -1099,19 +1254,19 @@ struct xparse {
     struct xb xdr;
 };
 
-#define XPARSE_INITER(_path, _st, _filename, _namelen, _wid) { \
+#define XPARSE_INITER(_worker, _path, _filename, _namelen) { \
+    .worker         = _worker,      \
     .filename       = _filename,    \
     .namelen        = _namelen,     \
-    .wid            = _wid,         \
     .path           = _path,        \
-    .st_tlv         = &(_st)[0],    \
-    .st_xdr         = &(_st)[1],    \
-    .st_raw         = &(_st)[2],    \
-    .st_http_request    = &(_st)[3],    \
-    .st_http_response   = &(_st)[4],    \
-    .st_file_content    = &(_st)[5],    \
-    .st_ssl_server      = &(_st)[6],    \
-    .st_ssl_client      = &(_st)[7],    \
+    .st_tlv         = &(_worker)->st[0],    \
+    .st_xdr         = &(_worker)->st[1],    \
+    .st_raw         = &(_worker)->st[2],    \
+    .st_http_request    = &(_worker)->st[3],    \
+    .st_http_response   = &(_worker)->st[4],    \
+    .st_file_content    = &(_worker)->st[5],    \
+    .st_ssl_server      = &(_worker)->st[6],    \
+    .st_ssl_client      = &(_worker)->st[7],    \
     .tlv            = XBUFFER_INITER((_path)[PATH_TLV].fullname),   \
     .xdr            = XBUFFER_INITER((_path)[PATH_XDR].fullname),   \
 }   /* end */

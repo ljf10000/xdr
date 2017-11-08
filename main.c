@@ -12,24 +12,65 @@ DECLARE_TLV_VARS;
 #define ENV_WORKER          "WORKER"
 #endif
 
-#ifndef WORKER_COUNT
-#define WORKER_COUNT        8
+#ifndef ENV_CACHE
+#define ENV_CACHE           "CACHE"
 #endif
 
 #define EVMASK              (IN_CLOSE_WRITE|IN_MOVED_TO)
-#define EVCOUNT             128
 #define EVSIZE              INOTIFY_EVSIZE
 #define EVNEXT(_ev)         inotify_ev_next(_ev)
 #define ISXDR(_file, _len)  os_str_has_suffix(_file, _len, "." XDR_SUFFIX, sizeof("." XDR_SUFFIX)-1)
 
 static char *self;
-
 static xpath_t Path[PATH_END];
-static xst_t St[WORKER_COUNT][XB_STCOUNT];
 
-static int Fd[WORKER_COUNT];
-static int FdCount;
-static int FdWorker;
+static xworker_t *Worker;
+static int WorkerID;
+static int WorkerCount = 1;
+static int WorkerCacheCount = 1;
+
+static inline xworker_t *
+xw_worker(int wid)
+{
+    return &Worker[wid];
+}
+
+static int
+__xw_wait_publisher(xworker_t **publisher)
+{
+    xworker_t *w;
+    int id;
+    
+    while(1) {
+        for (; WorkerID<WorkerCount; WorkerID++) {
+            w = xw_worker(WorkerID);
+
+            id = xw_get_publisher(w);
+            if (id>=0) {
+                *publisher = w;
+
+                return id;
+            }
+        }
+
+        WorkerID = 0;
+
+        usleep(1000);
+    }
+}
+
+static int
+xw_wait_publisher(xworker_t **publisher)
+{
+    if (is_option(OPT_MULTI)) {
+        return __xw_wait_publisher(publisher);
+    } 
+    else {
+        *publisher = xw_worker(0);
+        
+        return 0;
+    }
+}
 
 static nameflag_t opt[] = {
     { .flag = OPT_CLI,          .name = "--cli",        .help = "cli mode"},
@@ -85,7 +126,7 @@ statistic(struct xparse *parse)
             "request %llu, "
             "response %llu"
             __crlf, 
-            parse->wid,
+            parse->worker->wid,
             parse->st_tlv->ok, parse->st_tlv->error,
             parse->st_xdr->ok, parse->st_xdr->error,
             parse->st_raw->ok, parse->st_raw->error,
@@ -100,7 +141,7 @@ statistic(struct xparse *parse)
 static int
 xdr_handle(int wid, char *filename, int namelen)
 {
-    struct xparse parse = XPARSE_INITER(Path, St[wid], filename, namelen, wid);
+    struct xparse parse = XPARSE_INITER(xw_worker(wid), Path, filename, namelen);
     int err;
     
     xp_init(&parse);
@@ -139,97 +180,54 @@ tlv_remove(int wid, char *filename, int namelen)
     return 0;
 }
 
-static int (*handle)(inotify_ev_t *ev);
-
 static int
-common(int wid, char *filename, int namelen)
+handle(xworker_t *w)
 {
-    if (ISXDR(filename, namelen)) {
-        int err = xdr_handle(wid, filename, namelen);
-        if (err<0) {
-            // log
-        }
-    } else {
-        tlv_remove(wid, filename, namelen);
-    }
+    int id = xw_get_consumer(w);
+    xworker_cache_t *cache = xw_cache(w, id);
+    inotify_ev_t *ev  = (inotify_ev_t *)(cache->buf);
+    inotify_ev_t *end = (inotify_ev_t *)(cache->buf + cache->len);
+    int len, err;
+    
+    for (; ev<end; ev=EVNEXT(ev)) {
+        if (ev->mask & EVMASK) {
+            if (is_option(OPT_TRACE_EV)) {
+                ev_trace(ev);
+            }
 
-    return 0;
+            len = inotify_ev_len(ev);
+            if (ISXDR(ev->name, len)) {
+                err = xdr_handle(w->wid, ev->name, len);
+                if (err<0) {
+                    // log
+                }
+            } else {
+                tlv_remove(w->wid, ev->name, len);
+            }
+        }
+    }
 }
+
 
 static void *
 worker(void *args)
 {
-    int len, wid = (int)(uint32)(uint64)args;
-    uint64 data;
-    char *filename;
+    int wid = (int)(uint32)(uint64)args;
+    xworker_t *w = xw_worker(wid);
 
-    os_println("worker[%d] start", wid);
-    
     while(1) {
-        os_println("worker[%d] recv ...", wid);
-        len = read(Fd[wid], &data, sizeof(data));
-        if (len == sizeof(data)) {
-            os_println("worker[%d] recv ok.", wid);
-            
-            filename = (char *)data;
-
-            os_println("worker[%d] recv data:%llu", wid, data);
-            os_println("worker[%d] recv filename:%s", wid, filename);
-            
-            common(wid, filename, strlen(filename));
-
-            os_println("worker[%d] handle ok.", wid);
-            free(filename);
-            os_println("worker[%d] free ok.", wid);
-        } else {
-            os_println("worker[%d] recv error:%d", wid, -errno);
-        }
+        handle(w);
     }
     
     return NULL;
 }
 
 static int
-single(inotify_ev_t *ev)
-{
-    int len = inotify_ev_len(ev);
-
-    return common(0, ev->name, len);
-}
-
-static int
-multi(inotify_ev_t *ev)
-{
-    char *filename = strdup(ev->name);
-    if (NULL==filename) {
-        os_println("notify worker[%d] NOMEM", FdWorker);
-
-        return -ENOMEM;
-    }
-    
-    uint64 data = (uint64)filename;
-
-    int len = write(Fd[FdWorker], &data, sizeof(data));
-    if (len != sizeof(data)) {
-        int err = -errno;
-        
-        os_println("notify worker[%d] data:%llu:%s error:%d", FdWorker, data, filename, err);
-
-        return err;
-    } else {
-        os_println("notify worker[%d] data:%llu:%s ok", FdWorker, data, filename);
-    }
-    
-    FdWorker = (FdWorker+1)%FdCount;
-
-    return 0;
-}
-
-static int
 monitor(const char *watch)
 {
-    static char EV_BUFFER[EVCOUNT * INOTIFY_EVSIZE];
-    int fd, len, err;
+    xworker_t *w;
+    xworker_cache_t *cache;
+    int fd, err, id;
 
     fd = inotify_init1(IN_CLOEXEC);
     if (fd<0) {
@@ -242,23 +240,19 @@ monitor(const char *watch)
     }
 
     for (;;) {
-        len = read(fd, EV_BUFFER, sizeof(EV_BUFFER));
-        if (len == -1 && errno != EAGAIN) {
+        id = xw_wait_publisher(&w);
+        cache = xw_cache(w, id);
+        
+        cache->len = read(fd, cache->buf, EVBUFSIZE);
+        if (cache->len == -1 && errno != EAGAIN) {
             return -errno;
         }
         OS_VAR(time) = time(NULL);
 
-        inotify_ev_t *ev    = (inotify_ev_t *)EV_BUFFER;
-        inotify_ev_t *end   = (inotify_ev_t *)(EV_BUFFER + len);
-        
-        for (; ev<end; ev=EVNEXT(ev)) {
-            if (ev->mask & EVMASK) {
-                if (is_option(OPT_TRACE_EV)) {
-                    ev_trace(ev);
-                }
-
-                (*handle)(ev);
-            }
+        if (is_option(OPT_MULTI)) {
+            xw_put_publisher(w, id);
+        } else {
+            handle(w);
         }
     }
 }
@@ -307,25 +301,25 @@ init_xpath(char *path[PATH_END])
 }
 
 static int
-init_multi(void)
+init_worker(int wid)
 {
-    int i, fd, err;
+    xworker_t *w = xw_worker(wid);
+    int err;
 
-    FdCount = env_geti(ENV_WORKER, 0);
-    if (FdCount<=0 || FdCount>WORKER_COUNT) {
-        FdCount = WORKER_COUNT;
+    w->wid = wid;
+    w->cache_count = WorkerCacheCount;
+    w->cache = (xworker_cache_t *)os_calloc(WorkerCacheCount, sizeof(xworker_cache_t));
+    if (NULL==w->cache) {
+        return -ENOMEM;
     }
-
-    for (i=0; i<FdCount; i++) {
-        pthread_t tid;
-        
-        fd = eventfd(0, EFD_CLOEXEC);
-        if (fd<0) {
-            return -errno;
+    
+    if (is_option(OPT_MULTI)) {
+        err = pthread_mutex_init(&w->mutex, NULL);
+        if (err<0) {
+            return err;
         }
-        Fd[i] = fd;
         
-        err = pthread_create(&tid, NULL, worker, (void *)(uint64)i);
+        err = pthread_create(&w->tid, NULL, worker, (void *)(uint64)wid);
         if (err<0) {
             return err;
         }
@@ -335,21 +329,62 @@ init_multi(void)
 }
 
 static int
+init_workers(void)
+{
+    int i, err;
+
+    Worker = (xworker_t *)os_calloc(WorkerCount, sizeof(*Worker));
+    if (NULL==Worker) {
+        return -ENOMEM;
+    }
+    
+    for (i=0; i<WorkerCount; i++) {
+        err = init_worker(i);
+        if (err<0) {
+            return err;
+        }
+    }
+
+    return 0;
+}
+
+static int 
+xw_envi(char *env, int deft)
+{
+    int v = env_geti(env, deft);
+    if (v<=0 || v>deft) {
+        v = deft;
+    }
+
+    return v;
+}
+
+static void
+init_env(void)
+{
+    WorkerCount     = xw_envi(ENV_WORKER, WORKER_COUNT);
+    WorkerCacheCount= xw_envi(ENV_CACHE,  CACHE_COUNT);
+}
+
+static int
 init(char *path[PATH_END])
 {
     int err;
     
     init_xpath(path);
 
+    if (is_option(OPT_CLI)) {
+        // cli not multi-thread
+        clr_option(OPT_MULTI);
+    }
+    
     if (is_option(OPT_MULTI)) {
-        err = init_multi();
-        if (err<0) {
-            return err;
-        }
-        
-        handle = multi;
-    } else {
-        handle = single;
+        init_env;
+    }
+
+    err = init_workers();
+    if (err<0) {
+        return err;
     }
 
     return 0;
