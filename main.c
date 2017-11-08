@@ -159,7 +159,7 @@ common(int wid, char *filename, int namelen)
 static void *
 worker(void *args)
 {
-    int err, len, wid = (int)args;
+    int err, len, wid = (int)(uint32)(uint64)args;
     uint64 data;
     char *filename;
     
@@ -192,7 +192,7 @@ single(inotify_ev_t *ev)
 static int
 multi(inotify_ev_t *ev)
 {
-    char *filename = strcat(ev->name);
+    char *filename = strdup(ev->name);
     if (NULL==filename) {
         os_println("notify worker[%d] NOMEM", FdWorker);
 
@@ -263,7 +263,7 @@ cli(void)
         return -EBADENV;
     }
     
-    return xdr_handle(filename, strlen(filename));
+    return xdr_handle(0, filename, strlen(filename));
 }
 
 static int
