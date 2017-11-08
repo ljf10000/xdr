@@ -175,9 +175,10 @@ worker(void *args)
             continue;
         }
 
-        os_println("worker[%d] recv data:%llu", wid, data);
-        
         filename = (char *)data;
+
+        os_println("worker[%d] recv data:%llu:%s", wid, data, filename);
+        
         common(wid, filename, strlen(filename));
         free(filename);
     }
@@ -209,11 +210,11 @@ multi(inotify_ev_t *ev)
     if (len != sizeof(data)) {
         int err = -errno;
         
-        os_println("notify worker[%d] data:%llu error:%d", FdWorker, data, err);
+        os_println("notify worker[%d] data:%llu:%s error:%d", FdWorker, data, filename, err);
 
         return err;
     } else {
-        os_println("notify worker[%d] data:%llu ok", FdWorker, data);
+        os_println("notify worker[%d] data:%llu:%s ok", FdWorker, data, filename);
     }
     
     FdWorker = (FdWorker+1)%FdCount;
