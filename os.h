@@ -1168,6 +1168,15 @@ struct ringbuffer {
     char buffer[0];
 };
 
+struct reader_result
+{
+    size_t beg;
+    size_t end;
+    size_t cur;
+
+    struct ringbuffer *ring;
+};
+
 static inline uint 
 min_power_of_2(unsigned int in)
 {
