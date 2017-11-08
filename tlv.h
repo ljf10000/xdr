@@ -1153,10 +1153,7 @@ __xw_get_publisher(xworker_t *w)
         goto ERROR;
     }
 
-    id = w->publisher+1;
-    if (w->cache_count==id) {
-        id = 0;
-    }
+    id = w->publisher;
     
     os_println("get worker:%d publisher:%d", w->wid, id);
 ERROR:
@@ -1179,8 +1176,11 @@ __xw_put_publisher(xworker_t *w, int id)
     }
 
     os_println("put worker:%d publisher:%d", w->wid, id);
-    
-    w->publisher = id;
+
+    w->publisher = id+1;
+    if (w->publisher==w->cache_count) {
+        w->publisher = 0;
+    }
     w->count++;
     err = 0;
 ERROR:
@@ -1201,12 +1201,12 @@ __xw_get_consumer(xworker_t *w)
         goto ERROR;
     }
 
-    id = ++w->consumer;
-    if (id==w->cache_count) {
-        id = 0;
+    id = w->consumer++;
+    if (w->consumer==w->cache_count) {
+        w->consumer = 0;
     }
+    w->count--;
 
-    w->consumer = id;
     os_println("get worker:%d consumer:%d", w->wid, id);
 ERROR:
     xw_unlock(w);

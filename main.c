@@ -242,7 +242,7 @@ monitor(const char *watch)
     }
 
     for (;;) {
-        os_println("wait worker:%d publisher ...", w->wid);
+        os_println("wait worker publisher ...");
         id = xw_wait_publisher(&w);
         os_println("wait worker:%d publisher:%d ok.", w->wid, id);
         cache = xw_cache(w, id);
