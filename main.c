@@ -166,7 +166,9 @@ worker(void *args)
     os_println("worker[%d] start", wid);
     
     while(1) {
+        os_println("worker[%d] recv ...", wid);
         len = read(Fd[wid], &data, sizeof(data));
+        os_println("worker[%d] recv ok.", wid);
         if (len == sizeof(data)) {
             filename = (char *)data;
 
