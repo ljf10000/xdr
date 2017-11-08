@@ -107,6 +107,7 @@
 #include <limits.h>
 #include <dlfcn.h>
 #include <endian.h>
+#include <pthread.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>

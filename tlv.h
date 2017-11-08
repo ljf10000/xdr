@@ -1086,12 +1086,16 @@ xb_open(struct xb *x, bool readonly, int size)
     return xb_mmap(x, readonly);
 }
 
-enum { EVBUFSIZE = (EVCOUNT * EVSIZE) };
+enum { EVBUFSIZE = (EVCOUNT * INOTIFY_EVSIZE) };
 
 typedef struct {
     byte buf[EVBUFSIZE];
     int len;
 } xworker_cache_t;
+
+#ifndef XB_STCOUNT
+#define XB_STCOUNT  8
+#endif
 
 typedef struct {
     pthread_mutex_t mutex;
@@ -1228,10 +1232,6 @@ xw_get_consumer(xworker_t *w)
         return 0;
     }
 }
-
-#ifndef XB_STCOUNT
-#define XB_STCOUNT  8
-#endif
 
 struct xparse {
     xworker_t *worker;

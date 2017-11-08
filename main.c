@@ -1,5 +1,4 @@
 #include "xdr.h"
-#include <pthread.h>
 
 DECLARE_OS_VARS;
 DECLARE_TLV_VARS;
@@ -17,7 +16,6 @@ DECLARE_TLV_VARS;
 #endif
 
 #define EVMASK              (IN_CLOSE_WRITE|IN_MOVED_TO)
-#define EVSIZE              INOTIFY_EVSIZE
 #define EVNEXT(_ev)         inotify_ev_next(_ev)
 #define ISXDR(_file, _len)  os_str_has_suffix(_file, _len, "." XDR_SUFFIX, sizeof("." XDR_SUFFIX)-1)
 
@@ -206,6 +204,8 @@ ev_handle(xworker_t *w)
             }
         }
     }
+
+    return 0;
 }
 
 
@@ -379,7 +379,7 @@ init(char *path[PATH_END])
     }
     
     if (is_option(OPT_MULTI)) {
-        init_env;
+        init_env();
     }
 
     err = init_workers();
@@ -393,7 +393,6 @@ init(char *path[PATH_END])
 int main(int argc, char *argv[])
 {
     int err;
-    ringbuffer_create(1024, 1024);
     
     self = argv[0];
 
