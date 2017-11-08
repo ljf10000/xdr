@@ -159,7 +159,7 @@ common(int wid, char *filename, int namelen)
 static void *
 worker(void *args)
 {
-    int err, len, wid = (int)(uint32)(uint64)args;
+    int len, wid = (int)(uint32)(uint64)args;
     uint64 data;
     char *filename;
 
@@ -168,14 +168,18 @@ worker(void *args)
     while(1) {
         os_println("worker[%d] recv ...", wid);
         len = read(Fd[wid], &data, sizeof(data));
-        os_println("worker[%d] recv ok.", wid);
         if (len == sizeof(data)) {
+            os_println("worker[%d] recv ok.", wid);
+            
             filename = (char *)data;
 
             os_println("worker[%d] recv data:%llu:%s", wid, data, filename);
             
             common(wid, filename, strlen(filename));
+
+            os_println("worker[%d] handle ok.", wid);
             free(filename);
+            os_println("worker[%d] free ok.", wid);
         } else {
             os_println("worker[%d] recv error:%d", wid, -errno);
         }
