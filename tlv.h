@@ -1385,7 +1385,7 @@ xp_open(struct xparse *parse)
     struct xb *xdr = &parse->xdr;
     int size, err;
     
-    size = os_fsize(tlv->fullname);
+    size = tlv_trace(os_fsize(tlv->fullname), "os_fsize %s", tlv->fullname);
     if (size<0) {
         os_println("get size %s error:%d", tlv->fullname, size);
         return size;

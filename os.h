@@ -308,7 +308,7 @@
 #endif
 
 #ifndef ok_string
-#define ok_string(_err)                 (0==(_err)?__ok:__error)
+#define ok_string(_err)                 ((_err)<0?__error:__ok)
 #endif
 
 #define os_malloc(_size)            malloc(_size)
