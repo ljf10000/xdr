@@ -75,6 +75,10 @@
 #define XDR_EXPAND      (32*1024)
 #endif
 
+#ifndef XDR_USLEEP
+#define XDR_USLEEP      1000
+#endif
+
 #ifndef WORKER_COUNT
 #define WORKER_COUNT    8
 #endif
@@ -1164,7 +1168,7 @@ xw_get_publisher(xworker_t *w)
     
     xw_lock(w);
     if (xw_is_full(w)) {
-        xw_dprint(w, "get publisher failed(empty)");
+        // xw_dprint(w, "get publisher failed(empty)");
         
         goto ERROR;
     }
@@ -1186,7 +1190,7 @@ xw_put_publisher(xworker_t *w, int id)
     
     xw_lock(w);
     if (xw_is_full(w)) {
-        xw_dprint(w, "put publisher:%d failed(full)", id);
+        // xw_dprint(w, "put publisher:%d failed(full)", id);
         
         goto ERROR;
     }
@@ -1214,7 +1218,7 @@ xw_get_consumer(xworker_t *w, int wid)
    
     xw_lock(w);
     if (xw_is_empty(w)) {
-        xw_dprint(w, "get worker:%d consumer failed(empty)", wid);
+        // xw_dprint(w, "get worker:%d consumer failed(empty)", wid);
 
         goto ERROR;
     }

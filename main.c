@@ -39,7 +39,7 @@ put_publisher(int id)
 {
     if (is_option(OPT_MULTI)) {
         while(xw_put_publisher(&Worker, id) < 0) {
-            usleep(1000);
+            usleep(XDR_USLEEP);
         }
     }
 }
@@ -51,7 +51,7 @@ get_consumer(int wid)
         int id;
         
         while((id = xw_get_consumer(&Worker, wid)) < 0) {
-            usleep(1000);
+            usleep(XDR_USLEEP);
         }
 
         return id;
