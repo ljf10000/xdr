@@ -572,7 +572,7 @@ typedef char ip_string_t[OS_IPSTRING_LEN];
 static inline char *
 os_ipstring(os_ip4_t ip, ip_string_t string)
 {
-    return inet_ntop(AF_INET, &ip, string, OS_IPSTRING_LEN);
+    return (char *)inet_ntop(AF_INET, &ip, string, OS_IPSTRING_LEN);
 }
 
 static inline char *
