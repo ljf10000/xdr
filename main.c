@@ -315,6 +315,47 @@ init_xpath(int wid, char *path[PATH_END])
 }
 
 static int
+init_trace(int wid)
+{
+    if (is_option(OPT_TRACE_TLV) || is_option(OPT_TRACE_XDR)) {
+        char filename[1+OS_FILENAME_LEN] = {0};
+
+        os_sprintf(filename, "worker%d", i);
+        
+        Worker[wid].trace = fopen(filename, "w+");
+        if (NULL==Worker[wid].trace) {
+            os_println("open trace file %s error", filename);
+            
+            return -EBADF;
+        }
+
+        return 0;
+    }
+}
+
+static int
+init_multi(int wid)
+{
+    int err;
+        
+    if (is_option(OPT_MULTI)) {
+        pthread_t tid;
+
+        err = pthread_mutex_init(&WorkerQue.mutex, NULL);
+        if (err<0) {
+            return err;
+        }
+        
+        err = pthread_create(&tid, NULL, worker, (void *)(uint64)i);
+        if (err<0) {
+            return err;
+        }
+    }
+
+    return 0;
+}
+
+static int
 init_worker(char *path[PATH_END])
 {
     int i, err;
@@ -327,32 +368,15 @@ init_worker(char *path[PATH_END])
 
     for (i=0; i<WorkerCount; i++) {
         init_xpath(i, path);
-        
-        if (is_option(OPT_MULTI)) {
-            pthread_t tid;
 
-            if (is_option(OPT_TRACE_TLV) || is_option(OPT_TRACE_XDR)) {
-                char filename[1+OS_FILENAME_LEN] = {0};
+        err = init_trace(i);
+        if (err<0) {
+            return err;
+        }
 
-                os_sprintf(filename, "worker%d", i);
-                
-                Worker[i].trace = fopen(filename, "w+");
-                if (NULL==Worker[i].trace) {
-                    os_println("open trace file %s error", filename);
-                    
-                    return -EBADF;
-                }
-            }
-            
-            err = pthread_mutex_init(&WorkerQue.mutex, NULL);
-            if (err<0) {
-                return err;
-            }
-            
-            err = pthread_create(&tid, NULL, worker, (void *)(uint64)i);
-            if (err<0) {
-                return err;
-            }
+        err = init_multi(i);
+        if (err<0) {
+            return err;
         }
     }
 

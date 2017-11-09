@@ -30,12 +30,14 @@ xw_trace(int wid, const char *fmt, ...)
 {
     va_list args;
     FILE *f = xw_stream(wid);
-    
-    va_start(args, fmt);
-    vfprintf(f, fmt, args);
-    va_end(args);
 
-    fflush(f);
+    if (f) {
+        va_start(args, fmt);
+        vfprintf(f, fmt, args);
+        va_end(args);
+
+        fflush(f);
+    }
 }
 
 #ifndef xw_trace_by
