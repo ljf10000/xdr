@@ -1128,16 +1128,10 @@ xw_unlock(xworker_t *w)
     pthread_mutex_unlock(&w->mutex);
 }
 
-static inline uint64
-xw_id(xworker_t *w, uint64 id)
-{
-    return id % w->cache_count;
-}
-
 static inline xworker_cache_t *
 xw_cache(xworker_t *w, uint64 id)
 {
-    return w->cache + xw_id(w, id);
+    return w->cache + (id % w->cache_count);
 }
 
 static inline uint64
@@ -1166,7 +1160,8 @@ xw_is_empty(xworker_t *w)
 #define xw_dprint(_w, _fmt, _args...) os_do_nothing()
 #else
 #define xw_dprint(_w, _fmt, _args...) \
-    os_println("[[publisher:%llu consumer:%llu]]" __tab _fmt, (_w)->publisher, (_w)->consumer, ##_args)
+    os_println("[[publisher:%llu consumer:%llu count:%llu]]" __tab _fmt, \
+        (_w)->publisher, (_w)->consumer, xw_cache_count(_w), ##_args)
 #endif
 
 static inline uint64
