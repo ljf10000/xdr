@@ -84,7 +84,7 @@
 #endif
 
 #ifndef CACHE_COUNT
-#define CACHE_COUNT     16
+#define CACHE_COUNT     128
 #endif
 
 #ifndef EVCOUNT
@@ -1090,12 +1090,12 @@ xb_open(struct xb *x, bool readonly, int size)
     return xb_mmap(x, readonly);
 }
 
-enum { EVBUFSIZE = (EVCOUNT * INOTIFY_EVSIZE) };
+enum { EVBUFSIZE = (EVCOUNT * INOTIFY_EVSIZE) };    // 272 * 128 = 34816
 
 typedef struct {
     byte buf[EVBUFSIZE];
     int len;
-} xworker_cache_t;
+} xworker_cache_t; // 34816 + 4 = 34820
 
 #ifndef XB_STCOUNT
 #define XB_STCOUNT  8
@@ -1109,7 +1109,7 @@ typedef struct {
     uint64 cache_count;
     
     pthread_mutex_t mutex;
-    xworker_cache_t *cache;
+    xworker_cache_t *cache; // 128 * 34820 = 4456960
 } xworker_t;
 
 #ifndef INVALID_WORKER_ID
