@@ -147,27 +147,33 @@ xdr_handle(int wid, char *filename, int namelen)
 {
     struct xparse parse = XPARSE_INITER(wid, WorkerPath[wid], WorkerSt[wid], filename, namelen);
     int err;
-    
+
+    os_println("worker:%d xdr handle ...", wid);
     xp_init(&parse);
+    os_println("worker:%d xdr handle 1.", wid);
 
     err = xp_open(&parse);
     if (err<0) {
         goto ERROR;
     }
+    os_println("worker:%d xdr handle 2.", wid);
 
     err = xp_run(&parse);
     if (err<0) {
         goto ERROR;
     }
+    os_println("worker:%d xdr handle 3.", wid);
 
 ERROR:
     xp_close(&parse);
+    os_println("worker:%d xdr handle 4.", wid);
     if (err<0) {
         parse.st_raw->error++;
     } else {
         parse.st_raw->ok++;
     }
     statistic(&parse, wid);
+    os_println("worker:%d xdr handle ok.", wid);
     
     return err;
 }
