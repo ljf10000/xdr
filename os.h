@@ -564,27 +564,35 @@ enum { mv2_ok = 0 };
 #define is_mv2_go(_mv)          (__MV_GO==mv2_control(_mv))
 
 typedef uint32 os_ip4_t;
-/*
-* just for single-thread, unsafe for multi-thread
-*
-* @ip: network sort
-*/
+
+#define OS_FORMAT_IPSTRING      "255.255.255.255"
+#define OS_IPSTRING_LEN         OS_FORMAT_SIZE(OS_FORMAT_IPSTRING)
+typedef char ip_string_t[OS_IPSTRING_LEN];
+
+static inline char *
+os_ipstring(os_ip4_t ip, ip_string_t string)
+{
+    return inet_ntop(AF_INET, &ip, string, OS_IPSTRING_LEN);
+}
+
 static inline char *
 unsafe_ipstring(os_ip4_t ip)
 {
-    return (char *)inet_ntoa(*(struct in_addr *)&ip);
+    static ip_string_t string;
+
+    return os_ipstring(ip, string);
 }
 
 #define OS_FORMAT_FULLTIME      "1900-01-01#00:00:00"
+#define OS_FULLTIME_STRING_LEN  OS_FORMAT_SIZE(OS_FORMAT_FULLTIME)
+typedef char time_string_t[OS_FULLTIME_STRING_LEN];
 
 static inline char *
-unsafe_time_string(time_t t)
+os_time_string(time_t t, time_string_t string)
 {
-    static char current[OS_FORMAT_SIZE(OS_FORMAT_FULLTIME)];
-
     struct tm *tm = gmtime(&t);
 
-    os_saprintf(current, "%04d-%02d-%02d#%02d:%02d:%02d",
+    os_saprintf(string, "%04d-%02d-%02d#%02d:%02d:%02d",
                 1900 + tm->tm_year,
                 1 + tm->tm_mon,
                 tm->tm_mday,
@@ -592,7 +600,15 @@ unsafe_time_string(time_t t)
                 tm->tm_min,
                 (61==tm->tm_sec)?59:tm->tm_sec);
 
-    return current;
+    return string;
+}
+
+static inline char *
+unsafe_time_string(time_t t)
+{
+    static time_string_t string;
+
+    return os_time_string(t, string);
 }
 
 static inline bool

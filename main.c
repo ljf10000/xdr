@@ -11,8 +11,8 @@ DECLARE_TLV_VARS;
 #define ENV_XDR_WORKER      "XDR_WORKER"
 #endif
 
-#ifndef ENV_XDR_CACHE
-#define ENV_XDR_CACHE       "XDR_CACHE"
+#ifndef ENV_XDR_QUE
+#define ENV_XDR_QUE         "XDR_QUE"
 #endif
 
 #define EVMASK              (IN_CLOSE_WRITE|IN_MOVED_TO)
@@ -20,13 +20,13 @@ DECLARE_TLV_VARS;
 #define ISXDR(_file, _len)  os_str_has_suffix(_file, _len, "." XDR_SUFFIX, sizeof("." XDR_SUFFIX)-1)
 
 static char *self;
-static xpath_t Path[PATH_END];
-static xst_t St[WORKER_COUNT][XB_STCOUNT];
+static xpath_t WorkerPath[WORKER_COUNT][PATH_END];
+static xst_t WorkerSt[WORKER_COUNT][XB_STCOUNT];
 
 static xworker_t Worker;
 static int WorkerID;
 static int WorkerCount = 1;
-static int WorkerCacheCount = 1;
+static int WrokerQueCount = 1;
 
 static inline uint64
 get_publisher(void)
@@ -70,10 +70,10 @@ get_consumer(int wid)
     }
 }
 
-static inline xworker_cache_t *
-get_cache(uint64 id)
+static inline xworker_que_t *
+get_qentry(uint64 id)
 {
-    return xw_cache(&Worker, id);
+    return xw_qentry(&Worker, id);
 }
 
 static nameflag_t opt[] = {
@@ -145,7 +145,7 @@ statistic(struct xparse *parse, int wid)
 static int
 xdr_handle(int wid, char *filename, int namelen)
 {
-    struct xparse parse = XPARSE_INITER(Path, St[wid], filename, namelen);
+    struct xparse parse = XPARSE_INITER(WorkerPath[wid], WorkerSt[wid], filename, namelen);
     int err;
     
     xp_init(&parse);
@@ -175,7 +175,7 @@ ERROR:
 static int
 tlv_remove(int wid, char *filename, int namelen)
 {
-    char *fullname = xpath_fill(&Path[PATH_TLV], filename, namelen);
+    char *fullname = xpath_fill(&WorkerPath[wid][PATH_TLV], filename, namelen);
     
     remove(fullname);
     
@@ -188,7 +188,7 @@ static int
 ev_handle(int wid)
 {
     uint64 id = get_consumer(wid);
-    xworker_cache_t *cache = get_cache(id);
+    xworker_que_t *cache = get_qentry(id);
     inotify_ev_t *ev  = (inotify_ev_t *)(cache->buf);
     inotify_ev_t *end = (inotify_ev_t *)(cache->buf + cache->len);
     int len, err;
@@ -232,7 +232,7 @@ worker(void *args)
 static int
 monitor(const char *watch)
 {
-    xworker_cache_t *cache;
+    xworker_que_t *cache;
     int fd, err;
     uint64 id;
 
@@ -248,7 +248,7 @@ monitor(const char *watch)
 
     for (;;) {
         id = get_publisher();
-        cache = get_cache(id);
+        cache = get_qentry(id);
         
         cache->len = read(fd, cache->buf, EVBUFSIZE);
         if (cache->len == -1 && errno != EAGAIN) {
@@ -299,28 +299,30 @@ check(int argc, char *argv[])
 }
 
 static void
-init_xpath(char *path[PATH_END])
+init_xpath(int wid, char *path[PATH_END])
 {
     int i;
 
     for (i=0; i<PATH_END; i++) {
-        xpath_init(&Path[i], path[i]);
+        xpath_init(&WorkerPath[wid][i], path[i]);
     }
 }
 
 static int
-init_worker(void)
+init_worker(char *path[PATH_END])
 {
     int i, err;
 
-    Worker.cache_count = WorkerCacheCount;
-    Worker.cache = (xworker_cache_t *)os_calloc(WorkerCacheCount, sizeof(xworker_cache_t));
-    if (NULL==Worker.cache) {
+    Worker.qcount = WrokerQueCount;
+    Worker.que = (xworker_que_t *)os_calloc(WrokerQueCount, sizeof(xworker_que_t));
+    if (NULL==Worker.que) {
         return -ENOMEM;
     }
 
-    if (is_option(OPT_MULTI)) {
-        for (i=0; i<WorkerCount; i++) {
+    for (i=0; i<WorkerCount; i++) {
+        init_xpath(i, path);
+        
+        if (is_option(OPT_MULTI)) {
             pthread_t tid;
             
             err = pthread_mutex_init(&Worker.mutex, NULL);
@@ -354,15 +356,15 @@ init_env(void)
 {
     if (is_option(OPT_MULTI)) {
         WorkerCount     = xw_envi(ENV_XDR_WORKER, WORKER_COUNT);
-        WorkerCacheCount= xw_envi(ENV_XDR_CACHE,  CACHE_COUNT);
+        WrokerQueCount= xw_envi(ENV_XDR_QUE,  QUE_COUNT);
 
         os_println("worker count %d",       WorkerCount);
-        os_println("worker cache count %d", WorkerCacheCount);
+        os_println("worker queue count %d", WrokerQueCount);
     }
 }
 
 static void
-init_option(void)
+pre(void)
 {
     if (is_option(OPT_CLI)) {
         // cli not multi-thread
@@ -375,11 +377,9 @@ init(char *path[PATH_END])
 {
     int err;
     
-    init_xpath(path);
-    init_option();
     init_env();
 
-    err = init_worker();
+    err = init_worker(path);
     if (err<0) {
         return err;
     }
@@ -415,6 +415,8 @@ int main(int argc, char *argv[])
     if (0!=check(argc, argv)) {
         return usage();
     }
+
+    pre();
     
     err = init(argv);
     if (err<0) {

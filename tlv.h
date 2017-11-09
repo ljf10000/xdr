@@ -83,8 +83,8 @@
 #define WORKER_COUNT    8
 #endif
 
-#ifndef CACHE_COUNT
-#define CACHE_COUNT     128
+#ifndef QUE_COUNT
+#define QUE_COUNT     128
 #endif
 
 #ifndef EVCOUNT
@@ -352,7 +352,10 @@ tlv_dump_binary(FILE *stream, struct tlv *tlv)
 static inline void 
 tlv_dump_time(FILE *stream, struct tlv *tlv)
 {
-    TLV_DUMP(stream, "id:%d, %s: %s", tlv->id, tlv_ops_name(tlv), unsafe_time_string(XDR_SECOND(tlv_time(tlv))));
+    time_string_t tstring;
+        
+    TLV_DUMP(stream, "id:%d, %s: %s", tlv->id, tlv_ops_name(tlv), 
+        os_time_string(XDR_SECOND(tlv_time(tlv)), tstring));
 }
 
 static inline void
@@ -369,8 +372,11 @@ static inline void
 tlv_dump_ip4(FILE *stream, struct tlv *tlv)
 {
     uint32 ip = tlv_ip4(tlv); // ip = htonl(ip);
+    ip_string_t string;
     
-    TLV_DUMP(stream, "id:%d, %s: %s", tlv->id, tlv_ops_name(tlv), unsafe_ipstring(ip));
+    TLV_DUMP(stream, "id:%d, %s: %s", tlv->id, 
+        tlv_ops_name(tlv), 
+        os_ipstring(ip, string));
 }
 
 static inline void 
@@ -415,12 +421,13 @@ tlv_dump_session(FILE *stream, struct tlv *tlv)
 
     if (XDR_IPV4==obj->ver) {
         uint32 ip;
+        ip_string_t string;
         
         ip = XDR_IP(&obj->sip); // ip = htonl(ip);
-        TLV_DUMP2(stream, "sip    : %s", unsafe_ipstring(ip));
+        TLV_DUMP2(stream, "sip    : %s", os_ipstring(ip, string));
         
         ip = XDR_IP(&obj->dip); // ip = htonl(ip);
-        TLV_DUMP2(stream, "dip    : %s", unsafe_ipstring(ip));
+        TLV_DUMP2(stream, "dip    : %s", os_ipstring(ip, string));
     } else {
         TLV_DUMP2(stream, "sip    : ipv6 address");
         TLV_DUMP2(stream, "dip    : ipv6 addres");
@@ -480,12 +487,16 @@ static inline void
 tlv_dump_session_time(FILE *stream, struct tlv *tlv)
 {
     tlv_session_time_t *obj = tlv_session_time(tlv);
+    time_string_t tstring;
     
     TLV_DUMP(stream, "id: %d, session_time:", tlv->id);
-    
-    TLV_DUMP2(stream, "create: %s", unsafe_time_string(XDR_SECOND(obj->create)));
-    TLV_DUMP2(stream, "start : %s", unsafe_time_string(XDR_SECOND(obj->start)));
-    TLV_DUMP2(stream, "stop  : %s", unsafe_time_string(XDR_SECOND(obj->stop)));
+
+    TLV_DUMP2(stream, "create: %s", 
+        os_time_string(XDR_SECOND(obj->create), tstring));
+    TLV_DUMP2(stream, "start : %s", 
+        os_time_string(XDR_SECOND(obj->start), tstring));
+    TLV_DUMP2(stream, "stop  : %s", 
+        os_time_string(XDR_SECOND(obj->stop), tstring));
 }
 
 #ifndef sizeof_tcp
@@ -623,12 +634,16 @@ static inline void
 tlv_dump_http(FILE *stream, struct tlv *tlv)
 {
     tlv_http_t *obj = tlv_http(tlv);
+    time_string_t tstring;
     
     TLV_DUMP(stream, "id: %d, http:", tlv->id);
-    
-    TLV_DUMP2(stream, "time_request        : %s", unsafe_time_string(XDR_SECOND(obj->time_request)));
-    TLV_DUMP2(stream, "time_first_response : %s", unsafe_time_string(XDR_SECOND(obj->time_first_response)));
-    TLV_DUMP2(stream, "time_last_content   : %s", unsafe_time_string(XDR_SECOND(obj->time_last_content)));
+
+    TLV_DUMP2(stream, "time_request        : %s", 
+        os_time_string(XDR_SECOND(obj->time_request), tstring));
+    TLV_DUMP2(stream, "time_first_response : %s", 
+        os_time_string(XDR_SECOND(obj->time_first_response), tstring));
+    TLV_DUMP2(stream, "time_last_content   : %s", 
+        os_time_string(XDR_SECOND(obj->time_last_content), tstring));
     TLV_DUMP2(stream, "service_delay       : %llu us", obj->service_delay);
     TLV_DUMP2(stream, "content_length      : %u", obj->content_length);
     TLV_DUMP2(stream, "status_code         : %u", obj->status_code);
@@ -1095,7 +1110,7 @@ enum { EVBUFSIZE = (EVCOUNT * INOTIFY_EVSIZE) };    // 272 * 128 = 34816
 typedef struct {
     byte buf[EVBUFSIZE];
     int len;
-} xworker_cache_t; // 34816 + 4 = 34820
+} xworker_que_t; // 34816 + 4 = 34820
 
 #ifndef XB_STCOUNT
 #define XB_STCOUNT  8
@@ -1106,10 +1121,11 @@ typedef struct {
     
     uint64 publisher;
     uint64 consumer;
-    uint64 cache_count;
+    
+    uint64 qcount;
+    xworker_que_t *que; // 128 * 34820 = 4456960
     
     pthread_mutex_t mutex;
-    xworker_cache_t *cache; // 128 * 34820 = 4456960
 } xworker_t;
 
 #ifndef INVALID_WORKER_ID
@@ -1128,14 +1144,14 @@ xw_unlock(xworker_t *w)
     pthread_mutex_unlock(&w->mutex);
 }
 
-static inline xworker_cache_t *
-xw_cache(xworker_t *w, uint64 id)
+static inline xworker_que_t *
+xw_qentry(xworker_t *w, uint64 id)
 {
-    return w->cache + (id % w->cache_count);
+    return w->que + (id % w->qcount);
 }
 
 static inline uint64
-xw_cache_count(xworker_t *w)
+xw_qcount(xworker_t *w)
 {
     if (w->publisher >= w->consumer) {
         return w->publisher - w->consumer;
@@ -1147,7 +1163,7 @@ xw_cache_count(xworker_t *w)
 static inline bool
 xw_is_full(xworker_t *w)
 {
-    return xw_cache_count(w)==w->cache_count;
+    return xw_qcount(w)==w->qcount;
 }
 
 static inline bool
@@ -1161,7 +1177,7 @@ xw_is_empty(xworker_t *w)
 #else
 #define xw_dprint(_w, _fmt, _args...) \
     os_println("[[publisher:%llu consumer:%llu count:%llu]]" __tab _fmt, \
-        (_w)->publisher, (_w)->consumer, xw_cache_count(_w), ##_args)
+        (_w)->publisher, (_w)->consumer, xw_qcount(_w), ##_args)
 #endif
 
 static inline uint64
