@@ -21,6 +21,7 @@ DECLARE_TLV_VARS;
 
 static char *self;
 static xpath_t Path[PATH_END];
+static xst_t St[WORKER_COUNT][XB_STCOUNT];
 
 static xworker_t Worker;
 static int WorkerID;
@@ -134,7 +135,7 @@ statistic(struct xparse *parse)
 static int
 xdr_handle(int wid, char *filename, int namelen)
 {
-    struct xparse parse = XPARSE_INITER(wid, Path, filename, namelen);
+    struct xparse parse = XPARSE_INITER(Path, wid, St[wid], filename, namelen);
     int err;
     
     xp_init(&parse);

@@ -1107,8 +1107,6 @@ typedef struct {
     
     pthread_mutex_t mutex;
     xworker_cache_t *cache;
-
-    xst_t st[XB_STCOUNT];
 } xworker_t;
 
 static inline void
@@ -1231,19 +1229,19 @@ struct xparse {
     struct xb xdr;
 };
 
-#define XPARSE_INITER(_wid, _path, _filename, _namelen) { \
-    .wid            = _wid,      \
+#define XPARSE_INITER(_path, _wid, _st, _filename, _namelen) { \
+    .wid            = _wid,         \
     .filename       = _filename,    \
     .namelen        = _namelen,     \
     .path           = _path,        \
-    .st_tlv         = &(_worker)->st[0],    \
-    .st_xdr         = &(_worker)->st[1],    \
-    .st_raw         = &(_worker)->st[2],    \
-    .st_http_request    = &(_worker)->st[3],    \
-    .st_http_response   = &(_worker)->st[4],    \
-    .st_file_content    = &(_worker)->st[5],    \
-    .st_ssl_server      = &(_worker)->st[6],    \
-    .st_ssl_client      = &(_worker)->st[7],    \
+    .st_tlv         = (_st)[0],     \
+    .st_xdr         = (_st)[1],     \
+    .st_raw         = (_st)[2],     \
+    .st_http_request    = (_st)[3], \
+    .st_http_response   = (_st)[4], \
+    .st_file_content    = (_st)[5], \
+    .st_ssl_server      = (_st)[6], \
+    .st_ssl_client      = (_st)[7], \
     .tlv            = XBUFFER_INITER((_path)[PATH_TLV].fullname),   \
     .xdr            = XBUFFER_INITER((_path)[PATH_XDR].fullname),   \
 }   /* end */
