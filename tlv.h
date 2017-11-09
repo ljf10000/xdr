@@ -1164,49 +1164,57 @@ xw_is_empty(xworker_t *w)
 static inline int
 xw_get_publisher(xworker_t *w)
 {
-    int id = -1;
+    int err = 0, id = -1;
     
     xw_lock(w);
     if (xw_is_full(w)) {
-        // xw_dprint(w, "get publisher failed(empty)");
-        
-        goto ERROR;
+        err = -1; goto ERROR;
     }
 
     id = xw_id(w, w->publisher);
-
-    xw_dprint(w, "get publisher:%d", id);
 ERROR:
     xw_unlock(w);
-    
-    return id;
 
+    switch (err) {
+        case 0:
+            xw_dprint(w, "get publisher:%d", id);
+            break;
+        case -1:
+            // xw_dprint(w, "get publisher failed(empty)");
+            break;
+    }
+
+    return id;
 }
 
 static inline int
 xw_put_publisher(xworker_t *w, int id)
 {
-    int err = -1;
+    int err = 0;
     
     xw_lock(w);
     if (xw_is_full(w)) {
-        // xw_dprint(w, "put publisher:%d failed(full)", id);
-        
-        goto ERROR;
+        err = -1; goto ERROR;
     }
     else if (xw_id(w, w->publisher) != id) {
-        xw_dprint(w, "put publisher:%d failed(not-match)", id);
-        
-        goto ERROR;
+        err = -2; goto ERROR;
     }
-    
-    xw_dprint(w, "put publisher:%d", id);
 
     w->publisher++;
-
-    err = 0;
 ERROR:
     xw_unlock(w);
+
+    switch (err) {
+        case 0:
+            xw_dprint(w, "put publisher:%d", id);
+            break;
+        case -1:
+            // xw_dprint(w, "put publisher:%d failed(full)", id);
+            break;
+        case -2:
+            xw_dprint(w, "put publisher:%d failed(not-match)", id);
+            break;
+    }
     
     return err;
 }
@@ -1214,20 +1222,25 @@ ERROR:
 static inline int
 xw_get_consumer(xworker_t *w, int wid)
 {
-    int id = -1;
+    int err = 0, id = -1;
    
     xw_lock(w);
     if (xw_is_empty(w)) {
-        // xw_dprint(w, "get worker:%d consumer failed(empty)", wid);
-
-        goto ERROR;
+        err = -1; goto ERROR;
     }
 
     id = xw_id(w, w->consumer++);
-    
-    xw_dprint(w, "get worker:%d consumer:%d", wid, id);
 ERROR:
     xw_unlock(w);
+
+    switch (err) {
+        case 0:
+            xw_dprint(w, "get worker:%d consumer:%d", wid, id);
+            break;
+        case -1:
+            // xw_dprint(w, "get worker:%d consumer failed(empty)", wid);
+            break;
+    }
     
     return id;
 }
