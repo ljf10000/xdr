@@ -127,7 +127,7 @@ statistic(struct xparse *parse, int wid)
             "ssls %" PRIu64 ", "
             "sslc %" PRIu64 ", "
             "request %" PRIu64 ", "
-            "response %" PRIu64 ""
+            "response %" PRIu64
             __crlf, 
             wid,
             parse->st_tlv->ok, parse->st_tlv->error,

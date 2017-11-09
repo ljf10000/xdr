@@ -338,7 +338,7 @@ tlv_dump_u32(FILE *stream, struct tlv *tlv)
 static inline void
 tlv_dump_u64(FILE *stream, struct tlv *tlv)
 {
-    TLV_DUMP_BY(stream, tlv, "%" PRIu64 "", u64); 
+    TLV_DUMP_BY(stream, tlv, "%" PRIu64, u64); 
 }
 
 static inline void
@@ -1170,7 +1170,7 @@ xw_qentry(xworker_t *w, uint64 id)
     
     if (ID>=w->qcount) {
         os_assert(0);
-        os_println("invalid ID:%" PRIu64 ":%" PRIu64 "", id, ID);
+        os_println("invalid ID:%" PRIu64 ":%" PRIu64, id, ID);
         
         return NULL;
     } else {
@@ -1225,7 +1225,7 @@ ERROR:
 
     switch (err) {
         case 0:
-            xw_dprint(w, "get publisher:%" PRIu64 "", id);
+            xw_dprint(w, "get publisher:%" PRIu64, id);
             break;
         case -1:
             // xw_dprint(w, "get publisher failed(empty)");
@@ -1254,7 +1254,7 @@ ERROR:
 
     switch (err) {
         case 0:
-            xw_dprint(w, "put publisher:%" PRIu64 "", id);
+            xw_dprint(w, "put publisher:%" PRIu64, id);
             break;
         case -1:
             // xw_dprint(w, "put publisher:%" PRIu64 " failed(full)", id);
@@ -1284,7 +1284,7 @@ ERROR:
 
     switch (err) {
         case 0:
-            xw_dprint(w, "get worker:%d consumer:%" PRIu64 "", wid, id);
+            xw_dprint(w, "get worker:%d consumer:%" PRIu64, wid, id);
             break;
         case -1:
             // xw_dprint(w, "get worker:%d consumer failed(empty)", wid);
