@@ -1155,7 +1155,7 @@ xw_is_empty(xworker_t *w)
 }
 
 #define xw_dprint(_w, _fmt, _args...) \
-    os_println("[[publisher:%llu consumer:%llu]]" _fmt, (_w)->publisher, (_w)->consumer, ##_args)
+    os_println("[[publisher:%llu consumer:%llu]]" __tab _fmt, (_w)->publisher, (_w)->consumer, ##_args)
 
 static inline int
 xw_get_publisher(xworker_t *w)
@@ -1214,7 +1214,7 @@ xw_get_consumer(xworker_t *w, int wid)
    
     xw_lock(w);
     if (xw_is_empty(w)) {
-        xw_dprint(w, "get worker:%d consumer failed. cache is empty.", wid);
+        xw_dprint(w, "get worker:%d consumer failed(empty)", wid);
 
         goto ERROR;
     }
