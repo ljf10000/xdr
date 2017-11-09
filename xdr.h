@@ -1340,8 +1340,9 @@ to_xdr_ssl_fail_reason(struct xb *x, struct tlv *tlv)
 
 
 static inline int
-to_xdr_dns(tlv_record_t *r, struct xb *x, xdr_dns_t *dns)
+to_xdr_dns(tlv_record_t *r, struct xb *x, xdr_offset_t offset)
 {
+    xdr_dns_t *dns = (xdr_dns_t *)xb_obj(x, offset);
     xdr_size_t size, type;
     int id;
     
