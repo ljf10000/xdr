@@ -148,32 +148,30 @@ xdr_handle(int wid, char *filename, int namelen)
     struct xparse parse = XPARSE_INITER(wid, WorkerPath[wid], WorkerSt[wid], filename, namelen);
     int err;
 
-    os_println("worker:%d xdr handle ...", wid);
     xp_init(&parse);
-    os_println("worker:%d xdr handle 1.", wid);
+    os_println("worker:%d xdr handle ...", wid);
 
     err = xp_open(&parse);
     if (err<0) {
         goto ERROR;
     }
-    os_println("worker:%d xdr handle 2.", wid);
+    os_println("worker:%d xdr handle 1.", wid);
 
     err = xp_run(&parse);
     if (err<0) {
         goto ERROR;
     }
-    os_println("worker:%d xdr handle 3.", wid);
+    os_println("worker:%d xdr handle 2.", wid);
 
 ERROR:
     xp_close(&parse);
-    os_println("worker:%d xdr handle 4.", wid);
+    os_println("worker:%d xdr handle ok.", wid);
     if (err<0) {
         parse.st_raw->error++;
     } else {
         parse.st_raw->ok++;
     }
     statistic(&parse, wid);
-    os_println("worker:%d xdr handle ok.", wid);
     
     return err;
 }
@@ -193,13 +191,12 @@ tlv_remove(int wid, char *filename, int namelen)
 static int
 ev_handle(int wid)
 {
-    os_println("worker:%d handle ...", wid);
     uint64 id = get_consumer(wid);
     xworker_que_t *que = get_qentry(id);
     inotify_ev_t *ev  = (inotify_ev_t *)(que->buf);
     inotify_ev_t *end = (inotify_ev_t *)(que->buf + que->len);
     int len, err;
-    
+
     for (; ev<end; ev=EVNEXT(ev)) {
         if (ev->mask & EVMASK) {
             if (is_option(OPT_TRACE_EV)) {
@@ -217,7 +214,6 @@ ev_handle(int wid)
             }
         }
     }
-    os_println("worker:%d handle ok.", wid);
 
     return 0;
 }
