@@ -90,7 +90,7 @@ xw_trace(int wid, const char *fmt, ...)
 #endif
 
 #ifndef EVCOUNT
-#define EVCOUNT         32
+#define EVCOUNT         128
 #endif
 
 #define XDR_ALIGN(x)        OS_ALIGN(x, 4)

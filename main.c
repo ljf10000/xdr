@@ -403,7 +403,7 @@ init_env(void)
 {
     if (is_option(OPT_MULTI)) {
         WorkerCount     = xw_envi(ENV_XDR_WORKER, WORKER_COUNT);
-        WrokerQueCount= xw_envi(ENV_XDR_QUE,  QUE_COUNT);
+        WrokerQueCount  = xw_envi(ENV_XDR_QUE,  QUE_COUNT);
 
         os_println("worker count %d",       WorkerCount);
         os_println("worker queue count %d", WrokerQueCount);
