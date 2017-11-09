@@ -44,13 +44,13 @@ xw_trace(int wid, const char *fmt, ...)
     bool m_is_trace = _is_trace;                \
                                                 \
     if (m_is_trace) {                           \
-        xw_trace(WORK_ID, "worker:%d try " _fmt " ...", WORK_ID, ##_args);    \
+        xw_trace(WORK_ID, "worker:%d try " _fmt " ..." __crlf, WORK_ID, ##_args);    \
     }                                           \
                                                 \
     m_err = (_call);                            \
                                                 \
     if (m_is_trace) {                           \
-        xw_trace(WORK_ID, __tab "worker:%d %s:%d " _fmt, WORK_ID, ok_string(m_err), m_err, ##_args); \
+        xw_trace(WORK_ID, __tab "worker:%d %s:%d " _fmt __crlf, WORK_ID, ok_string(m_err), m_err, ##_args); \
     }                                           \
                                                 \
     m_err;                                      \
