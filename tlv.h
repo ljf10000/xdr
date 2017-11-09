@@ -1154,9 +1154,9 @@ xw_qentry(xworker_t *w, uint64 id)
         os_println("invalid ID:%llu:%llu", id, ID);
         
         return NULL;
+    } else {
+        return w->que + ID;
     }
-    
-    return w->que + ID;
 }
 
 static inline uint64
