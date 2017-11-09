@@ -1326,13 +1326,8 @@ to_xdr_ssl_fail_reason(struct xb *x, struct tlv *tlv)
 
 
 static inline int
-to_xdr_dns(tlv_record_t *r, struct xb *x)
+to_xdr_dns(tlv_record_t *r, struct xb *x, xdr_dns_t *dns)
 {
-    xdr_dns_t *dns = xdr_dns(x->u.xdr);
-    if (NULL==dns) {
-        return 0;
-    }
-
     xdr_size_t size, type;
     int id;
     
@@ -1411,13 +1406,8 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_array_t *certs, int id)
 }
 
 static inline int
-to_xdr_ssl(tlv_record_t *r, struct xb *x)
+to_xdr_ssl(tlv_record_t *r, struct xb *x, xdr_ssl_t *ssl)
 {
-    xdr_ssl_t *ssl = xdr_ssl(x->u.xdr);
-    if (NULL==ssl) {
-        return 0;
-    }
-    
     int err;
 
     err = to_xdr_ssl_helper(r, x, &ssl->cert_server, tlv_id_ssl_server_cert);
@@ -1440,20 +1430,18 @@ to_xdr_helper(tlv_cache_t *cache, struct xb *x)
     struct tlv *tlv;
     int i, err;
 
-    if (cache->count>0) {
-        for (i=0; i<cache->count; i++) {
-            tlv = cache->multi[i];
-            ops = tlv_ops(tlv);
+    for (i=0; i<cache->count; i++) {
+        tlv = cache->multi[i];
+        ops = tlv_ops(tlv);
 
-            if (ops && ops->toxdr) {
-                err = (*ops->toxdr)(x, tlv);
-                if (err<0) {
-                    if (tlv->id>200) {
-                        // xdr_dprint("toxdr %d:%d %s:%d.", i, tlv->id, ok_string(err), err);
-                    }
-                    
-                    return err;
+        if (ops && ops->toxdr) {
+            err = (*ops->toxdr)(x, tlv);
+            if (err<0) {
+                if (tlv->id>200) {
+                    // xdr_dprint("toxdr %d:%d %s:%d.", i, tlv->id, ok_string(err), err);
                 }
+                
+                return err;
             }
         }
     }
@@ -1464,30 +1452,45 @@ to_xdr_helper(tlv_cache_t *cache, struct xb *x)
 static inline int
 to_xdr(tlv_record_t *r, struct xb *x)
 {
+    tlv_cache_t *cache;
     int i, err;
 
     for (i=tlv_id_header; i<tlv_id_low_end; i++) {
-        err = xdr_trace(to_xdr_helper(&r->cache[i], x), r->parse->wid, "to_xdr_helper:%d", i);
-        if (err<0) {
-            return err;
+        cache = &r->cache[i];
+        
+        if (cache->count>0) {
+            err = xdr_trace(to_xdr_helper(cache, x), r->parse->wid, "to_xdr_helper:%d", i);
+            if (err<0) {
+                return err;
+            }
         }
     }
 
     for (i=tlv_id_high_begin; i<tlv_id_end; i++) {
-        err = xdr_trace(to_xdr_helper(&r->cache[i], x), r->parse->wid, "to_xdr_helper:%d", i);
+        cache = &r->cache[i];
+        
+        if (cache->count>0) {
+            err = xdr_trace(to_xdr_helper(cache, x), r->parse->wid, "to_xdr_helper:%d", i);
+            if (err<0) {
+                return err;
+            }
+        }
+    }
+    
+    xdr_ssl_t *ssl = xdr_ssl(x->u.xdr);
+    if (ssl) {
+        err = xdr_trace(to_xdr_ssl(r, x, ssl), r->parse->wid, "to_xdr_ssl");
         if (err<0) {
             return err;
         }
     }
-    
-    err = xdr_trace(to_xdr_ssl(r, x), r->parse->wid, "to_xdr_ssl");
-    if (err<0) {
-        return err;
-    }
 
-    err = xdr_trace(to_xdr_dns(r, x), r->parse->wid, "to_xdr_ssl");
-    if (err<0) {
-        return err;
+    xdr_dns_t *dns = xdr_dns(x->u.xdr);
+    if (dns) {
+        err = xdr_trace(to_xdr_dns(r, x, dns), r->parse->wid, "to_xdr_ssl");
+        if (err<0) {
+            return err;
+        }
     }
     
     return 0;
