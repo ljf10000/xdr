@@ -144,23 +144,24 @@ statistic(struct xparse *parse, int wid)
 static int
 xdr_handle(int wid, char *filename, int namelen)
 {
+#define WORK_ID wid
     struct xparse parse = XPARSE_INITER(wid, WorkerPath[wid], WorkerSt[wid], filename, namelen);
     int err;
 
     xp_init(&parse);
 
-    err = xp_open(&parse);
+    err = tlv_trace(xp_open(&parse), "xp_open");
     if (err<0) {
         goto ERROR;
     }
 
-    err = xp_run(&parse);
+    err = tlv_trace(xp_run(&parse), "xp_run");
     if (err<0) {
         goto ERROR;
     }
 
 ERROR:
-    xp_close(&parse);
+    tlv_trace(xp_close(&parse), "xp_close");
     if (err<0) {
         parse.st_raw->error++;
     } else {
@@ -169,6 +170,7 @@ ERROR:
     statistic(&parse, wid);
     
     return err;
+#undef WORK_ID
 }
 
 static int
