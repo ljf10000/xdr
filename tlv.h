@@ -1102,7 +1102,6 @@ typedef struct {
     
     uint64 publisher;
     uint64 consumer;
-    uint64 count;  // ev count
     uint64 cache_count;
     
     pthread_mutex_t mutex;
@@ -1121,10 +1120,32 @@ xw_unlock(xworker_t *w)
     pthread_mutex_unlock(&w->mutex);
 }
 
+static inline xworker_cache_t *
+xw_cache(xworker_t *w, int id)
+{
+    return w->cache + id;
+}
+
+static inline int
+xw_id(xworker_t *w, uint64 id)
+{
+    return (int)(id % w->cache_count);
+}
+
+static inline uint64
+xw_cache_count(xworker_t *w)
+{
+    if (w->publisher >= w->consumer) {
+        return w->publisher - w->consumer;
+    } else {
+        return (uint64)(-1);
+    }
+}
+
 static inline bool
 xw_is_full(xworker_t *w)
 {
-    return w->publisher > w->consumer && (w->publisher - w->consumer)==w->cache_count;
+    return xw_cache_count(w)==w->cache_count;
 }
 
 static inline bool
@@ -1133,11 +1154,8 @@ xw_is_empty(xworker_t *w)
     return w->publisher==w->consumer;
 }
 
-static inline xworker_cache_t *
-xw_cache(xworker_t *w, int id)
-{
-    return w->cache + id;
-}
+#define xw_dprint(_w, _fmt, _args...) \
+    os_println("[[publisher:%llu consumer:%llu]]" _fmt, (_w)->publisher, (_w)->consumer, ##_args)
 
 static inline int
 xw_get_publisher(xworker_t *w)
@@ -1146,14 +1164,14 @@ xw_get_publisher(xworker_t *w)
     
     xw_lock(w);
     if (xw_is_full(w)) {
-        // os_println("get publisher failed. cache is full");
+        xw_dprint(w, "get publisher failed(empty)");
         
         goto ERROR;
     }
 
-    id = w->publisher;
-    
-    os_println("get publisher:%d cache:%d", id, w->count);
+    id = xw_id(w, w->publisher);
+
+    xw_dprint(w, "get publisher:%d", id);
 ERROR:
     xw_unlock(w);
     
@@ -1168,12 +1186,17 @@ xw_put_publisher(xworker_t *w, int id)
     
     xw_lock(w);
     if (xw_is_full(w)) {
-        // os_println("put publisher:%d failed. cache is full", id);
+        xw_dprint(w, "put publisher:%d failed(full)", id);
         
         goto ERROR;
     }
-
-    os_println("put publisher:%d cache:%d", id, w->count);
+    else if (xw_id(w, w->publisher) != id) {
+        xw_dprint(w, "put publisher:%d failed(not-match)", id);
+        
+        goto ERROR;
+    }
+    
+    xw_dprint(w, "put publisher:%d", id);
 
     w->publisher++;
 
@@ -1191,18 +1214,14 @@ xw_get_consumer(xworker_t *w, int wid)
    
     xw_lock(w);
     if (xw_is_empty(w)) {
-        // os_println("get worker:%d consumer failed. cache is empty", wid);
-        
+        xw_dprint(w, "get worker:%d consumer failed. cache is empty.", wid);
+
         goto ERROR;
     }
 
-    id = w->consumer++;
-    if (w->consumer==w->cache_count) {
-        w->consumer = 0;
-    }
-    w->count--;
-
-    os_println("get worker:%d consumer:%d cache:%d", wid, id, w->count);
+    id = xw_id(w, w->consumer++);
+    
+    xw_dprint(w, "get worker:%d consumer:%d", wid, id);
 ERROR:
     xw_unlock(w);
     
