@@ -1385,20 +1385,16 @@ xp_open(struct xparse *parse)
     struct xb *xdr = &parse->xdr;
     int size, err;
     
-    os_println("worker:%d xp open %s ...", parse->wid, tlv->fullname);
-    
     size = os_fsize(tlv->fullname);
     if (size<0) {
         os_println("get size %s error:%d", tlv->fullname, size);
         return size;
     }
-    os_println("worker:%d xp open %s 1", parse->wid, tlv->fullname);
-    
+
     err = tlv_trace(tlv_open(tlv, size), "tlv_open %s:%d", tlv->fullname, size);
     if (err<0) {
         return err;
     }
-    os_println("worker:%d xp open %s 2", parse->wid, tlv->fullname);
 
     size = XDR_EXPAND_ALIGN(size);
     err = tlv_trace(xdr_open(xdr, size), "xdr_open %s:%d", xdr->fullname, size);
@@ -1406,8 +1402,6 @@ xp_open(struct xparse *parse)
         return err;
     }
     
-    os_println("worker:%d xp open %s ok.", parse->wid, tlv->fullname);
-
     return 0;
 #undef WORK_ID
 }

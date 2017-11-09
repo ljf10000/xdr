@@ -24,7 +24,6 @@ static xpath_t WorkerPath[WORKER_COUNT][PATH_END];
 static xst_t WorkerSt[WORKER_COUNT][XB_STCOUNT];
 
 static xworker_t Worker;
-static int WorkerID;
 static int WorkerCount = 1;
 static int WrokerQueCount = 1;
 
@@ -149,23 +148,19 @@ xdr_handle(int wid, char *filename, int namelen)
     int err;
 
     xp_init(&parse);
-    os_println("worker:%d xdr handle ...", wid);
 
     err = xp_open(&parse);
     if (err<0) {
         goto ERROR;
     }
-    os_println("worker:%d xdr handle 1.", wid);
 
     err = xp_run(&parse);
     if (err<0) {
         goto ERROR;
     }
-    os_println("worker:%d xdr handle 2.", wid);
 
 ERROR:
     xp_close(&parse);
-    os_println("worker:%d xdr handle ok.", wid);
     if (err<0) {
         parse.st_raw->error++;
     } else {
