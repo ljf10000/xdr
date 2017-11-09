@@ -120,14 +120,14 @@ statistic(struct xparse *parse, int wid)
     if (is_option(OPT_DUMP_ST)) {
         os_printf(
             "worker:%d "
-            "tlv %"PRIu64":%"PRIu64", "
-            "xdr %"PRIu64":%"PRIu64", "
-            "raw %"PRIu64":%"PRIu64", "
-            "file %"PRIu64", "
-            "ssls %"PRIu64", "
-            "sslc %"PRIu64", "
-            "request %"PRIu64", "
-            "response %"PRIu64""
+            "tlv %" PRIu64 ":%" PRIu64 ", "
+            "xdr %" PRIu64 ":%" PRIu64 ", "
+            "raw %" PRIu64 ":%" PRIu64 ", "
+            "file %" PRIu64 ", "
+            "ssls %" PRIu64 ", "
+            "sslc %" PRIu64 ", "
+            "request %" PRIu64 ", "
+            "response %" PRIu64 ""
             __crlf, 
             wid,
             parse->st_tlv->ok, parse->st_tlv->error,
