@@ -189,9 +189,9 @@ ev_handle(int wid)
 {
     os_println("worker:%d handle ...", wid);
     uint64 id = get_consumer(wid);
-    xworker_que_t *cache = get_qentry(id);
-    inotify_ev_t *ev  = (inotify_ev_t *)(cache->buf);
-    inotify_ev_t *end = (inotify_ev_t *)(cache->buf + cache->len);
+    xworker_que_t *que = get_qentry(id);
+    inotify_ev_t *ev  = (inotify_ev_t *)(que->buf);
+    inotify_ev_t *end = (inotify_ev_t *)(que->buf + que->len);
     int len, err;
     
     for (; ev<end; ev=EVNEXT(ev)) {
@@ -234,7 +234,7 @@ worker(void *args)
 static int
 monitor(const char *watch)
 {
-    xworker_que_t *cache;
+    xworker_que_t *que;
     int fd, err;
     uint64 id;
 
@@ -250,10 +250,12 @@ monitor(const char *watch)
 
     for (;;) {
         id = get_publisher();
-        cache = get_qentry(id);
+        que = get_qentry(id);
         
-        cache->len = read(fd, cache->buf, EVBUFSIZE);
-        if (cache->len == -1 && errno != EAGAIN) {
+        que->len = read(fd, que->buf, EVBUFSIZE);
+        if (que->len == -1 && errno != EAGAIN) {
+            os_println("master read error:%d", -errno);
+            
             return -errno;
         }
         OS_VAR(time) = time(NULL);
