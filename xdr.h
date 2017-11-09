@@ -1467,25 +1467,25 @@ to_xdr(tlv_record_t *r, struct xb *x)
     int i, err;
 
     for (i=tlv_id_header; i<tlv_id_low_end; i++) {
-        err = to_xdr_helper(&r->cache[i], x);
+        err = xdr_trace(to_xdr_helper(&r->cache[i], x), r->parse->wid, "to_xdr_helper:%d", i);
         if (err<0) {
             return err;
         }
     }
 
     for (i=tlv_id_high_begin; i<tlv_id_end; i++) {
-        err = to_xdr_helper(&r->cache[i], x);
+        err = xdr_trace(to_xdr_helper(&r->cache[i], x), r->parse->wid, "to_xdr_helper:%d", i);
         if (err<0) {
             return err;
         }
     }
     
-    err = to_xdr_ssl(r, x);
+    err = xdr_trace(to_xdr_ssl(r, x), r->parse->wid, "to_xdr_ssl");
     if (err<0) {
         return err;
     }
 
-    err = to_xdr_dns(r, x);
+    err = xdr_trace(to_xdr_dns(r, x), r->parse->wid, "to_xdr_ssl");
     if (err<0) {
         return err;
     }
