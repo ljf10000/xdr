@@ -145,7 +145,7 @@ statistic(struct xparse *parse, int wid)
 static int
 xdr_handle(int wid, char *filename, int namelen)
 {
-    struct xparse parse = XPARSE_INITER(WorkerPath[wid], WorkerSt[wid], filename, namelen);
+    struct xparse parse = XPARSE_INITER(wid, WorkerPath[wid], WorkerSt[wid], filename, namelen);
     int err;
     
     xp_init(&parse);
@@ -179,7 +179,7 @@ tlv_remove(int wid, char *filename, int namelen)
     
     remove(fullname);
     
-    xdr_dprint("worker:%d remove %s", wid, fullname);
+    os_println("worker:%d remove %s", wid, fullname);
     
     return 0;
 }
@@ -187,6 +187,7 @@ tlv_remove(int wid, char *filename, int namelen)
 static int
 ev_handle(int wid)
 {
+    os_println("worker:%d handle ...", wid);
     uint64 id = get_consumer(wid);
     xworker_que_t *cache = get_qentry(id);
     inotify_ev_t *ev  = (inotify_ev_t *)(cache->buf);
@@ -210,6 +211,7 @@ ev_handle(int wid)
             }
         }
     }
+    os_println("worker:%d handle ok.", wid);
 
     return 0;
 }
