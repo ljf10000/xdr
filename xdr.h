@@ -578,11 +578,11 @@ xb_expand(struct xb *x, xdr_size_t size)
     if (false==xb_enought(x, size)) {
         int err;
 
-        err = xdr_trace(xb_munmap(x), "xb_munmap");
+        err = tlv_trace(xb_munmap(x), "xb_munmap");
         
         x->size += XDR_EXPAND_ALIGN(size);
         
-        err = xdr_trace(xb_mmap(x, false), "xb_mmap");
+        err = tlv_trace(xb_mmap(x, false), "xb_mmap");
         if (err<0) {
             return err;
         }

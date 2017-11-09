@@ -1681,7 +1681,7 @@ tlv_record_parse(tlv_record_t *r)
             return err;
         }
 
-        err = xdr_trace(tlv_record_save(r, tlv), "tlv_record_save %d:%d", parse->count, r->count);
+        err = tlv_trace(tlv_record_save(r, tlv), "tlv_record_save %d:%d", parse->count, r->count);
         if (err<0) {
             parse->st_tlv->error++;
             
