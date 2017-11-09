@@ -159,7 +159,7 @@ xdr_handle(int wid, char *filename, int namelen)
         goto ERROR;
     }
 
-    err = xdr_trace(xp_run(&parse), wid, "xp_run");
+    err = tlv_trace(xp_run(&parse), wid, "xp_run");
     if (err<0) {
         goto ERROR;
     }
