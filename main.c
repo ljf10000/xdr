@@ -324,7 +324,7 @@ init_trace(int wid)
     if (is_option(OPT_TRACE_TLV) || is_option(OPT_TRACE_XDR)) {
         char filename[1+OS_FILENAME_LEN] = {0};
 
-        os_sprintf(filename, "worker%d", i);
+        os_sprintf(filename, "worker%d.log", wid);
         
         Worker[wid].trace = fopen(filename, "w+");
         if (NULL==Worker[wid].trace) {
