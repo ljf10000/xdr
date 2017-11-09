@@ -1184,7 +1184,7 @@ ERROR:
             xw_dprint(w, "get publisher:%llu", id);
             break;
         case -1:
-            xw_dprint(w, "get publisher failed(empty)");
+            // xw_dprint(w, "get publisher failed(empty)");
             break;
     }
 
@@ -1198,10 +1198,10 @@ xw_put_publisher(xworker_t *w, uint64 id)
     
     xw_lock(w);
     if (xw_is_full(w)) {
-        err = -1; goto ERROR;
+        err = -1; os_assert(0); goto ERROR;
     }
     else if (w->publisher != id) {
-        err = -2; goto ERROR;
+        err = -2; os_assert(0); goto ERROR;
     }
 
     w->publisher++;

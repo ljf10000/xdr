@@ -31,16 +31,26 @@ static int WorkerCacheCount = 1;
 static inline uint64
 get_publisher(void)
 {
-    return is_option(OPT_MULTI)?xw_get_publisher(&Worker):0;
+    if (is_option(OPT_MULTI)) {
+        uint64 id;
+        
+        while(INVALID_WORKER_ID==(id = xw_get_publisher(&Worker))) {
+            usleep(XDR_USLEEP);
+        }
+
+        return id;
+    } else {
+        return 0;
+    }
 }
 
-static inline void
+static inline int
 put_publisher(uint64 id)
 {
     if (is_option(OPT_MULTI)) {
-        while(xw_put_publisher(&Worker, id) < 0) {
-            usleep(XDR_USLEEP);
-        }
+        return xw_put_publisher(&Worker, id);
+    } else {
+        return 0;
     }
 }
 
@@ -48,9 +58,9 @@ static inline uint64
 get_consumer(int wid)
 {
     if (is_option(OPT_MULTI)) {
-        int id;
+        uint64 id;
         
-        while((id = xw_get_consumer(&Worker, wid)) < 0) {
+        while(INVALID_WORKER_ID==(id = xw_get_consumer(&Worker, wid))) {
             usleep(XDR_USLEEP);
         }
 
@@ -247,7 +257,10 @@ monitor(const char *watch)
         OS_VAR(time) = time(NULL);
 
         if (is_option(OPT_MULTI)) {
-            put_publisher(id);
+            err = put_publisher(id);
+            if (err<0) {
+                
+            }
         } else {
             ev_handle(0);
         }
