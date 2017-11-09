@@ -1390,9 +1390,10 @@ xp_open(struct xparse *parse)
         return -EEXIST;
     }
     
-    size = tlv_trace(os_fsize(tlv->fullname), "os_fsize %s", tlv->fullname);
+    size = os_fsize(tlv->fullname);
     if (size<0) {
         os_println("get size %s error:%d", tlv->fullname, size);
+        
         return size;
     }
 
@@ -1652,7 +1653,7 @@ tlv_record_save(tlv_record_t *r, struct tlv *tlv)
 #define WORK_ID r->parse->wid
     tlv_cache_t *cache = &r->cache[tlv->id];
     
-    int err = tlv_trace(tlv_cache_save(r->parse, cache, tlv), "tlv_record_save");
+    int err = tlv_trace(tlv_cache_save(r->parse, cache, tlv), "tlv_cache_save");
     if (err<0) {
         return err;
     }
