@@ -625,7 +625,7 @@ xb_pre_array(struct xb *x, xdr_offset_t offset, int type, xdr_size_t size, int c
         return NULL;
     }
 
-    xdr_array_t *obj = xb_obj(x, offset);
+    xdr_array_t *obj = (xdr_array_t *)xb_obj(x, offset);
     obj->type = type;
     obj->size = size;
     obj->count = count;
@@ -979,9 +979,7 @@ to_xdr_http(struct xb *x, struct tlv *tlv)
 static inline int
 to_xdr_http_host(struct xb *x, struct tlv *tlv)
 {
-    xdr_offset_t offset = xb_offset(x, &xb_pre_http(x)->host);
-    
-    return xb_pre_string_ex(x, offset, tlv);
+    return xb_pre_string_ex(x, &xb_pre_http(x)->host, tlv);
 }
 
 static inline int
