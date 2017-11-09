@@ -332,9 +332,9 @@ init_trace(int wid)
             
             return -EBADF;
         }
-
-        return 0;
     }
+    
+    return 0;
 }
 
 static int
