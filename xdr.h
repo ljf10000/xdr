@@ -588,7 +588,7 @@ xb_expand(struct xb *x, xdr_size_t size)
             return err;
         }
         
-        os_println("xb expand new:%p", x->u.header);
+        os_println("xb expand new:%p" __crlf, x->u.header);
     }
 
     return 0;
