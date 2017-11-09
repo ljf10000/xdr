@@ -1459,7 +1459,7 @@ to_xdr(tlv_record_t *r, struct xb *x)
         cache = &r->cache[i];
         
         if (cache->count>0) {
-            err = xdr_trace(to_xdr_helper(cache, x), r->parse->wid, "to_xdr_helper:%d", i);
+            err = tlv_trace(to_xdr_helper(cache, x), r->parse->wid, "to_xdr_helper:%d", i);
             if (err<0) {
                 return err;
             }
@@ -1470,7 +1470,7 @@ to_xdr(tlv_record_t *r, struct xb *x)
         cache = &r->cache[i];
         
         if (cache->count>0) {
-            err = xdr_trace(to_xdr_helper(cache, x), r->parse->wid, "to_xdr_helper:%d", i);
+            err = tlv_trace(to_xdr_helper(cache, x), r->parse->wid, "to_xdr_helper:%d", i);
             if (err<0) {
                 return err;
             }
@@ -1479,7 +1479,7 @@ to_xdr(tlv_record_t *r, struct xb *x)
     
     xdr_ssl_t *ssl = xdr_ssl(x->u.xdr);
     if (ssl) {
-        err = xdr_trace(to_xdr_ssl(r, x, ssl), r->parse->wid, "to_xdr_ssl");
+        err = tlv_trace(to_xdr_ssl(r, x, ssl), r->parse->wid, "to_xdr_ssl");
         if (err<0) {
             return err;
         }
@@ -1487,7 +1487,7 @@ to_xdr(tlv_record_t *r, struct xb *x)
 
     xdr_dns_t *dns = xdr_dns(x->u.xdr);
     if (dns) {
-        err = xdr_trace(to_xdr_dns(r, x, dns), r->parse->wid, "to_xdr_ssl");
+        err = tlv_trace(to_xdr_dns(r, x, dns), r->parse->wid, "to_xdr_ssl");
         if (err<0) {
             return err;
         }
@@ -1504,7 +1504,7 @@ xp_run(struct xparse *parse)
         tlv_record_t r = TLV_RECORD_INITER(parse);
         int err;
 
-        err = tlv_trace(tlv_record_parse(&r), parse->wid, "tlv_record_parse:%d", parse->count);
+        err = xdr_trace(tlv_record_parse(&r), parse->wid, "tlv_record_parse:%d", parse->count);
         if (err<0) {
             parse->st_xdr->error++;
             return err;
@@ -1518,6 +1518,8 @@ xp_run(struct xparse *parse)
 
         parse->count++;
         parse->st_xdr->ok++;
+
+        xdr_dprint("tlv to xdr ok");
         
         return 0;
     }

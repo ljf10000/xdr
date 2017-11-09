@@ -3,26 +3,6 @@
 /******************************************************************************/
 #include "os.h"
 /******************************************************************************/
-#ifndef D_tlv_dprint
-#define D_tlv_dprint    0
-#endif
-
-#ifndef D_xdr_dprint
-#define D_xdr_dprint    0
-#endif
-
-#if D_tlv_dprint
-#define tlv_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
-#else
-#define tlv_dprint(_fmt, _args...)      os_do_nothing()
-#endif
-
-#if D_xdr_dprint
-#define xdr_dprint(_fmt, _args...)      os_println(_fmt, ##_args)
-#else
-#define xdr_dprint(_fmt, _args...)      os_do_nothing()
-#endif
-
 extern FILE *xw_stream(int wid);
 
 static inline void
@@ -39,6 +19,9 @@ xw_trace(int wid, const char *fmt, ...)
         fflush(f);
     }
 }
+
+#define tlv_dprint(_wid, _fmt, _args...)      do{if (is_option(OPT_TRACE_TLV)) { xw_trace(_fmt, ##_args); }}while(0)
+#define xdr_dprint(_wid, _fmt, _args...)      do{if (is_option(OPT_TRACE_XDR)) { xw_trace(_fmt, ##_args); }}while(0)
 
 #ifndef xw_trace_by
 #define xw_trace_by(_call, _wid, _is_trace, _fmt, _args...) ({  \
