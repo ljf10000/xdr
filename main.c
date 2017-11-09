@@ -28,14 +28,14 @@ static int WorkerID;
 static int WorkerCount = 1;
 static int WorkerCacheCount = 1;
 
-static inline int
+static inline uint64
 get_publisher(void)
 {
     return is_option(OPT_MULTI)?xw_get_publisher(&Worker):0;
 }
 
 static inline void
-put_publisher(int id)
+put_publisher(uint64 id)
 {
     if (is_option(OPT_MULTI)) {
         while(xw_put_publisher(&Worker, id) < 0) {
@@ -44,7 +44,7 @@ put_publisher(int id)
     }
 }
 
-static inline int
+static inline uint64
 get_consumer(int wid)
 {
     if (is_option(OPT_MULTI)) {
@@ -61,7 +61,7 @@ get_consumer(int wid)
 }
 
 static inline xworker_cache_t *
-get_cache(int id)
+get_cache(uint64 id)
 {
     return xw_cache(&Worker, id);
 }
@@ -177,7 +177,7 @@ tlv_remove(int wid, char *filename, int namelen)
 static int
 ev_handle(int wid)
 {
-    int id = get_consumer(wid);
+    uint64 id = get_consumer(wid);
     xworker_cache_t *cache = get_cache(id);
     inotify_ev_t *ev  = (inotify_ev_t *)(cache->buf);
     inotify_ev_t *end = (inotify_ev_t *)(cache->buf + cache->len);
@@ -223,7 +223,8 @@ static int
 monitor(const char *watch)
 {
     xworker_cache_t *cache;
-    int fd, err, id;
+    int fd, err;
+    uint64 id;
 
     fd = inotify_init1(IN_CLOEXEC);
     if (fd<0) {

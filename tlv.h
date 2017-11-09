@@ -1112,6 +1112,10 @@ typedef struct {
     xworker_cache_t *cache;
 } xworker_t;
 
+#ifndef INVALID_WORKER_ID
+#define INVALID_WORKER_ID   ((uint64)(-1))
+#endif
+
 static inline void
 xw_lock(xworker_t *w)
 {
@@ -1124,16 +1128,16 @@ xw_unlock(xworker_t *w)
     pthread_mutex_unlock(&w->mutex);
 }
 
-static inline xworker_cache_t *
-xw_cache(xworker_t *w, int id)
-{
-    return w->cache + id;
-}
-
-static inline int
+static inline uint64
 xw_id(xworker_t *w, uint64 id)
 {
-    return (int)(id % w->cache_count);
+    return id % w->cache_count;
+}
+
+static inline xworker_cache_t *
+xw_cache(xworker_t *w, uint64 id)
+{
+    return w->cache + xw_id(w, id);
 }
 
 static inline uint64
@@ -1142,7 +1146,7 @@ xw_cache_count(xworker_t *w)
     if (w->publisher >= w->consumer) {
         return w->publisher - w->consumer;
     } else {
-        return (uint64)(-1);
+        return INVALID_WORKER_ID;
     }
 }
 
@@ -1158,26 +1162,31 @@ xw_is_empty(xworker_t *w)
     return w->publisher==w->consumer;
 }
 
+#if 0
+#define xw_dprint(_w, _fmt, _args...) os_do_nothing()
+#else
 #define xw_dprint(_w, _fmt, _args...) \
     os_println("[[publisher:%llu consumer:%llu]]" __tab _fmt, (_w)->publisher, (_w)->consumer, ##_args)
+#endif
 
-static inline int
+static inline uint64
 xw_get_publisher(xworker_t *w)
 {
-    int err = 0, id = -1;
+    int err = 0;
+    uint64 id = INVALID_WORKER_ID;
     
     xw_lock(w);
     if (xw_is_full(w)) {
         err = -1; goto ERROR;
     }
 
-    id = xw_id(w, w->publisher);
+    id = w->publisher;
 ERROR:
     xw_unlock(w);
 
     switch (err) {
         case 0:
-            xw_dprint(w, "get publisher:%d", id);
+            xw_dprint(w, "get publisher:%llu", id);
             break;
         case -1:
             // xw_dprint(w, "get publisher failed(empty)");
@@ -1188,7 +1197,7 @@ ERROR:
 }
 
 static inline int
-xw_put_publisher(xworker_t *w, int id)
+xw_put_publisher(xworker_t *w, uint64 id)
 {
     int err = 0;
     
@@ -1196,7 +1205,7 @@ xw_put_publisher(xworker_t *w, int id)
     if (xw_is_full(w)) {
         err = -1; goto ERROR;
     }
-    else if (xw_id(w, w->publisher) != id) {
+    else if (w->publisher != id) {
         err = -2; goto ERROR;
     }
 
@@ -1206,36 +1215,37 @@ ERROR:
 
     switch (err) {
         case 0:
-            xw_dprint(w, "put publisher:%d", id);
+            xw_dprint(w, "put publisher:%llu", id);
             break;
         case -1:
-            // xw_dprint(w, "put publisher:%d failed(full)", id);
+            // xw_dprint(w, "put publisher:%llu failed(full)", id);
             break;
         case -2:
-            xw_dprint(w, "put publisher:%d failed(not-match)", id);
+            xw_dprint(w, "put publisher:%llu failed(not-match %llu)", id, w->publisher);
             break;
     }
     
     return err;
 }
 
-static inline int
+static inline uint64
 xw_get_consumer(xworker_t *w, int wid)
 {
-    int err = 0, id = -1;
+    int err = 0;
+    uint64 id = INVALID_WORKER_ID;
    
     xw_lock(w);
     if (xw_is_empty(w)) {
         err = -1; goto ERROR;
     }
 
-    id = xw_id(w, w->consumer++);
+    id = w->consumer++;
 ERROR:
     xw_unlock(w);
 
     switch (err) {
         case 0:
-            xw_dprint(w, "get worker:%d consumer:%d", wid, id);
+            xw_dprint(w, "get worker:%d consumer:%llu", wid, id);
             break;
         case -1:
             // xw_dprint(w, "get worker:%d consumer failed(empty)", wid);
