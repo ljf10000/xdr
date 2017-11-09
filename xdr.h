@@ -1520,7 +1520,7 @@ xp_run(struct xparse *parse)
         parse->st_xdr->ok++;
         
         return 0;
-#endif
+#undef WORK_ID
     }
 
     return tlv_walk(parse, parse->tlv.u.tlv, parse->tlv.size, walk);
