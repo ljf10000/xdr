@@ -86,11 +86,11 @@ xw_trace(int wid, const char *fmt, ...)
 #endif
 
 #ifndef QUE_COUNT
-#define QUE_COUNT       1024
+#define QUE_COUNT       (4*1024)
 #endif
 
 #ifndef EVCOUNT
-#define EVCOUNT         128
+#define EVCOUNT         32
 #endif
 
 #define XDR_ALIGN(x)        OS_ALIGN(x, 4)
@@ -1127,7 +1127,7 @@ typedef struct {
     uint64 consumer;
     
     uint64 qcount;
-    xque_buffer_t *qb;  // 1024 * 8708 = 8916992
+    xque_buffer_t *qb;  // 4*1024 * 8708 = 35667968
     
     pthread_mutex_t mutex;
 } xque_t;
