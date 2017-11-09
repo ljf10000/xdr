@@ -77,7 +77,7 @@
 /* just for sourceinsight */
 #define size_t          size_t
 /******************************************************************************/
-#include "inttypes.h"
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdlib.h>
