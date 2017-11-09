@@ -20,8 +20,8 @@ xw_trace(int wid, const char *fmt, ...)
     }
 }
 
-#define tlv_dprint(_wid, _fmt, _args...)      do{if (is_option(OPT_TRACE_TLV)) { xw_trace(_wid, _fmt, ##_args); }}while(0)
-#define xdr_dprint(_wid, _fmt, _args...)      do{if (is_option(OPT_TRACE_XDR)) { xw_trace(_wid, _fmt, ##_args); }}while(0)
+#define tlv_dprint(_wid, _fmt, _args...)      do{if (is_option(OPT_TRACE_TLV)) { xw_trace(_wid, _fmt __crlf, ##_args); }}while(0)
+#define xdr_dprint(_wid, _fmt, _args...)      do{if (is_option(OPT_TRACE_XDR)) { xw_trace(_wid, _fmt __crlf, ##_args); }}while(0)
 
 #ifndef xw_trace_by
 #define xw_trace_by(_call, _wid, _is_trace, _fmt, _args...) ({  \
