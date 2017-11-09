@@ -1674,14 +1674,14 @@ tlv_record_parse(tlv_record_t *r)
             tlv_dump(DUMP_STREAM, tlv);
         }
 
-        err = tlv_trace(tlv_check(parse, tlv), "tlv_check %d:%d", parse->count, r->count);
+        err = xdr_trace(tlv_check(parse, tlv), "tlv_check %d:%d", parse->count, r->count);
         if (err<0) {
             parse->st_tlv->error++;
             
             return err;
         }
 
-        err = tlv_trace(tlv_record_save(r, tlv), "tlv_record_save %d:%d", parse->count, r->count);
+        err = xdr_trace(tlv_record_save(r, tlv), "tlv_record_save %d:%d", parse->count, r->count);
         if (err<0) {
             parse->st_tlv->error++;
             
