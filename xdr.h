@@ -1501,6 +1501,8 @@ xp_run(struct xparse *parse)
 {
     int walk(struct xparse *parse, struct tlv *header)
     {
+        xdr_dprint(parse->wid, "xp_run_walk ...");
+        
         tlv_record_t r = TLV_RECORD_INITER(parse);
         int err;
 
@@ -1519,7 +1521,7 @@ xp_run(struct xparse *parse)
         parse->count++;
         parse->st_xdr->ok++;
 
-        xdr_dprint("tlv to xdr ok");
+        xdr_dprint(parse->wid, "xp_run_walk ok");
         
         return 0;
     }
