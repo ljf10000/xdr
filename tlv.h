@@ -102,6 +102,8 @@ struct tlv;
 struct xdr;
 struct xparse;
 
+#define INVALID_XDR_OFFSET  0
+
 typedef uint32 xdr_offset_t;
 typedef uint32 xdr_size_t;
 typedef uint32 xdr_delay_t;
@@ -1187,7 +1189,7 @@ xw_is_empty(xque_t *w)
 #define xw_dprint(_w, _fmt, _args...) os_do_nothing()
 #else
 #define xw_dprint(_w, _fmt, _args...) \
-    os_println("[[publisher:%"PRIu64" consumer:%"PRIu64" count:%"PRIu64"]]" __tab _fmt, \
+    os_println("[publisher:%"PRIu64" consumer:%"PRIu64" count:%"PRIu64"]" __tab _fmt, \
         (_w)->publisher, (_w)->consumer, xw_qcount(_w), ##_args)
 #endif
 

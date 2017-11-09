@@ -607,23 +607,17 @@ xb_pre(struct xb *x, xdr_size_t size)
 }
 
 static inline void *
-xb_pre_obj(struct xb *x, xdr_size_t size, xdr_offset_t *poffset)
+xb_pre_obj(struct xb *x, xdr_size_t size, xdr_offset_t offset)
 {
-    xdr_offset_t offset = *poffset;
     if (offset) {
         return xb_obj(x, offset);
+    } else {
+        return xb_pre(x, size);
     }
-    
-    void *p = xb_pre(x, size);
-    if (p) {
-        *poffset = xb_offset(x, p);
-    }
-
-    return p;
 }
 
 static inline xdr_array_t *
-xb_pre_array(struct xb *x, xdr_array_t *a, int type, xdr_size_t size, int count)
+xb_pre_array(struct xb *x, xdr_offset_t offset, int type, xdr_size_t size, int count)
 {
     xdr_size_t allsize = count * XDR_ALIGN(size);
     void *p = xb_pre(x, allsize);
@@ -631,15 +625,16 @@ xb_pre_array(struct xb *x, xdr_array_t *a, int type, xdr_size_t size, int count)
         return NULL;
     }
 
-    a->type = type;
-    a->size = size;
-    a->count = count;
+    xdr_array_t *obj = xb_obj(x, offset);
+    obj->type = type;
+    obj->size = size;
+    obj->count = count;
 
-    return a;
+    return obj;
 }
 
 static inline xdr_string_t *
-xb_pre_string(struct xb *x, xdr_string_t *obj, void *buf, xdr_size_t size)
+xb_pre_string(struct xb *x, xdr_offset_t offset, void *buf, xdr_size_t size)
 {
     void *p = xb_pre(x, XDR_ALIGN(1+size));
     if (NULL==p) {
@@ -647,7 +642,8 @@ xb_pre_string(struct xb *x, xdr_string_t *obj, void *buf, xdr_size_t size)
     }
     
     xdr_strcpy(p, buf, size);
-    
+
+    xdr_string_t *obj = (xdr_string_t *)xb_obj(x, offset);
     obj->size = size;
     obj->offset = xb_offset(x, p);
 
@@ -657,18 +653,19 @@ xb_pre_string(struct xb *x, xdr_string_t *obj, void *buf, xdr_size_t size)
 static inline int
 xb_pre_string_ex(struct xb *x, xdr_string_t *obj, struct tlv *tlv)
 {
-    return xb_pre_string(x, obj, tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
+    return xb_pre_string(x, xb_offset(x, obj), tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
 }
 
 static inline xdr_binary_t *
-xb_pre_binnary(struct xb *x, xdr_binary_t *obj, void *buf, xdr_size_t size)
+xb_pre_binnary(struct xb *x, xdr_offset_t offset, void *buf, xdr_size_t size)
 {
     void *p = xb_pre(x, XDR_ALIGN(size));
     if (NULL==p) {
         return NULL;
     }
     memcpy(p, buf, size);
-    
+
+    xdr_binary_t *obj = (xdr_binary_t *)xb_obj(x, offset);
     obj->size = size;
     obj->offset = xb_offset(x, p);
 
@@ -678,7 +675,7 @@ xb_pre_binnary(struct xb *x, xdr_binary_t *obj, void *buf, xdr_size_t size)
 static inline int
 xb_pre_binary_ex(struct xb *x, xdr_binary_t *obj, struct tlv *tlv)
 {
-    return xb_pre_binnary(x, obj, tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
+    return xb_pre_binnary(x, xb_offset(x, obj), tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
 }
 
 static inline const char *
@@ -772,26 +769,30 @@ xb_pre_file(struct xb *x, xdr_file_t *file, struct tlv *tlv)
     return 0;
 }
 
-static inline int
-xb_pre_file_ex(struct xb *x, xdr_offset_t *poffset, struct tlv *tlv)
+static inline xdr_file_t *
+xb_pre_file_ex(struct xb *x, struct tlv *tlv)
 {
     xdr_file_t *file = (xdr_file_t *)xb_pre(x, sizeof(xdr_file_t));
     if (NULL==file) {
-        return -ENOMEM;
+        return NULL;
     }
 
     int err = xb_pre_file(x, file, tlv);
     if (err<0) {
-        return err;
+        return NULL;
     }
 
-    *poffset = xb_offset(x, file);
-
-    return 0;
+    return file;
 }
 
-#define xb_pre_by(_x, _type, _field_offsetof) \
-    (_type *)xb_pre_obj(_x, sizeof(_type), &(_x)->u.xdr->_field_offsetof)
+#define xb_pre_by(_x, _type, _field_offsetof) ({ \
+    void *m_obj = xb_pre_obj(_x, sizeof(_type), (_x)->u.xdr->_field_offsetof); \
+    if (m_obj) {                                \
+        (_x)->u.xdr->_field_offsetof = xb_offset(_x, m_obj); \
+    }                                           \
+                                                \
+    (_type *)m_obj;                             \
+})
 
 #define xb_pre_L4(_x, _type)    xb_pre_by(_x, _type, offsetof_L4)
 #define xb_pre_L5(_x, _type)    xb_pre_by(_x, _type, offsetof_L5)
@@ -978,7 +979,9 @@ to_xdr_http(struct xb *x, struct tlv *tlv)
 static inline int
 to_xdr_http_host(struct xb *x, struct tlv *tlv)
 {
-    return xb_pre_string_ex(x, &xb_pre_http(x)->host, tlv);
+    xdr_offset_t offset = xb_offset(x, &xb_pre_http(x)->host);
+    
+    return xb_pre_string_ex(x, offset, tlv);
 }
 
 static inline int
@@ -1278,34 +1281,43 @@ to_xdr_dns_delay(struct xb *x, struct tlv *tlv)
 static inline int
 to_xdr_http_request(struct xb *x, struct tlv *tlv)
 {
-    int err = xb_pre_file_ex(x, &xb_pre_http(x)->offsetof_request, tlv);
-    if (0==err) {
-        x->parse->st_http_request->ok++;
+    xdr_file_t *file = xb_pre_file_ex(x, tlv);
+    if (NULL==file) {
+        return -ENOMEM;
     }
-
-    return err;
+    
+    xb_pre_http(x)->offsetof_request = xb_offset(x, file);
+    x->parse->st_http_request->ok++;
+    
+    return 0;
 }
 
 static inline int
 to_xdr_http_response(struct xb *x, struct tlv *tlv)
 {
-    int err = xb_pre_file_ex(x, &xb_pre_http(x)->offsetof_response, tlv);
-    if (0==err) {
-        x->parse->st_http_response->ok++;
+    xdr_file_t *file = xb_pre_file_ex(x, tlv);
+    if (NULL==file) {
+        return -ENOMEM;
     }
-
-    return err;
+    
+    xb_pre_http(x)->offsetof_response = xb_offset(x, file);
+    x->parse->st_http_response->ok++;
+    
+    return 0;
 }
 
 static inline int
 to_xdr_file_content(struct xb *x, struct tlv *tlv)
 {
-    int err = xb_pre_file_ex(x, &x->u.xdr->offsetof_file_content, tlv);
-    if (0==err) {
-        x->parse->st_file_content->ok++;
+    xdr_file_t *file = xb_pre_file_ex(x, tlv);
+    if (NULL==file) {
+        return -ENOMEM;
     }
-
-    return err;
+    
+    x->u.xdr->offsetof_file_content = xb_offset(x, file);
+    x->parse->st_file_content->ok++;
+    
+    return 0;
 }
 
 static inline int
@@ -1358,7 +1370,7 @@ to_xdr_dns(tlv_record_t *r, struct xb *x, xdr_dns_t *dns)
         return 0;
     }
     
-    xdr_array_t *array = xb_pre_array(x, &dns->ip, type, size, count);
+    xdr_array_t *array = xb_pre_array(x, xb_offset(x, &dns->ip), type, size, count);
     if (NULL==array) {
         return -ENOMEM;
     }
@@ -1373,7 +1385,7 @@ to_xdr_dns(tlv_record_t *r, struct xb *x, xdr_dns_t *dns)
 }
 
 static inline int
-to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_array_t *certs, int id)
+to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_offset_t offset, int id)
 {
     tlv_cache_t *cache = &r->cache[id];
     if (0==cache->count) {
@@ -1383,7 +1395,7 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_array_t *certs, int id)
     int i, err, count = cache->count;
     xdr_cert_t *cert;
     
-    xdr_array_t *array = xb_pre_array(x, certs, XDR_ARRAY_cert, sizeof(xdr_cert_t), count);
+    xdr_array_t *array = xb_pre_array(x, offset, XDR_ARRAY_cert, sizeof(xdr_cert_t), count);
     if (NULL==array) {
         return -ENOMEM;
     }
@@ -1410,16 +1422,19 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_array_t *certs, int id)
 }
 
 static inline int
-to_xdr_ssl(tlv_record_t *r, struct xb *x, xdr_ssl_t *ssl)
+to_xdr_ssl(tlv_record_t *r, struct xb *x, xdr_offset_t offset)
 {
+    xdr_ssl_t *ssl;
     int err;
 
-    err = to_xdr_ssl_helper(r, x, &ssl->cert_server, tlv_id_ssl_server_cert);
+    ssl = (xdr_ssl_t *)xb_obj(x, offset);
+    err = to_xdr_ssl_helper(r, x, xb_offset(x, &ssl->cert_server), tlv_id_ssl_server_cert);
     if (err<0) {
         return err;
     }
 
-    err = to_xdr_ssl_helper(r, x, &ssl->cert_client, tlv_id_ssl_client_cert);
+    ssl = (xdr_ssl_t *)xb_obj(x, offset);
+    err = to_xdr_ssl_helper(r, x, xb_offset(x, &ssl->cert_client), tlv_id_ssl_client_cert);
     if (err<0) {
         return err;
     }
@@ -1483,7 +1498,7 @@ to_xdr(tlv_record_t *r, struct xb *x)
     
     xdr_ssl_t *ssl = xdr_ssl(x->u.xdr);
     if (ssl) {
-        err = tlv_trace(to_xdr_ssl(r, x, ssl), r->parse->wid, "to_xdr_ssl");
+        err = tlv_trace(to_xdr_ssl(r, x, xb_offset(x, ssl)), r->parse->wid, "to_xdr_ssl");
         if (err<0) {
             return err;
         }
@@ -1491,7 +1506,7 @@ to_xdr(tlv_record_t *r, struct xb *x)
 
     xdr_dns_t *dns = xdr_dns(x->u.xdr);
     if (dns) {
-        err = tlv_trace(to_xdr_dns(r, x, dns), r->parse->wid, "to_xdr_ssl");
+        err = tlv_trace(to_xdr_dns(r, x, xb_offset(x, dns)), r->parse->wid, "to_xdr_ssl");
         if (err<0) {
             return err;
         }
