@@ -93,12 +93,8 @@ static nameflag_t opt[] = {
     { .flag = OPT_DUMP_PRE,     .name = "--dump-pre",   .help = "dump before check"},
     { .flag = OPT_DUMP_ST,      .name = "--dump-st",    .help = "dump statistic"},
     { .flag = OPT_SPLIT,        .name = "--file-split", .help = "dpi file split from xdr"},
-#if D_tlv_trace
     { .flag = OPT_TRACE_TLV,    .name = "--trace-tlv",  .help = "trace tlv parse"},
-#endif
-#if D_xdr_trace
     { .flag = OPT_TRACE_XDR,    .name = "--trace-xdr",  .help = "trace xdr parse"},
-#endif
     { .flag = OPT_TRACE_EV,     .name = "--trace-ev",   .help = "trace inotify event"},
     { .flag = OPT_MULTI,        .name = "--multi",      .help = "multi thread"},
 };
