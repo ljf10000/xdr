@@ -84,11 +84,11 @@
 #endif
 
 #ifndef QUE_COUNT
-#define QUE_COUNT     128
+#define QUE_COUNT       1024
 #endif
 
 #ifndef EVCOUNT
-#define EVCOUNT         128
+#define EVCOUNT         32
 #endif
 
 #define XDR_ALIGN(x)        OS_ALIGN(x, 4)
@@ -1105,12 +1105,12 @@ xb_open(struct xb *x, bool readonly, int size)
     return xb_mmap(x, readonly);
 }
 
-enum { EVBUFSIZE = (EVCOUNT * INOTIFY_EVSIZE) };    // 272 * 128 = 34816
+enum { EVBUFSIZE = (EVCOUNT * INOTIFY_EVSIZE) };    // 272 * 32 = 8704
 
 typedef struct {
     byte buf[EVBUFSIZE];
     int len;
-} xworker_que_t; // 34816 + 4 = 34820
+} xworker_que_t; // 8704 + 4 = 8708
 
 #ifndef XB_STCOUNT
 #define XB_STCOUNT  8
@@ -1123,7 +1123,7 @@ typedef struct {
     uint64 consumer;
     
     uint64 qcount;
-    xworker_que_t *que; // 128 * 34820 = 4456960
+    xworker_que_t *que; // 1024 * 8708 = 8916992
     
     pthread_mutex_t mutex;
 } xworker_t;
