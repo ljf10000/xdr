@@ -1362,23 +1362,29 @@ xp_open(struct xparse *parse)
     struct xb *tlv = &parse->tlv;
     struct xb *xdr = &parse->xdr;
     int size, err;
-
+    
+    os_println("worker:%d xp open ...", parse->wid);
+    
     size = os_fsize(tlv->fullname);
     if (size<0) {
         os_println("get size %s error:%d", tlv->fullname, size);
         return size;
     }
+    os_println("worker:%d xp open 1", parse->wid);
 
     err = tlv_trace(tlv_open(tlv, size), "tlv_open %s:%d", tlv->fullname, size);
     if (err<0) {
         return err;
     }
+    os_println("worker:%d xp open 2", parse->wid);
 
     size = XDR_EXPAND_ALIGN(size);
     err = tlv_trace(xdr_open(xdr, size), "xdr_open %s:%d", xdr->fullname, size);
     if (err<0) {
         return err;
     }
+    
+    os_println("worker:%d xp open ok.", parse->wid);
 
     return 0;
 }
