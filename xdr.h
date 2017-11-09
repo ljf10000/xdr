@@ -576,8 +576,8 @@ xb_expand(struct xb *x, xdr_size_t size)
 {
     if (false==xb_enought(x, size)) {
         int err;
-
-        os_println("xb expand ...");
+        
+        os_println("xb expand old:%p", x->u.header);
         
         err = tlv_trace(xb_munmap(x), x->parse->wid, "xb_munmap");
         
@@ -588,7 +588,7 @@ xb_expand(struct xb *x, xdr_size_t size)
             return err;
         }
         
-        os_println("xb expand ok.");
+        os_println("xb expand new:%p", x->u.header);
     }
 
     return 0;
