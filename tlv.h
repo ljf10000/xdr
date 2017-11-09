@@ -1147,7 +1147,16 @@ xw_unlock(xworker_t *w)
 static inline xworker_que_t *
 xw_qentry(xworker_t *w, uint64 id)
 {
-    return w->que + (id % w->qcount);
+    uint64 ID = id % w->qcount;
+    
+    if (ID>=w->qcount) {
+        os_assert(0);
+        os_println("invalid ID:%llu:%llu", id, ID);
+        
+        return NULL;
+    }
+    
+    return w->que + ID;
 }
 
 static inline uint64
