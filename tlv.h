@@ -338,7 +338,7 @@ tlv_dump_u32(FILE *stream, struct tlv *tlv)
 static inline void
 tlv_dump_u64(FILE *stream, struct tlv *tlv)
 {
-    TLV_DUMP_BY(stream, tlv, "%" PRIu64, u64); 
+    TLV_DUMP_BY(stream, tlv, "%"PRIu64"", u64); 
 }
 
 static inline void
@@ -663,7 +663,7 @@ tlv_dump_http(FILE *stream, struct tlv *tlv)
         os_time_string(XDR_SECOND(obj->time_first_response), tstring));
     TLV_DUMP2(stream, "time_last_content   : %s", 
         os_time_string(XDR_SECOND(obj->time_last_content), tstring));
-    TLV_DUMP2(stream, "service_delay       : %" PRIu64 " us", obj->service_delay);
+    TLV_DUMP2(stream, "service_delay       : %"PRIu64" us", obj->service_delay);
     TLV_DUMP2(stream, "content_length      : %u", obj->content_length);
     TLV_DUMP2(stream, "status_code         : %u", obj->status_code);
     TLV_DUMP2(stream, "method              : %u", obj->method);
@@ -1170,7 +1170,7 @@ xw_qentry(xworker_t *w, uint64 id)
     
     if (ID>=w->qcount) {
         os_assert(0);
-        os_println("invalid ID:%" PRIu64 ":%" PRIu64, id, ID);
+        os_println("invalid ID:%"PRIu64":%"PRIu64"", id, ID);
         
         return NULL;
     } else {
@@ -1204,7 +1204,7 @@ xw_is_empty(xworker_t *w)
 #define xw_dprint(_w, _fmt, _args...) os_do_nothing()
 #else
 #define xw_dprint(_w, _fmt, _args...) \
-    os_println("[[publisher:%" PRIu64 " consumer:%" PRIu64 " count:%" PRIu64 "]]" __tab _fmt, \
+    os_println("[[publisher:%"PRIu64" consumer:%"PRIu64" count:%"PRIu64"]]" __tab _fmt, \
         (_w)->publisher, (_w)->consumer, xw_qcount(_w), ##_args)
 #endif
 
@@ -1225,7 +1225,7 @@ ERROR:
 
     switch (err) {
         case 0:
-            xw_dprint(w, "get publisher:%" PRIu64, id);
+            xw_dprint(w, "get publisher:%"PRIu64"", id);
             break;
         case -1:
             // xw_dprint(w, "get publisher failed(empty)");
@@ -1254,13 +1254,13 @@ ERROR:
 
     switch (err) {
         case 0:
-            xw_dprint(w, "put publisher:%" PRIu64, id);
+            xw_dprint(w, "put publisher:%"PRIu64"", id);
             break;
         case -1:
-            // xw_dprint(w, "put publisher:%" PRIu64 " failed(full)", id);
+            // xw_dprint(w, "put publisher:%"PRIu64" failed(full)", id);
             break;
         case -2:
-            xw_dprint(w, "put publisher:%" PRIu64 " failed(not-match %" PRIu64 ")", id, w->publisher);
+            xw_dprint(w, "put publisher:%"PRIu64" failed(not-match %"PRIu64")", id, w->publisher);
             break;
     }
     
@@ -1284,7 +1284,7 @@ ERROR:
 
     switch (err) {
         case 0:
-            xw_dprint(w, "get worker:%d consumer:%" PRIu64, wid, id);
+            xw_dprint(w, "get worker:%d consumer:%"PRIu64"", wid, id);
             break;
         case -1:
             // xw_dprint(w, "get worker:%d consumer failed(empty)", wid);

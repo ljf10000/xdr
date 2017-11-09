@@ -37,6 +37,7 @@
 #ifndef uint64
 #define uint64          uint64_t
 #endif
+#define __STDC_FORMAT_MACROS
 
 #ifndef float64
 #define float64         float64_t
