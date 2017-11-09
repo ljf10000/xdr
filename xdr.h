@@ -574,6 +574,7 @@ xb_put(struct xb *x, xdr_size_t size)
 static inline int
 xb_expand(struct xb *x, xdr_size_t size)
 {
+#define WORK_ID x->parse->wid
     if (false==xb_enought(x, size)) {
         int err;
 
@@ -588,6 +589,7 @@ xb_expand(struct xb *x, xdr_size_t size)
     }
 
     return 0;
+#undef WORK_ID
 }
 
 static inline byte *
@@ -1498,6 +1500,7 @@ xp_run(struct xparse *parse)
 {
     int walk(struct xparse *parse, struct tlv *header)
     {
+#define WORK_ID parse->wid
         tlv_record_t r = TLV_RECORD_INITER(parse);
         int err;
 
@@ -1517,6 +1520,7 @@ xp_run(struct xparse *parse)
         parse->st_xdr->ok++;
         
         return 0;
+#endif
     }
 
     return tlv_walk(parse, parse->tlv.u.tlv, parse->tlv.size, walk);

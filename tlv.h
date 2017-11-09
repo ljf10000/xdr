@@ -31,14 +31,33 @@
 #define xdr_dprint(_fmt, _args...)      os_do_nothing()
 #endif
 
+#ifndef xp_trace_by
+#define xp_trace_by(_is_trace, _print, _call, _fmt, _args...) ({  \
+    int m_err;                                  \
+    bool m_is_trace = _is_trace;                \
+                                                \
+    if (m_is_trace) {                           \
+        _print("worker:%d try " _fmt " ...", WORK_ID, ##_args);    \
+    }                                           \
+                                                \
+    m_err = (_call);                            \
+                                                \
+    if (m_is_trace) {                           \
+        _print(__tab "worker:%d %s:%d " _fmt, WORK_ID, ok_string(m_err), m_err, ##_args); \
+    }                                           \
+                                                \
+    m_err;                                      \
+})  /* end */
+#endif
+
 #if D_tlv_trace
-#define tlv_trace(_call, _fmt, _args...)    os_trace_by(is_option(OPT_TRACE_TLV), os_println, _call, _fmt, ##_args)
+#define tlv_trace(_call, _fmt, _args...)    xp_trace_by(is_option(OPT_TRACE_TLV), os_println, _call, _fmt, ##_args)
 #else
 #define tlv_trace(_call, _fmt, _args...)    (_call)
 #endif
 
 #if D_xdr_trace
-#define xdr_trace(_call, _fmt, _args...)    os_trace_by(is_option(OPT_TRACE_XDR), os_println, _call, _fmt, ##_args)
+#define xdr_trace(_call, _fmt, _args...)    xp_trace_by(is_option(OPT_TRACE_XDR), os_println, _call, _fmt, ##_args)
 #else
 #define xdr_trace(_call, _fmt, _args...)    (_call)
 #endif
@@ -1348,17 +1367,20 @@ xp_init(struct xparse *parse)
 static inline int
 xp_close(struct xparse *parse)
 {
+#define WORK_ID parse->wid
     tlv_trace(tlv_close(&parse->tlv), "tlv_close");
     tlv_trace(xdr_close(&parse->xdr), "xdr_close");
 
     os_fclose(parse->ferr);
-    
+
     return 0;
+#undef WORK_ID
 }
 
 static inline int
 xp_open(struct xparse *parse)
 {
+#define WORK_ID parse->wid
     struct xb *tlv = &parse->tlv;
     struct xb *xdr = &parse->xdr;
     int size, err;
@@ -1371,7 +1393,7 @@ xp_open(struct xparse *parse)
         return size;
     }
     os_println("worker:%d xp open 1", parse->wid);
-
+    
     err = tlv_trace(tlv_open(tlv, size), "tlv_open %s:%d", tlv->fullname, size);
     if (err<0) {
         return err;
@@ -1387,6 +1409,7 @@ xp_open(struct xparse *parse)
     os_println("worker:%d xp open ok.", parse->wid);
 
     return 0;
+#undef WORK_ID
 }
 
 static inline void
@@ -1627,14 +1650,16 @@ tlv_cache_save(struct xparse *parse, tlv_cache_t *cache, struct tlv *tlv)
 static inline int
 tlv_record_save(tlv_record_t *r, struct tlv *tlv)
 {
+#define WORK_ID r->parse->wid
     tlv_cache_t *cache = &r->cache[tlv->id];
-
+    
     int err = tlv_trace(tlv_cache_save(r->parse, cache, tlv), "tlv_record_save");
     if (err<0) {
         return err;
     }
-    
+
     return 0;
+#undef WORK_ID
 }
 
 static inline int
@@ -1642,6 +1667,7 @@ tlv_record_parse(tlv_record_t *r)
 {
     int walk(struct xparse *parse, struct tlv *tlv) 
     {
+#define WORK_ID parse->wid
         int err;
         
         if (is_option(OPT_DUMP_PRE)) {
@@ -1670,6 +1696,7 @@ tlv_record_parse(tlv_record_t *r)
         parse->st_tlv->ok++;
         
         return 0;
+#undef WORK_ID
     }
 
     struct tlv *header = r->parse->tlv.u.tlv;
