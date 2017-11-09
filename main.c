@@ -325,7 +325,7 @@ init_trace(int wid)
         char filename[1+OS_FILENAME_LEN] = {0};
 
         os_sprintf(filename, "worker%d.log", wid);
-        
+
         Worker[wid].trace = fopen(filename, "w+");
         if (NULL==Worker[wid].trace) {
             os_println("open trace file %s error", filename);
@@ -350,7 +350,7 @@ init_multi(int wid)
             return err;
         }
         
-        err = pthread_create(&tid, NULL, worker, (void *)(uint64)i);
+        err = pthread_create(&tid, NULL, worker, (void *)(uint64)wid);
         if (err<0) {
             return err;
         }
