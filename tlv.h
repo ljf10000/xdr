@@ -1213,7 +1213,7 @@ struct xparse {
     FILE *ferr;     // bad file
     char *filename; // just filename, not include path
     int namelen;    // just filename, not include path
-    int wid;
+
     xpath_t *path;  // xpath_t path[PATH_END];
     xst_t   *st_tlv;
     xst_t   *st_xdr;
@@ -1229,8 +1229,7 @@ struct xparse {
     struct xb xdr;
 };
 
-#define XPARSE_INITER(_path, _wid, _st, _filename, _namelen) { \
-    .wid            = _wid,         \
+#define XPARSE_INITER(_path, _st, _filename, _namelen) { \
     .filename       = _filename,    \
     .namelen        = _namelen,     \
     .path           = _path,        \

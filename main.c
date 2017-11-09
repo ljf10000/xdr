@@ -106,7 +106,7 @@ usage(void)
 }
 
 static void
-statistic(struct xparse *parse)
+statistic(struct xparse *parse, int wid)
 {
     if (is_option(OPT_DUMP_ST)) {
         os_printf(
@@ -120,7 +120,7 @@ statistic(struct xparse *parse)
             "request %llu, "
             "response %llu"
             __crlf, 
-            parse->wid,
+            wid,
             parse->st_tlv->ok, parse->st_tlv->error,
             parse->st_xdr->ok, parse->st_xdr->error,
             parse->st_raw->ok, parse->st_raw->error,
@@ -135,7 +135,7 @@ statistic(struct xparse *parse)
 static int
 xdr_handle(int wid, char *filename, int namelen)
 {
-    struct xparse parse = XPARSE_INITER(Path, wid, St[wid], filename, namelen);
+    struct xparse parse = XPARSE_INITER(Path, St[wid], filename, namelen);
     int err;
     
     xp_init(&parse);
@@ -157,7 +157,7 @@ ERROR:
     } else {
         parse.st_raw->ok++;
     }
-    statistic(&parse);
+    statistic(&parse, wid);
     
     return err;
 }
