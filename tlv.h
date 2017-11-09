@@ -1184,7 +1184,7 @@ ERROR:
             xw_dprint(w, "get publisher:%llu", id);
             break;
         case -1:
-            // xw_dprint(w, "get publisher failed(empty)");
+            xw_dprint(w, "get publisher failed(empty)");
             break;
     }
 
