@@ -574,22 +574,20 @@ xb_put(struct xb *x, xdr_size_t size)
 static inline int
 xb_expand(struct xb *x, xdr_size_t size)
 {
-#define WORK_ID x->parse->wid
     if (false==xb_enought(x, size)) {
         int err;
 
-        err = tlv_trace(xb_munmap(x), "xb_munmap");
+        err = tlv_trace(xb_munmap(x), x->parse->wid, "xb_munmap");
         
         x->size += XDR_EXPAND_ALIGN(size);
         
-        err = tlv_trace(xb_mmap(x, false), "xb_mmap");
+        err = tlv_trace(xb_mmap(x, false), x->parse->wid, "xb_mmap");
         if (err<0) {
             return err;
         }
     }
 
     return 0;
-#undef WORK_ID
 }
 
 static inline byte *
@@ -1500,17 +1498,16 @@ xp_run(struct xparse *parse)
 {
     int walk(struct xparse *parse, struct tlv *header)
     {
-#define WORK_ID parse->wid
         tlv_record_t r = TLV_RECORD_INITER(parse);
         int err;
 
-        err = tlv_trace(tlv_record_parse(&r), "tlv_record_parse:%d", parse->count);
+        err = tlv_trace(tlv_record_parse(&r), parse->wid, "tlv_record_parse:%d", parse->count);
         if (err<0) {
             parse->st_xdr->error++;
             return err;
         }
 
-        err = tlv_trace(to_xdr(&r, &parse->xdr), "to_xdr:%d", parse->count);
+        err = tlv_trace(to_xdr(&r, &parse->xdr), parse->wid, "to_xdr:%d", parse->count);
         if (err<0) {
             parse->st_xdr->error++;
             return err;
@@ -1520,7 +1517,6 @@ xp_run(struct xparse *parse)
         parse->st_xdr->ok++;
         
         return 0;
-#undef WORK_ID
     }
 
     return tlv_walk(parse, parse->tlv.u.tlv, parse->tlv.size, walk);
