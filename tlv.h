@@ -31,19 +31,34 @@
 #define xdr_dprint(_fmt, _args...)      os_do_nothing()
 #endif
 
-#ifndef xp_trace_by
-#define xp_trace_by(_is_trace, _print, _call, _fmt, _args...) ({  \
+extern FILE *xw_stream(int wid);
+
+static inline void
+xw_trace(int wid, const char *fmt, ...)
+{
+    va_list args;
+    FILE *f = xw_stream(wid);
+    
+    va_start(args, fmt);
+    vfprintf(f, fmt, args);
+    va_end(args);
+
+    fflush(f);
+}
+
+#ifndef xw_trace_by
+#define xw_trace_by(_is_trace, _call, _fmt, _args...) ({  \
     int m_err;                                  \
     bool m_is_trace = _is_trace;                \
                                                 \
     if (m_is_trace) {                           \
-        _print("worker:%d try " _fmt " ...", WORK_ID, ##_args);    \
+        xw_trace(WORK_ID, "worker:%d try " _fmt " ...", WORK_ID, ##_args);    \
     }                                           \
                                                 \
     m_err = (_call);                            \
                                                 \
     if (m_is_trace) {                           \
-        _print(__tab "worker:%d %s:%d " _fmt, WORK_ID, ok_string(m_err), m_err, ##_args); \
+        xw_trace(WORK_ID, __tab "worker:%d %s:%d " _fmt, WORK_ID, ok_string(m_err), m_err, ##_args); \
     }                                           \
                                                 \
     m_err;                                      \
@@ -51,13 +66,13 @@
 #endif
 
 #if D_tlv_trace
-#define tlv_trace(_call, _fmt, _args...)    xp_trace_by(is_option(OPT_TRACE_TLV), os_println, _call, _fmt, ##_args)
+#define tlv_trace(_call, _fmt, _args...)    xw_trace_by(is_option(OPT_TRACE_TLV), _call, _fmt, ##_args)
 #else
 #define tlv_trace(_call, _fmt, _args...)    (_call)
 #endif
 
 #if D_xdr_trace
-#define xdr_trace(_call, _fmt, _args...)    xp_trace_by(is_option(OPT_TRACE_XDR), os_println, _call, _fmt, ##_args)
+#define xdr_trace(_call, _fmt, _args...)    xw_trace_by(is_option(OPT_TRACE_XDR), _call, _fmt, ##_args)
 #else
 #define xdr_trace(_call, _fmt, _args...)    (_call)
 #endif
@@ -1129,7 +1144,7 @@ enum { EVBUFSIZE = (EVCOUNT * INOTIFY_EVSIZE) };    // 272 * 32 = 8704
 typedef struct {
     byte buf[EVBUFSIZE];
     int len;
-} xworker_que_t; // 8704 + 4 = 8708
+} xque_buffer_t; // 8704 + 4 = 8708
 
 #ifndef XB_STCOUNT
 #define XB_STCOUNT  8
@@ -1142,29 +1157,29 @@ typedef struct {
     uint64 consumer;
     
     uint64 qcount;
-    xworker_que_t *que; // 1024 * 8708 = 8916992
+    xque_buffer_t *qb;  // 1024 * 8708 = 8916992
     
     pthread_mutex_t mutex;
-} xworker_t;
+} xque_t;
 
 #ifndef INVALID_WORKER_ID
 #define INVALID_WORKER_ID   ((uint64)(-1))
 #endif
 
 static inline void
-xw_lock(xworker_t *w)
+xw_lock(xque_t *w)
 {
     pthread_mutex_lock(&w->mutex);
 }
 
 static inline void
-xw_unlock(xworker_t *w)
+xw_unlock(xque_t *w)
 {
     pthread_mutex_unlock(&w->mutex);
 }
 
-static inline xworker_que_t *
-xw_qentry(xworker_t *w, uint64 id)
+static inline xque_buffer_t *
+xw_qb(xque_t *w, uint64 id)
 {
     uint64 ID = id % w->qcount;
     
@@ -1174,12 +1189,12 @@ xw_qentry(xworker_t *w, uint64 id)
         
         return NULL;
     } else {
-        return w->que + ID;
+        return w->qb + ID;
     }
 }
 
 static inline uint64
-xw_qcount(xworker_t *w)
+xw_qcount(xque_t *w)
 {
     if (w->publisher >= w->consumer) {
         return w->publisher - w->consumer;
@@ -1189,13 +1204,13 @@ xw_qcount(xworker_t *w)
 }
 
 static inline bool
-xw_is_full(xworker_t *w)
+xw_is_full(xque_t *w)
 {
     return xw_qcount(w)==w->qcount;
 }
 
 static inline bool
-xw_is_empty(xworker_t *w)
+xw_is_empty(xque_t *w)
 {
     return w->publisher==w->consumer;
 }
@@ -1209,7 +1224,7 @@ xw_is_empty(xworker_t *w)
 #endif
 
 static inline uint64
-xw_get_publisher(xworker_t *w)
+xw_get_publisher(xque_t *w)
 {
     int err = 0;
     uint64 id = INVALID_WORKER_ID;
@@ -1236,7 +1251,7 @@ ERROR:
 }
 
 static inline int
-xw_put_publisher(xworker_t *w, uint64 id)
+xw_put_publisher(xque_t *w, uint64 id)
 {
     int err = 0;
     
@@ -1268,7 +1283,7 @@ ERROR:
 }
 
 static inline uint64
-xw_get_consumer(xworker_t *w, int wid)
+xw_get_consumer(xque_t *w, int wid)
 {
     int err = 0;
     uint64 id = INVALID_WORKER_ID;

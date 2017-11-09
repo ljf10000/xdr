@@ -20,12 +20,21 @@ DECLARE_TLV_VARS;
 #define ISXDR(_file, _len)  os_str_has_suffix(_file, _len, "." XDR_SUFFIX, sizeof("." XDR_SUFFIX)-1)
 
 static char *self;
-static xpath_t WorkerPath[WORKER_COUNT][PATH_END];
-static xst_t WorkerSt[WORKER_COUNT][XB_STCOUNT];
 
-static xworker_t Worker;
-static int WorkerCount = 1;
-static int WrokerQueCount = 1;
+static xque_t   WorkerQue;
+static int      WorkerCount = 1;
+static int      WrokerQueCount = 1;
+
+static struct {
+    xpath_t path[PATH_END];
+    xst_t   st[XB_STCOUNT];
+    FILE    *trace;
+} Worker[WORKER_COUNT];
+
+FILE *xw_stream(int wid)
+{
+    return Worker[wid].trace;
+}
 
 static inline uint64
 get_publisher(void)
@@ -33,7 +42,7 @@ get_publisher(void)
     if (is_option(OPT_MULTI)) {
         uint64 id;
         
-        while(INVALID_WORKER_ID==(id = xw_get_publisher(&Worker))) {
+        while(INVALID_WORKER_ID==(id = xw_get_publisher(&WorkerQue))) {
             usleep(XDR_USLEEP);
         }
 
@@ -47,7 +56,7 @@ static inline int
 put_publisher(uint64 id)
 {
     if (is_option(OPT_MULTI)) {
-        return xw_put_publisher(&Worker, id);
+        return xw_put_publisher(&WorkerQue, id);
     } else {
         return 0;
     }
@@ -59,7 +68,7 @@ get_consumer(int wid)
     if (is_option(OPT_MULTI)) {
         uint64 id;
         
-        while(INVALID_WORKER_ID==(id = xw_get_consumer(&Worker, wid))) {
+        while(INVALID_WORKER_ID==(id = xw_get_consumer(&WorkerQue, wid))) {
             usleep(XDR_USLEEP);
         }
 
@@ -69,10 +78,10 @@ get_consumer(int wid)
     }
 }
 
-static inline xworker_que_t *
-get_qentry(uint64 id)
+static inline xque_buffer_t *
+get_qb(uint64 id)
 {
-    return xw_qentry(&Worker, id);
+    return xw_qb(&WorkerQue, id);
 }
 
 static nameflag_t opt[] = {
@@ -145,7 +154,7 @@ static int
 xdr_handle(int wid, char *filename, int namelen)
 {
 #define WORK_ID wid
-    struct xparse parse = XPARSE_INITER(wid, WorkerPath[wid], WorkerSt[wid], filename, namelen);
+    struct xparse parse = XPARSE_INITER(wid, Worker[wid].path, Worker[wid].st, filename, namelen);
     int err;
 
     xp_init(&parse);
@@ -176,7 +185,7 @@ ERROR:
 static int
 tlv_remove(int wid, char *filename, int namelen)
 {
-    char *fullname = xpath_fill(&WorkerPath[wid][PATH_TLV], filename, namelen);
+    char *fullname = xpath_fill(&Worker[wid].path[PATH_TLV], filename, namelen);
     
     remove(fullname);
     
@@ -189,9 +198,9 @@ static int
 ev_handle(int wid)
 {
     uint64 id = get_consumer(wid);
-    xworker_que_t *que = get_qentry(id);
-    inotify_ev_t *ev  = (inotify_ev_t *)(que->buf);
-    inotify_ev_t *end = (inotify_ev_t *)(que->buf + que->len);
+    xque_buffer_t *qb = get_qb(id);
+    inotify_ev_t *ev  = (inotify_ev_t *)(qb->buf);
+    inotify_ev_t *end = (inotify_ev_t *)(qb->buf + qb->len);
     int len, err;
 
     for (; ev<end; ev=EVNEXT(ev)) {
@@ -233,7 +242,7 @@ worker(void *args)
 static int
 monitor(const char *watch)
 {
-    xworker_que_t *que;
+    xque_buffer_t *qb;
     int fd, err;
     uint64 id;
 
@@ -249,10 +258,10 @@ monitor(const char *watch)
 
     for (;;) {
         id = get_publisher();
-        que = get_qentry(id);
+        qb = get_qb(id);
         
-        que->len = read(fd, que->buf, EVBUFSIZE);
-        if (que->len == -1 && errno != EAGAIN) {
+        qb->len = read(fd, qb->buf, EVBUFSIZE);
+        if (qb->len == -1 && errno != EAGAIN) {
             os_println("master read error:%d", -errno);
             
             return -errno;
@@ -307,7 +316,7 @@ init_xpath(int wid, char *path[PATH_END])
     int i;
 
     for (i=0; i<PATH_END; i++) {
-        xpath_init(&WorkerPath[wid][i], path[i]);
+        xpath_init(&Worker[wid].path[i], path[i]);
     }
 }
 
@@ -316,9 +325,9 @@ init_worker(char *path[PATH_END])
 {
     int i, err;
 
-    Worker.qcount = WrokerQueCount;
-    Worker.que = (xworker_que_t *)os_calloc(WrokerQueCount, sizeof(xworker_que_t));
-    if (NULL==Worker.que) {
+    WorkerQue.qcount = WrokerQueCount;
+    WorkerQue.qb = (xque_buffer_t *)os_calloc(WrokerQueCount, sizeof(xque_buffer_t));
+    if (NULL==WorkerQue.qb) {
         return -ENOMEM;
     }
 
@@ -327,8 +336,21 @@ init_worker(char *path[PATH_END])
         
         if (is_option(OPT_MULTI)) {
             pthread_t tid;
+
+            if (is_option(OPT_TRACE_TLV) || is_option(OPT_TRACE_XDR)) {
+                char filename[1+OS_FILENAME_LEN] = {0};
+
+                os_sprintf(filename, "worker%d", i);
+                
+                Worker[i].trace = fopen(filename, "w+");
+                if (NULL==Worker[i].trace) {
+                    os_println("open trace file %s error", filename);
+                    
+                    return -EBADF;
+                }
+            }
             
-            err = pthread_mutex_init(&Worker.mutex, NULL);
+            err = pthread_mutex_init(&WorkerQue.mutex, NULL);
             if (err<0) {
                 return err;
             }
