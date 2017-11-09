@@ -154,18 +154,18 @@ xdr_handle(int wid, char *filename, int namelen)
 
     xp_init(&parse);
 
-    err = xdr_trace(xp_open(&parse), wid, "xp_open");
+    err = tlv_trace(xp_open(&parse), wid, "xp_open");
     if (err<0) {
         goto ERROR;
     }
 
-    err = xdr_trace(xp_run(&parse), wid, "xp_run");
+    err = tlv_trace(xp_run(&parse), wid, "xp_run");
     if (err<0) {
         goto ERROR;
     }
 
 ERROR:
-    xdr_trace(xp_close(&parse), wid, "xp_close");
+    tlv_trace(xp_close(&parse), wid, "xp_close");
     if (err<0) {
         parse.st_raw->error++;
     } else {
