@@ -22,52 +22,47 @@ DECLARE_TLV_VARS;
 static char *self;
 static xpath_t Path[PATH_END];
 
-static xworker_t *Worker;
+static xworker_t Worker;
 static int WorkerID;
 static int WorkerCount = 1;
 static int WorkerCacheCount = 1;
 
-static inline xworker_t *
-xw_worker(int wid)
+static inline int
+get_publisher(void)
 {
-    return &Worker[wid];
+    return is_option(OPT_MULTI)?xw_get_publisher(&Worker):0;
 }
 
-static int
-__xw_wait_publisher(xworker_t **publisher)
-{
-    xworker_t *w;
-    int id;
-    
-    while(1) {
-        for (; WorkerID<WorkerCount; WorkerID++) {
-            w = xw_worker(WorkerID);
-
-            id = xw_get_publisher(w);
-            if (id>=0) {
-                *publisher = w;
-
-                return id;
-            }
-        }
-
-        WorkerID = 0;
-
-        usleep(1000);
-    }
-}
-
-static int
-xw_wait_publisher(xworker_t **publisher)
+static inline void
+put_publisher(int id)
 {
     if (is_option(OPT_MULTI)) {
-        return __xw_wait_publisher(publisher);
-    } 
-    else {
-        *publisher = xw_worker(0);
+        while(xw_put_publisher(&Worker, id) < 0) {
+            sleep(1000);
+        }
+    }
+}
+
+static inline int
+get_consumer(void)
+{
+    if (is_option(OPT_MULTI)) {
+        int id;
         
+        while((id = xw_get_consumer(&Worker)) < 0) {
+            sleep(1000);
+        }
+
+        return id;
+    } else {
         return 0;
     }
+}
+
+static inline xworker_cache_t *
+get_cache(int id)
+{
+    return xw_cache(&Worker, id);
 }
 
 static nameflag_t opt[] = {
@@ -124,7 +119,7 @@ statistic(struct xparse *parse)
             "request %llu, "
             "response %llu"
             __crlf, 
-            parse->worker->wid,
+            parse->wid,
             parse->st_tlv->ok, parse->st_tlv->error,
             parse->st_xdr->ok, parse->st_xdr->error,
             parse->st_raw->ok, parse->st_raw->error,
@@ -139,7 +134,7 @@ statistic(struct xparse *parse)
 static int
 xdr_handle(int wid, char *filename, int namelen)
 {
-    struct xparse parse = XPARSE_INITER(xw_worker(wid), Path, filename, namelen);
+    struct xparse parse = XPARSE_INITER(wid, Path, filename, namelen);
     int err;
     
     xp_init(&parse);
@@ -179,11 +174,10 @@ tlv_remove(int wid, char *filename, int namelen)
 }
 
 static int
-ev_handle(xworker_t *w)
+ev_handle(int wid)
 {
-    int id = xw_get_consumer(w);
-    
-    xworker_cache_t *cache = xw_cache(w, id);
+    int id = get_consumer();
+    xworker_cache_t *cache = get_cache(id);
     inotify_ev_t *ev  = (inotify_ev_t *)(cache->buf);
     inotify_ev_t *end = (inotify_ev_t *)(cache->buf + cache->len);
     int len, err;
@@ -196,12 +190,12 @@ ev_handle(xworker_t *w)
 
             len = inotify_ev_len(ev);
             if (ISXDR(ev->name, len)) {
-                err = xdr_handle(w->wid, ev->name, len);
+                err = xdr_handle(wid, ev->name, len);
                 if (err<0) {
                     // log
                 }
             } else {
-                tlv_remove(w->wid, ev->name, len);
+                tlv_remove(wid, ev->name, len);
             }
         }
     }
@@ -213,12 +207,12 @@ ev_handle(xworker_t *w)
 static void *
 worker(void *args)
 {
-    xworker_t *w = (xworker_t *)args;
+    int wid = (int)(uint32)(uint64)args;
 
-    os_println("start worker:%d", w->wid);
-    
+    os_println("start worker:%d", wid);
+
     while(1) {
-        ev_handle(w);
+        ev_handle(wid);
     }
     
     return NULL;
@@ -227,7 +221,6 @@ worker(void *args)
 static int
 monitor(const char *watch)
 {
-    xworker_t *w;
     xworker_cache_t *cache;
     int fd, err, id;
 
@@ -242,10 +235,8 @@ monitor(const char *watch)
     }
 
     for (;;) {
-        os_println("wait worker publisher ...");
-        id = xw_wait_publisher(&w);
-        os_println("wait worker:%d publisher:%d ok.", w->wid, id);
-        cache = xw_cache(w, id);
+        id = get_publisher();
+        cache = get_cache(id);
         
         cache->len = read(fd, cache->buf, EVBUFSIZE);
         if (cache->len == -1 && errno != EAGAIN) {
@@ -254,11 +245,9 @@ monitor(const char *watch)
         OS_VAR(time) = time(NULL);
 
         if (is_option(OPT_MULTI)) {
-            os_println("put worker:%d publisher:%d ...", w->wid, id);
-            xw_put_publisher(w, id);
-            os_println("put worker:%d publisher:%d ok.", w->wid, id);
+            put_publisher(id);
         } else {
-            ev_handle(w);
+            ev_handle(0);
         }
     }
 }
@@ -294,7 +283,7 @@ check(int argc, char *argv[])
     return 0;
 }
 
-static int
+static void
 init_xpath(char *path[PATH_END])
 {
     int i;
@@ -302,52 +291,32 @@ init_xpath(char *path[PATH_END])
     for (i=0; i<PATH_END; i++) {
         xpath_init(&Path[i], path[i]);
     }
-
-    return 0;
 }
 
 static int
-init_worker(int wid)
-{
-    xworker_t *w = xw_worker(wid);
-    int err;
-
-    w->wid = wid;
-    w->cache_count = WorkerCacheCount;
-    w->cache = (xworker_cache_t *)os_calloc(WorkerCacheCount, sizeof(xworker_cache_t));
-    if (NULL==w->cache) {
-        return -ENOMEM;
-    }
-    
-    if (is_option(OPT_MULTI)) {
-        err = pthread_mutex_init(&w->mutex, NULL);
-        if (err<0) {
-            return err;
-        }
-        
-        err = pthread_create(&w->tid, NULL, worker, w);
-        if (err<0) {
-            return err;
-        }
-    }
-
-    return 0;
-}
-
-static int
-init_workers(void)
+init_worker(void)
 {
     int i, err;
 
-    Worker = (xworker_t *)os_calloc(WorkerCount, sizeof(*Worker));
-    if (NULL==Worker) {
+    Worker.cache_count = WorkerCacheCount;
+    Worker.cache = (xworker_cache_t *)os_calloc(WorkerCacheCount, sizeof(xworker_cache_t));
+    if (NULL==Worker.cache) {
         return -ENOMEM;
     }
-    
-    for (i=0; i<WorkerCount; i++) {
-        err = init_worker(i);
-        if (err<0) {
-            return err;
+
+    if (is_option(OPT_MULTI)) {
+        for (i=0; i<WorkerCount; i++) {
+            pthread_t tid;
+            
+            err = pthread_mutex_init(&Worker.mutex, NULL);
+            if (err<0) {
+                return err;
+            }
+            
+            err = pthread_create(&tid, NULL, worker, (void *)(uint64)i);
+            if (err<0) {
+                return err;
+            }
         }
     }
 
@@ -368,11 +337,22 @@ xw_envi(char *env, int max)
 static void
 init_env(void)
 {
-    WorkerCount     = xw_envi(ENV_XDR_WORKER, WORKER_COUNT);
-    WorkerCacheCount= xw_envi(ENV_XDR_CACHE,  CACHE_COUNT);
+    if (is_option(OPT_MULTI)) {
+        WorkerCount     = xw_envi(ENV_XDR_WORKER, WORKER_COUNT);
+        WorkerCacheCount= xw_envi(ENV_XDR_CACHE,  CACHE_COUNT);
 
-    os_println("worker count %d",       WorkerCount);
-    os_println("worker cache count %d", WorkerCacheCount);
+        os_println("worker count %d",       WorkerCount);
+        os_println("worker cache count %d", WorkerCacheCount);
+    }
+}
+
+static void
+init_option(void)
+{
+    if (is_option(OPT_CLI)) {
+        // cli not multi-thread
+        clr_option(OPT_MULTI);
+    }
 }
 
 static int
@@ -381,17 +361,10 @@ init(char *path[PATH_END])
     int err;
     
     init_xpath(path);
+    init_option();
+    init_env();
 
-    if (is_option(OPT_CLI)) {
-        // cli not multi-thread
-        clr_option(OPT_MULTI);
-    }
-    
-    if (is_option(OPT_MULTI)) {
-        init_env();
-    }
-
-    err = init_workers();
+    err = init_worker();
     if (err<0) {
         return err;
     }

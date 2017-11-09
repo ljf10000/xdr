@@ -1099,7 +1099,6 @@ typedef struct {
 
 typedef struct {
     pthread_mutex_t mutex;
-    pthread_t tid;
     int publisher;
     int consumer;
     int count;  // ev count
@@ -1142,7 +1141,7 @@ xw_cache(xworker_t *w, int id)
 }
 
 static inline int
-__xw_get_publisher(xworker_t *w)
+xw_get_publisher(xworker_t *w)
 {
     int id = -1;
     
@@ -1164,7 +1163,7 @@ ERROR:
 }
 
 static inline int
-__xw_put_publisher(xworker_t *w, int id)
+xw_put_publisher(xworker_t *w, int id)
 {
     int err = -1;
     
@@ -1190,7 +1189,7 @@ ERROR:
 }
 
 static inline int
-__xw_get_consumer(xworker_t *w)
+xw_get_consumer(xworker_t *w)
 {
     int id = -1;
    
@@ -1214,44 +1213,11 @@ ERROR:
     return id;
 }
 
-static inline int
-xw_get_publisher(xworker_t *w)
-{
-    return is_option(OPT_MULTI)?__xw_get_publisher(w):0;
-}
-
-static inline void
-xw_put_publisher(xworker_t *w, int id)
-{
-    if (is_option(OPT_MULTI)) {
-        while(__xw_put_publisher(w, id) < 0) {
-            sleep(1000);
-        }
-    }
-}
-
-static inline int
-xw_get_consumer(xworker_t *w)
-{
-    if (is_option(OPT_MULTI)) {
-        int id;
-        
-        while((id = __xw_get_consumer(w)) < 0) {
-            sleep(1000);
-        }
-
-        return id;
-    } else {
-        return 0;
-    }
-}
-
 struct xparse {
-    xworker_t *worker;
     FILE *ferr;     // bad file
     char *filename; // just filename, not include path
     int namelen;    // just filename, not include path
-    
+    int wid;
     xpath_t *path;  // xpath_t path[PATH_END];
     xst_t   *st_tlv;
     xst_t   *st_xdr;
@@ -1267,8 +1233,8 @@ struct xparse {
     struct xb xdr;
 };
 
-#define XPARSE_INITER(_worker, _path, _filename, _namelen) { \
-    .worker         = _worker,      \
+#define XPARSE_INITER(_wid, _path, _filename, _namelen) { \
+    .wid            = _wid,      \
     .filename       = _filename,    \
     .namelen        = _namelen,     \
     .path           = _path,        \
