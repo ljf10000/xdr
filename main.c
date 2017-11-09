@@ -44,12 +44,12 @@ put_publisher(int id)
 }
 
 static inline int
-get_consumer(void)
+get_consumer(int wid)
 {
     if (is_option(OPT_MULTI)) {
         int id;
         
-        while((id = xw_get_consumer(&Worker)) < 0) {
+        while((id = xw_get_consumer(&Worker, wid)) < 0) {
             sleep(1000);
         }
 
@@ -176,7 +176,7 @@ tlv_remove(int wid, char *filename, int namelen)
 static int
 ev_handle(int wid)
 {
-    int id = get_consumer();
+    int id = get_consumer(wid);
     xworker_cache_t *cache = get_cache(id);
     inotify_ev_t *ev  = (inotify_ev_t *)(cache->buf);
     inotify_ev_t *end = (inotify_ev_t *)(cache->buf + cache->len);
