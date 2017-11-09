@@ -1384,6 +1384,11 @@ xp_open(struct xparse *parse)
     struct xb *tlv = &parse->tlv;
     struct xb *xdr = &parse->xdr;
     int size, err;
+
+    // maybe multi-file have same name
+    if (os_fexist(xdr->fullname)) {
+        return -EEXIST;
+    }
     
     size = tlv_trace(os_fsize(tlv->fullname), "os_fsize %s", tlv->fullname);
     if (size<0) {
