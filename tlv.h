@@ -1382,7 +1382,7 @@ xp_open(struct xparse *parse)
         return err;
     }
 
-    size = XDR_EXPAND_ALIGN(size);
+    size = 4 * XDR_EXPAND_ALIGN(size);
     err = tlv_trace(xdr_open(xdr, size), parse->wid, "xdr_open %s:%d", xdr->fullname, size);
     if (err<0) {
         return err;
