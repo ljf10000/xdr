@@ -1233,14 +1233,14 @@ struct xparse {
     .filename       = _filename,    \
     .namelen        = _namelen,     \
     .path           = _path,        \
-    .st_tlv         = (_st)[0],     \
-    .st_xdr         = (_st)[1],     \
-    .st_raw         = (_st)[2],     \
-    .st_http_request    = (_st)[3], \
-    .st_http_response   = (_st)[4], \
-    .st_file_content    = (_st)[5], \
-    .st_ssl_server      = (_st)[6], \
-    .st_ssl_client      = (_st)[7], \
+    .st_tlv         = &(_st)[0],    \
+    .st_xdr         = &(_st)[1],    \
+    .st_raw         = &(_st)[2],    \
+    .st_http_request    = &(_st)[3],\
+    .st_http_response   = &(_st)[4],\
+    .st_file_content    = &(_st)[5],\
+    .st_ssl_server      = &(_st)[6],\
+    .st_ssl_client      = &(_st)[7],\
     .tlv            = XBUFFER_INITER((_path)[PATH_TLV].fullname),   \
     .xdr            = XBUFFER_INITER((_path)[PATH_XDR].fullname),   \
 }   /* end */
