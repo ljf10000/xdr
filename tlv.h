@@ -94,7 +94,7 @@ xw_trace(int wid, const char *fmt, ...)
 #endif
 
 #define XDR_ALIGN(x)        OS_ALIGN(x, 4)
-#define XDR_EXPAND_ALIGN(x) OS_ALIGN(2*x + XDR_EXPAND, XDR_EXPAND)
+#define XDR_EXPAND_ALIGN(x) OS_ALIGN(x + XDR_EXPAND, XDR_EXPAND)
 #define XDR_DIGEST_SIZE     SHA256_DIGEST_SIZE
 
 struct xb;
