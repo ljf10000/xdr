@@ -701,7 +701,7 @@ getshafilename(xpath_t *path, const char *dir, char *sha)
 }
 
 static inline int
-xb_file_handle_bybuffer(struct xb *x, struct tlv *tlv, xdr_file_t *file)
+xb_file_handle_bybuffer(struct xb *x, struct tlv *tlv, xdr_file_t *file, void *header, xdr_size_t size)
 {
     const char *dir = getdirbyflag(tlv_ops_flag(tlv));
     if (NULL==dir) {
@@ -753,7 +753,7 @@ xb_file_handle(struct xb *x, struct tlv *tlv, xdr_file_t *file)
     if (is_option(OPT_SPLIT)) {
         err = xb_file_handle_bypath(x, file, tlv);
     } else {
-        err = xb_file_handle_bybuffer(x, file, tlv);
+        err = xb_file_handle_bybuffer(x, file, tlv, x->u.header, x->size);
     }
 
     if (err<0) {
