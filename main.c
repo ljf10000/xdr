@@ -28,7 +28,6 @@ static xque_t   WorkerQue;
 static int      WorkerSleep;
 static int      WorkerCount = 1;
 static int      WrokerQueCount = 1;
-static int      InotifyBufSize;
 
 static struct {
     xpath_t path[PATH_END];
@@ -223,7 +222,7 @@ ev_handle(int wid)
         }
     }
 
-    option_dump(OPT_DUMP_EV, "event include file:%d", count);
+    os_println("event include file:%d", count);
     
     return 0;
 }
