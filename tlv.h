@@ -3,6 +3,77 @@
 /******************************************************************************/
 #include "os.h"
 /******************************************************************************/
+#ifndef TLV_MAXDATA
+#define TLV_MAXDATA     (128*1024*1024)
+#endif
+
+#ifndef TLV_MAXCOUNT
+#define TLV_MAXCOUNT    (128*1024)
+#endif
+
+#ifndef DUMP_STREAM
+#define DUMP_STREAM     stdout
+#endif
+
+#ifndef XDR_SUFFIX
+#define XDR_SUFFIX      "xdr"
+#endif
+
+#ifndef ERR_SUFFIX
+#define ERR_SUFFIX      "err"
+#endif
+
+#ifndef OK_SUFFIX
+#define OK_SUFFIX       "ok\x00"
+#endif
+
+#ifndef XDR_VERSION
+#define XDR_VERSION     0
+#endif
+
+#ifndef XDR_EXPAND
+#define XDR_EXPAND      (32*1024)
+#endif
+
+#ifndef XDR_USLEEP
+#define XDR_USLEEP      (100*1000)
+#endif
+
+#ifndef WORKER_COUNT
+#define WORKER_COUNT    128
+#endif
+
+#ifndef QUE_COUNT
+#define QUE_COUNT       (8*1024)
+#endif
+
+#ifndef EVCOUNT
+#define EVCOUNT         32
+#endif
+
+#define XDR_ALIGN(x)        OS_ALIGN(x, 4)
+#define XDR_EXPAND_ALIGN(x) OS_ALIGN(x + XDR_EXPAND, XDR_EXPAND)
+#define XDR_DIGEST_SIZE     SHA256_DIGEST_SIZE
+
+struct xb;
+struct tlv;
+struct xdr;
+struct xparse;
+
+#define INVALID_XDR_OFFSET  0
+
+typedef uint32 xdr_offset_t;
+typedef uint32 xdr_size_t;
+typedef uint32 xdr_delay_t;
+
+typedef uint8  tlv_u8_t;
+typedef uint16 tlv_u16_t;
+typedef uint32 tlv_u32_t;
+typedef uint64 tlv_u64_t;
+
+typedef uint64 xdr_duration_t,  tlv_duration_t;
+typedef uint64 xdr_time_t,      tlv_time_t;
+#define XDR_SECOND(_us)         ((time_t)((_us)/1000000))
 extern FILE *xw_stream(int wid);
 
 static inline void
@@ -44,78 +115,6 @@ xw_trace(int wid, const char *fmt, ...)
 
 #define tlv_trace(_call, _wid, _fmt, _args...)    xw_trace_by(_call, _wid, is_option(OPT_TRACE_TLV), _fmt, ##_args)
 #define xdr_trace(_call, _wid, _fmt, _args...)    xw_trace_by(_call, _wid, is_option(OPT_TRACE_XDR), _fmt, ##_args)
-
-#ifndef TLV_MAXDATA
-#define TLV_MAXDATA     (128*1024*1024)
-#endif
-
-#ifndef TLV_MAXCOUNT
-#define TLV_MAXCOUNT    (128*1024)
-#endif
-
-#ifndef DUMP_STREAM
-#define DUMP_STREAM     stdout
-#endif
-
-#ifndef XDR_SUFFIX
-#define XDR_SUFFIX      "xdr"
-#endif
-
-#ifndef ERR_SUFFIX
-#define ERR_SUFFIX      "err"
-#endif
-
-#ifndef OK_SUFFIX
-#define OK_SUFFIX       "ok\x00"
-#endif
-
-#ifndef XDR_VERSION
-#define XDR_VERSION     0
-#endif
-
-#ifndef XDR_EXPAND
-#define XDR_EXPAND      (32*1024)
-#endif
-
-#ifndef XDR_USLEEP
-#define XDR_USLEEP      (100*1000)
-#endif
-
-#ifndef WORKER_COUNT
-#define WORKER_COUNT    8
-#endif
-
-#ifndef QUE_COUNT
-#define QUE_COUNT       (4*1024)
-#endif
-
-#ifndef EVCOUNT
-#define EVCOUNT         32
-#endif
-
-#define XDR_ALIGN(x)        OS_ALIGN(x, 4)
-#define XDR_EXPAND_ALIGN(x) OS_ALIGN(x + XDR_EXPAND, XDR_EXPAND)
-#define XDR_DIGEST_SIZE     SHA256_DIGEST_SIZE
-
-struct xb;
-struct tlv;
-struct xdr;
-struct xparse;
-
-#define INVALID_XDR_OFFSET  0
-
-typedef uint32 xdr_offset_t;
-typedef uint32 xdr_size_t;
-typedef uint32 xdr_delay_t;
-
-typedef uint8  tlv_u8_t;
-typedef uint16 tlv_u16_t;
-typedef uint32 tlv_u32_t;
-typedef uint64 tlv_u64_t;
-
-typedef uint64 xdr_duration_t,  tlv_duration_t;
-typedef uint64 xdr_time_t,      tlv_time_t;
-#define XDR_SECOND(_us)         ((time_t)((_us)/1000000))
 
 typedef uint32 xdr_ip4_t, tlv_ip4_t;
 typedef struct {
@@ -1134,7 +1133,7 @@ typedef struct {
     uint64 consumer;
     
     uint64 qcount;
-    xque_buffer_t *qb;  // 4*1024 * 8708 = 35667968
+    xque_buffer_t *qb;  // 8K * 8708 = 69664K
     
     pthread_mutex_t mutex;
 } xque_t;

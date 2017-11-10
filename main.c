@@ -15,6 +15,10 @@ DECLARE_TLV_VARS;
 #define ENV_XDR_QUE         "XDR_QUE"
 #endif
 
+#ifndef ENV_XDR_SLEEP
+#define ENV_XDR_SLEEP       "XDR_SLEEP"
+#endif
+
 #define EVMASK              (IN_CLOSE_WRITE|IN_MOVED_TO)
 #define EVNEXT(_ev)         inotify_ev_next(_ev)
 #define ISXDR(_file, _len)  os_str_has_suffix(_file, _len, "." XDR_SUFFIX, sizeof("." XDR_SUFFIX)-1)
@@ -22,6 +26,7 @@ DECLARE_TLV_VARS;
 static char *self;
 
 static xque_t   WorkerQue;
+static int      WorkerSleep;
 static int      WorkerCount = 1;
 static int      WrokerQueCount = 1;
 
@@ -43,7 +48,7 @@ get_publisher(void)
         uint64 id;
         
         while(INVALID_WORKER_ID==(id = xw_get_publisher(&WorkerQue))) {
-            usleep(XDR_USLEEP);
+            usleep(WorkerSleep);
         }
 
         return id;
@@ -69,7 +74,7 @@ get_consumer(int wid)
         uint64 id;
         
         while(INVALID_WORKER_ID==(id = xw_get_consumer(&WorkerQue, wid))) {
-            usleep(XDR_USLEEP);
+            usleep(WorkerSleep);
         }
 
         return id;
@@ -402,9 +407,11 @@ static void
 init_env(void)
 {
     if (is_option(OPT_MULTI)) {
+        WorkerSleep     = xw_envi(ENV_XDR_SLEEP, XDR_USLEEP);
         WorkerCount     = xw_envi(ENV_XDR_WORKER, WORKER_COUNT);
         WrokerQueCount  = xw_envi(ENV_XDR_QUE,  QUE_COUNT);
 
+        os_println("worker sleep %d",       WorkerSleep);
         os_println("worker count %d",       WorkerCount);
         os_println("worker queue count %d", WrokerQueCount);
     }
