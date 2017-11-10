@@ -36,7 +36,7 @@
 #endif
 
 #ifndef XDR_USLEEP
-#define XDR_USLEEP      (100*1000)
+#define XDR_USLEEP      (10*1000)
 #endif
 
 #ifndef WORKER_COUNT
