@@ -221,8 +221,6 @@ ev_handle(int wid)
             }
         }
     }
-
-    os_println("event include file:%d", count);
     
     return 0;
 }
