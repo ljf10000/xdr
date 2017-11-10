@@ -130,20 +130,20 @@ enum {
 enum {
     OPT_CLI         = 0x0001,
     OPT_IP6         = 0x0002,
-    OPT_SPLIT       = 0x0004,
+    OPT_MULTI       = 0x0004,
     OPT_STRICT      = 0x0008,
 
-    OPT_DUMP        = 0x0010,
-    OPT_DUMP_SB     = 0x0020 | OPT_DUMP,
-    OPT_DUMP_PRE    = 0x0040 | OPT_DUMP,
-    OPT_DUMP_ST     = 0x0080,
+    OPT_DUMP        = 0x0100,
+    OPT_DUMP_SB     = 0x0200 | OPT_DUMP,
+    OPT_DUMP_PRE    = 0x0400 | OPT_DUMP,
+    OPT_DUMP_ST     = 0x0800,
+    OPT_DUMP_EV     = 0x1000,
+    OPT_DUMP_QUE    = 0x2000,
     
-    OPT_TRACE_TLV   = 0x1000,
-    OPT_TRACE_XDR   = 0x2000,
-    OPT_TRACE_EV    = 0x4000,
-    OPT_TRACE_QUE   = 0x8000,
+    OPT_TRACE_TLV   = 0x0001_0000,
+    OPT_TRACE_XDR   = 0x0002_0000,
     
-    OPT_MULTI       = 0x10000,
+    OPT_SPLIT       = 0x0100_0000,
 };
 
 enum {
@@ -1213,13 +1213,13 @@ ERROR:
 
     switch (err) {
         case 0:
-            if (is_option(OPT_TRACE_QUE)) {
+            if (is_option(OPT_DUMP_QUE)) {
                 xw_dprint(w, "get publisher:%"PRIu64"", id);
             }
             
             break;
         case -1:
-            if (is_option(OPT_TRACE_QUE)) {
+            if (is_option(OPT_DUMP_QUE)) {
                 // xw_dprint(w, "get publisher failed(empty)");
             }
             
@@ -1248,19 +1248,19 @@ ERROR:
 
     switch (err) {
         case 0:
-            if (is_option(OPT_TRACE_QUE)) {
+            if (is_option(OPT_DUMP_QUE)) {
                 xw_dprint(w, "put publisher:%"PRIu64"", id);
             }
             
             break;
         case -1:
-            if (is_option(OPT_TRACE_QUE)) {
+            if (is_option(OPT_DUMP_QUE)) {
                 // xw_dprint(w, "put publisher:%"PRIu64" failed(full)", id);
             }
             
             break;
         case -2:
-            if (is_option(OPT_TRACE_QUE)) {
+            if (is_option(OPT_DUMP_QUE)) {
                 xw_dprint(w, "put publisher:%"PRIu64" failed(not-match %"PRIu64")", id, w->publisher);
             }
             
@@ -1287,13 +1287,13 @@ ERROR:
 
     switch (err) {
         case 0:
-            if (is_option(OPT_TRACE_QUE)) {
+            if (is_option(OPT_DUMP_QUE)) {
                 xw_dprint(w, "get worker:%d consumer:%"PRIu64"", wid, id);
             }
             
             break;
         case -1:
-            if (is_option(OPT_TRACE_QUE)) {
+            if (is_option(OPT_DUMP_QUE)) {
                 // xw_dprint(w, "get worker:%d consumer failed(empty)", wid);
             }
             

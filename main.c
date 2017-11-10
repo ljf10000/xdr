@@ -94,16 +94,16 @@ static nameflag_t opt[] = {
     { .flag = OPT_CLI,          .name = "--cli",        .help = "cli mode"},
     { .flag = OPT_IP6,          .name = "--ip6",        .help = "ipv6[not support now]"},
     { .flag = OPT_STRICT,       .name = "--strict",     .help = "strict check"},
+    { .flag = OPT_MULTI,        .name = "--multi",      .help = "multi thread"},
     { .flag = OPT_DUMP,         .name = "--dump",       .help = "dump all"},
     { .flag = OPT_DUMP_SB,      .name = "--dump-sb",    .help = "dump short binary"},
     { .flag = OPT_DUMP_PRE,     .name = "--dump-pre",   .help = "dump before check"},
     { .flag = OPT_DUMP_ST,      .name = "--dump-st",    .help = "dump statistic"},
-    { .flag = OPT_SPLIT,        .name = "--file-split", .help = "dpi file split from xdr"},
+    { .flag = OPT_DUMP_EV,      .name = "--trace-ev",   .help = "dump inotify event"},
+    { .flag = OPT_DUMP_QUE,     .name = "--trace-que",  .help = "dump queue"},
     { .flag = OPT_TRACE_TLV,    .name = "--trace-tlv",  .help = "trace tlv parse"},
     { .flag = OPT_TRACE_XDR,    .name = "--trace-xdr",  .help = "trace xdr parse"},
-    { .flag = OPT_TRACE_EV,     .name = "--trace-ev",   .help = "trace inotify event"},
-    { .flag = OPT_TRACE_QUE,    .name = "--trace-que",  .help = "trace queue"},
-    { .flag = OPT_MULTI,        .name = "--multi",      .help = "multi thread"},
+    { .flag = OPT_SPLIT,        .name = "--file-split", .help = "dpi file split from xdr"},
 };
 
 static inline void
@@ -210,7 +210,7 @@ ev_handle(int wid)
 
     for (; ev<end; ev=EVNEXT(ev)) {
         if (ev->mask & EVMASK) {
-            if (is_option(OPT_TRACE_EV)) {
+            if (is_option(OPT_DUMP_EV)) {
                 ev_trace(ev);
             }
 
