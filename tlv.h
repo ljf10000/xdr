@@ -36,11 +36,15 @@
 #endif
 
 #ifndef XDR_USLEEP
-#define XDR_USLEEP      (10*1000)
+#define XDR_USLEEP      (100*1000)
+#endif
+
+#ifndef INOTIFY_BUFSIZE 
+#define INOTIFY_BUFSIZE (1*1024*1024)
 #endif
 
 #ifndef WORKER_COUNT
-#define WORKER_COUNT    128
+#define WORKER_COUNT    32
 #endif
 
 #ifndef QUE_COUNT

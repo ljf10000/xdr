@@ -19,6 +19,10 @@ DECLARE_TLV_VARS;
 #define ENV_XDR_SLEEP       "XDR_SLEEP"
 #endif
 
+#ifndef ENV_INOTIFY_BUFSIZE
+#define ENV_INOTIFY_BUFSIZE "INOTIFY_BUFSIZE"
+#endif
+
 #define EVMASK              (IN_CLOSE_WRITE|IN_MOVED_TO)
 #define EVNEXT(_ev)         inotify_ev_next(_ev)
 #define ISXDR(_file, _len)  os_str_has_suffix(_file, _len, "." XDR_SUFFIX, sizeof("." XDR_SUFFIX)-1)
@@ -29,6 +33,7 @@ static xque_t   WorkerQue;
 static int      WorkerSleep;
 static int      WorkerCount = 1;
 static int      WrokerQueCount = 1;
+static int      InotifyBufSize;
 
 static struct {
     xpath_t path[PATH_END];
@@ -254,6 +259,13 @@ monitor(const char *watch)
         return -errno;
     }
 
+    err = setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &InotifyBufSize, sizeof(InotifyBufSize));
+    if (err<0) {
+        os_println("set inotify buffer size:%d error:%d", InotifyBufSize, -errno;);
+
+        return -errno;
+    }
+    
     err = inotify_add_watch(fd, watch, EVMASK);
     if (err<0) {
         return -errno;
@@ -407,6 +419,7 @@ static void
 init_env(void)
 {
     if (is_option(OPT_MULTI)) {
+        InotifyBufSize  = xw_envi(ENV_INOTIFY_BUFSIZE, INOTIFY_BUFSIZE);
         WorkerSleep     = xw_envi(ENV_XDR_SLEEP, XDR_USLEEP);
         WorkerCount     = xw_envi(ENV_XDR_WORKER, WORKER_COUNT);
         WrokerQueCount  = xw_envi(ENV_XDR_QUE,  QUE_COUNT);
