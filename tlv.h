@@ -140,10 +140,10 @@ enum {
     OPT_DUMP_EV     = 0x1000,
     OPT_DUMP_QUE    = 0x2000,
     
-    OPT_TRACE_TLV   = 0x0001_0000,
-    OPT_TRACE_XDR   = 0x0002_0000,
+    OPT_TRACE_TLV   = 0x00010000,
+    OPT_TRACE_XDR   = 0x00020000,
     
-    OPT_SPLIT       = 0x0100_0000,
+    OPT_SPLIT       = 0x01000000,
 };
 
 enum {
