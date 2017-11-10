@@ -102,6 +102,7 @@ static nameflag_t opt[] = {
     { .flag = OPT_TRACE_TLV,    .name = "--trace-tlv",  .help = "trace tlv parse"},
     { .flag = OPT_TRACE_XDR,    .name = "--trace-xdr",  .help = "trace xdr parse"},
     { .flag = OPT_TRACE_EV,     .name = "--trace-ev",   .help = "trace inotify event"},
+    { .flag = OPT_TRACE_QUE,    .name = "--trace-que",  .help = "trace queue"},
     { .flag = OPT_MULTI,        .name = "--multi",      .help = "multi thread"},
 };
 

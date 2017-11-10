@@ -141,6 +141,7 @@ enum {
     OPT_TRACE_TLV   = 0x1000,
     OPT_TRACE_XDR   = 0x2000,
     OPT_TRACE_EV    = 0x4000,
+    OPT_TRACE_QUE   = 0x8000,
     
     OPT_MULTI       = 0x10000,
 };
@@ -1212,10 +1213,16 @@ ERROR:
 
     switch (err) {
         case 0:
-            xw_dprint(w, "get publisher:%"PRIu64"", id);
+            if (is_option(OPT_TRACE_QUE)) {
+                xw_dprint(w, "get publisher:%"PRIu64"", id);
+            }
+            
             break;
         case -1:
-            // xw_dprint(w, "get publisher failed(empty)");
+            if (is_option(OPT_TRACE_QUE)) {
+                // xw_dprint(w, "get publisher failed(empty)");
+            }
+            
             break;
     }
 
@@ -1241,13 +1248,22 @@ ERROR:
 
     switch (err) {
         case 0:
-            xw_dprint(w, "put publisher:%"PRIu64"", id);
+            if (is_option(OPT_TRACE_QUE)) {
+                xw_dprint(w, "put publisher:%"PRIu64"", id);
+            }
+            
             break;
         case -1:
-            // xw_dprint(w, "put publisher:%"PRIu64" failed(full)", id);
+            if (is_option(OPT_TRACE_QUE)) {
+                // xw_dprint(w, "put publisher:%"PRIu64" failed(full)", id);
+            }
+            
             break;
         case -2:
-            xw_dprint(w, "put publisher:%"PRIu64" failed(not-match %"PRIu64")", id, w->publisher);
+            if (is_option(OPT_TRACE_QUE)) {
+                xw_dprint(w, "put publisher:%"PRIu64" failed(not-match %"PRIu64")", id, w->publisher);
+            }
+            
             break;
     }
     
@@ -1271,10 +1287,16 @@ ERROR:
 
     switch (err) {
         case 0:
-            xw_dprint(w, "get worker:%d consumer:%"PRIu64"", wid, id);
+            if (is_option(OPT_TRACE_QUE)) {
+                xw_dprint(w, "get worker:%d consumer:%"PRIu64"", wid, id);
+            }
+            
             break;
         case -1:
-            // xw_dprint(w, "get worker:%d consumer failed(empty)", wid);
+            if (is_option(OPT_TRACE_QUE)) {
+                // xw_dprint(w, "get worker:%d consumer failed(empty)", wid);
+            }
+            
             break;
     }
     
