@@ -1021,25 +1021,19 @@ typedef struct {
 
 struct xb {
     struct xparse *parse;
-    char *fullname;
-    int fd;
-
-    union {
-        void *header;
-        
-        struct tlv *tlv;
-        struct xdr *xdr;
-    } u;
-
+    
+    char    *fullname;
+    int     fd;
+    void            *buffer;
     xdr_size_t      size;       // include struct xdr/tlv header
 
-    struct xdr      *xdr;
-    xdr_offset_t    current;    // for xdr, init to xdr body
+    xdr_offset_t    obj;        // obj offsetof buffer
+    xdr_offset_t    current;    // pointer to obj body when obj init
 };
+
 #define XBUFFER_INITER(_fullname)   {   \
     .fullname   = _fullname,            \
     .fd         = -1,                   \
-    .current    = sizeof(struct xdr),   \
 } /* end */
 
 static inline int
@@ -1058,15 +1052,14 @@ xb_mmap(struct xb *x, bool readonly)
         }
     }
 
-    x->u.header = os_mmap(x->size, prot, flag, x->fd, 0);
-    if (NULL==x->u.header) {
+    x->buffer = os_mmap(x->size, prot, flag, x->fd, 0);
+    if (NULL==x->buffer) {
         option_dump_error("mmap %s error:%d", x->fullname, -errno);
         
         return -errno;
     }
-    x->xdr = x->u.xdr;
 
-    err = madvise(x->u.header, x->size, MADV_SEQUENTIAL);
+    err = madvise(x->buffer, x->size, MADV_SEQUENTIAL);
     if (err<0) {
         option_dump_error("madvise %s error:%d", x->fullname, -errno);
     }
@@ -1077,13 +1070,13 @@ xb_mmap(struct xb *x, bool readonly)
 static inline int
 xb_munmap(struct xb *x)
 {
-    if (x->u.header) {
+    if (x->buffer) {
         int i, err = 0;
 
-        madvise(x->u.header, x->size, MADV_DONTNEED);
+        madvise(x->buffer, x->size, MADV_DONTNEED);
         
         for (i=0; i<3; i++) {
-            err = os_munmap(x->fullname, x->u.header, x->size);
+            err = os_munmap(x->fullname, x->buffer, x->size);
             if (0==err) {
                 return 0;
             }
@@ -1423,7 +1416,7 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
     fprintf(stream,
         ", %s offset:%d" __crlf,
         parse->filename,
-        (uint32)((byte *)tlv - (byte *)parse->tlv.u.header));
+        (uint32)((byte *)tlv - (byte *)parse->tlv.buffer));
 
     fprintf(stream, __tab
             "tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%lu dlen:%lu"
@@ -1698,7 +1691,7 @@ tlv_record_parse(tlv_record_t *r)
         return 0;
     }
 
-    struct tlv *header = r->parse->tlv.u.tlv;
+    struct tlv *header = (struct tlv *)r->parse->tlv.buffer;
     
     return tlv_walk(r->parse, tlv_first(header), tlv_datalen(header), walk);
 }
