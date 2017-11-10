@@ -261,7 +261,7 @@ monitor(const char *watch)
 
     err = setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &InotifyBufSize, sizeof(InotifyBufSize));
     if (err<0) {
-        os_println("set inotify buffer size:%d error:%d", InotifyBufSize, -errno;);
+        os_println("set inotify buffer size:%d error:%d", InotifyBufSize, -errno);
 
         return -errno;
     }
