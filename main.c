@@ -217,7 +217,7 @@ ev_handle(int wid)
             if (ISXDR(ev->name, len)) {
                 err = xdr_handle(wid, ev->name, len);
                 if (err<0) {
-                    // log
+                    os_println("EVERROR:%d", err);
                 }
             } else {
                 tlv_remove(wid, ev->name, len);
