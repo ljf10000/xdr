@@ -1032,7 +1032,9 @@ struct xb {
     } u;
 
     xdr_size_t      size;       // include struct xdr/tlv header
-    xdr_offset_t    current;    // include struct xdr/tlv header
+
+    struct xdr      *xdr;
+    xdr_offset_t    current;    // for xdr, init to xdr body
 };
 #define XBUFFER_INITER(_fullname)   {   \
     .fullname   = _fullname,            \
@@ -1062,7 +1064,8 @@ xb_mmap(struct xb *x, bool readonly)
         
         return -errno;
     }
-    
+    x->xdr = x->u.xdr;
+
     err = madvise(x->u.header, x->size, MADV_SEQUENTIAL);
     if (err<0) {
         option_dump_error("madvise %s error:%d", x->fullname, -errno);
@@ -1123,7 +1126,7 @@ typedef struct {
 } xque_buffer_t; // 4096
 
 static inline inotify_ev_t *
-xq_ev_begin(xque_buffer_t *qb) 
+xp_ev_first(xque_buffer_t *qb) 
 {
     return (inotify_ev_t *)qb->buf;
 }

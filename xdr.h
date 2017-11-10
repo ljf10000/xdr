@@ -439,7 +439,7 @@ xdr_open(struct xb *x, int size)
 {
     int err = xb_open(x, false, size);
     if (0==err) {
-        xdr_init(x->u.xdr);
+        xdr_init(x->xdr);
     }
 
     return err;
@@ -448,15 +448,17 @@ xdr_open(struct xb *x, int size)
 static inline int
 xdr_close(struct xb *x)
 {
-    if (x->u.xdr) {
-        x->u.xdr->total = x->current;
-    }
-
     if (x->fd<0) {
         ftruncate(x->fd, x->current);
     }
 
     return xb_close(x);
+}
+
+static inline struct xdr *
+xdr_next(struct xdr *xdr)
+{
+    return (struct xdr *)((char *)xdr + xdr->total);
 }
 
 static inline xdr_session_t
@@ -593,7 +595,7 @@ xb_expand(struct xb *x, xdr_size_t size)
 static inline byte *
 xb_obj(struct xb *x, xdr_offset_t offset)
 {
-    return XDR_OBJ(x->u.xdr, offset);
+    return XDR_OBJ(x->xdr, offset);
 }
 
 static inline void *
@@ -760,7 +762,7 @@ xb_file_handle(struct xb *x, struct tlv *tlv, xdr_file_t *file)
         return err;
     }
 
-    x->u.xdr->flag |= tlv_ops_flag(tlv) & TLV_F_FILE;
+    x->xdr->flag |= tlv_ops_flag(tlv) & TLV_F_FILE;
 
     return 0;
 }
@@ -866,7 +868,7 @@ xb_pre_ssl(struct xb *x)
     return xb_pre_L6(x, xdr_ssl_t);
 }
 
-#define to_xdr_by(_x, _tlv, _field, _nt)    ({(_x)->u.xdr->_field = tlv_##_nt(_tlv); 0; })
+#define to_xdr_by(_x, _tlv, _field, _nt)    ({(_x)->xdr->_field = tlv_##_nt(_tlv); 0; })
 #define to_xdr_obj(_x, _tlv, _obj)          ({  \
     tlv_##_obj##_t *__src = tlv_##_obj(_tlv);   \
     xdr_##_obj##_t *__dst = xb_pre_##_obj(_x);  \
@@ -905,7 +907,7 @@ to_xdr_session(struct xb *x, struct tlv *tlv)
         dst->sip = XDR_IP(&src->sip);
         dst->dip = XDR_IP(&src->dip);
 
-        x->u.xdr->bkdr = xdr_session_bkdr(dst);
+        x->xdr->bkdr = xdr_session_bkdr(dst);
     } else {
         xdr_session6_t *dst = xb_pre_session6(x);
         if (NULL==dst) {
@@ -914,10 +916,10 @@ to_xdr_session(struct xb *x, struct tlv *tlv)
         
         os_objcpy(dst, src);
         
-        x->u.xdr->bkdr = xdr_session_bkdr(dst);
+        x->xdr->bkdr = xdr_session_bkdr(dst);
     }
     
-    x->u.xdr->ip_version = src->ver;
+    x->xdr->ip_version = src->ver;
     
     return 0;
 }
@@ -939,9 +941,9 @@ to_xdr_session_time(struct xb *x, struct tlv *tlv)
 {
     tlv_session_time_t *tm = tlv_session_time(tlv);
     
-    x->u.xdr->session_time_create = tm->create;
-    x->u.xdr->session_time_start  = tm->start;
-    x->u.xdr->session_time_stop   = tm->stop;
+    x->xdr->session_time_create = tm->create;
+    x->xdr->session_time_start  = tm->start;
+    x->xdr->session_time_stop   = tm->stop;
 
     return 0;
 }
@@ -961,7 +963,7 @@ to_xdr_first_response_delay(struct xb *x, struct tlv *tlv)
 static inline int
 to_xdr_L7(struct xb *x, struct tlv *tlv)
 {
-    os_objcpy(&x->u.xdr->L7, tlv_L7(tlv));
+    os_objcpy(&x->xdr->L7, tlv_L7(tlv));
     
     return 0;
 }
@@ -1307,7 +1309,7 @@ to_xdr_file_content(struct xb *x, struct tlv *tlv)
     if (NULL==file) {
         return -ENOMEM;
     }
-    x->u.xdr->offsetof_file_content = xb_offset(x, file);
+    x->xdr->offsetof_file_content = xb_offset(x, file);
     
     x->parse->st_file_content->ok++;
     
@@ -1466,6 +1468,7 @@ to_xdr_helper(tlv_cache_t *cache, struct xb *x)
 static inline int
 to_xdr(tlv_record_t *r, struct xb *x)
 {
+    struct xdr *xdr = x->xdr;
     tlv_cache_t *cache;
     int i, err;
 
@@ -1491,7 +1494,7 @@ to_xdr(tlv_record_t *r, struct xb *x)
         }
     }
     
-    xdr_ssl_t *ssl = xdr_ssl(x->u.xdr);
+    xdr_ssl_t *ssl = xdr_ssl(xdr);
     if (ssl) {
         err = tlv_trace(to_xdr_ssl(r, x, xb_offset(x, ssl)), r->parse->wid, "to_xdr_ssl");
         if (err<0) {
@@ -1499,19 +1502,21 @@ to_xdr(tlv_record_t *r, struct xb *x)
         }
     }
 
-    xdr_dns_t *dns = xdr_dns(x->u.xdr);
+    xdr_dns_t *dns = xdr_dns(xdr);
     if (dns) {
         err = tlv_trace(to_xdr_dns(r, x, xb_offset(x, dns)), r->parse->wid, "to_xdr_ssl");
         if (err<0) {
             return err;
         }
     }
+
+    xdr->total = x->current - xb_offset(x, xdr); x->xdr = xdr_next(xdr);
     
     return 0;
 }
 
 static inline int
-xp_run(struct xparse *parse)
+xp_parse(struct xparse *parse)
 {
     int walk(struct xparse *parse, struct tlv *header)
     {
@@ -1541,6 +1546,14 @@ xp_run(struct xparse *parse)
     }
 
     return tlv_walk(parse, parse->tlv.u.tlv, parse->tlv.size, walk);
+}
+
+typedef int xdr_walk_t(struct xdr *xdr);
+
+static inline int
+xdr_walk(struct xdr *xdr, uint32 left, xdr_walk_t *walk)
+{
+    return 0;
 }
 /******************************************************************************/
 #endif /* __XDR_H_049defbc41a4441e855ee0479dad96eb__ */

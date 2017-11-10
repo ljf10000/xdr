@@ -166,7 +166,7 @@ xdr_handle(int wid, char *filename, int namelen)
         goto ERROR;
     }
 
-    err = xdr_trace(xp_run(&parse), wid, "xp_run");
+    err = xdr_trace(xp_parse(&parse), wid, "xp_parse");
     if (err<0) {
         goto ERROR;
     }
@@ -202,7 +202,7 @@ ev_handle(int wid)
 {
     uint64 id = get_consumer(wid);
     xque_buffer_t *qb = get_qb(id);
-    inotify_ev_t *ev  = xq_ev_begin(qb);
+    inotify_ev_t *ev  = xp_ev_first(qb);
     inotify_ev_t *end = xq_ev_end(qb);
     int len, err, count = 0;
 
