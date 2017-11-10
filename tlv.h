@@ -166,6 +166,18 @@ enum {
     TLV_F_FILE              = TLV_F_FILE_CONTENT|TLV_F_HTTP|TLV_F_CERT,
 };
 
+static inline const char *
+tlv_flag_to_dir(int flag)
+{
+    static nameflag_t opt[] = {
+        { .flag = TLV_F_FILE_CONTENT,   .name = "file" },
+        { .flag = TLV_F_HTTP,           .name = "http" },
+        { .flag = TLV_F_CERT,           .name = "cert" },
+    };
+
+    return get_nameflag_byflag(opt, flag);
+}
+
 #if 1
 #define TLV_T_MAPPER(_)         \
     _(TLV_T,    u8,         0)  \
@@ -988,6 +1000,20 @@ xpath_fill(xpath_t *path, char *filename, int namelen)
     os_strmcpy(path->filename, filename, namelen);
     
     path->suffix = path->filename + namelen - (sizeof(ERR_SUFFIX) - 1);
+    
+    return path->fullname;
+}
+
+static inline char *
+xpath_fill_sha(xpath_t *path, const char *dir, char *sha)
+{
+    char *p = path->filename;
+    int len = strlen(dir);
+
+    // push dir
+    memcpy(p, dir, len); p += len; *p++ = '/';
+    // push sha
+    memcpy(p, sha, 2*XDR_DIGEST_SIZE); p[2*XDR_DIGEST_SIZE] = 0;
     
     return path->fullname;
 }

@@ -738,36 +738,10 @@ xb_pre_binary_ex(struct xb *x, xdr_binary_t *obj, struct tlv *tlv)
     return xb_pre_binnary(x, xb_obj_offset(x, obj), tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
 }
 
-static inline const char *
-getdirbyflag(int flag)
-{
-    static nameflag_t opt[] = {
-        { .flag = TLV_F_FILE_CONTENT,   .name = "file" },
-        { .flag = TLV_F_HTTP,           .name = "http" },
-        { .flag = TLV_F_CERT,           .name = "cert" },
-    };
-
-    return get_nameflag_byflag(opt, flag);
-}
-
-static inline char *
-getshafilename(xpath_t *path, const char *dir, char *sha)
-{
-    char *p = path->filename;
-    int len = strlen(dir);
-
-    // push dir
-    memcpy(p, dir, len); p += len; *p++ = '/';
-    // push sha
-    memcpy(p, sha, 2*XDR_DIGEST_SIZE); p[2*XDR_DIGEST_SIZE] = 0;
-    
-    return path->fullname;
-}
-
 static inline int
 xb_fexport_bybuffer(struct xb *x, struct tlv *tlv, xdr_file_t *file)
 {
-    const char *dir = getdirbyflag(tlv_ops_flag(tlv));
+    const char *dir = tlv_flag_to_dir(tlv_ops_flag(tlv));
     if (NULL==dir) {
         return -ENOSUPPORT;
     }
@@ -783,7 +757,7 @@ xb_fexport_bybuffer(struct xb *x, struct tlv *tlv, xdr_file_t *file)
     os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
     
     xpath_t *path = xp_path(x->parse, PATH_SHA);
-    char *filename = getshafilename(path, dir, digest);
+    char *filename = xpath_fill_sha(path, dir, digest);
     
     if (os_fexist(filename)) {
         return 0;
