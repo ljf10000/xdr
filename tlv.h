@@ -78,7 +78,7 @@ xw_trace(int wid, const char *fmt, ...)
 #endif
 
 #ifndef XDR_USLEEP
-#define XDR_USLEEP      1000
+#define XDR_USLEEP      (100*1000)
 #endif
 
 #ifndef WORKER_COUNT
@@ -1049,7 +1049,7 @@ xb_mmap(struct xb *x, bool readonly)
     if (!readonly) {
         err = ftruncate(x->fd, x->size);
         if (err<0) {
-            os_println("ftruncate %s size:%d error:%d ...", x->fullname, x->size, -errno);
+            os_println("ftruncate %s size:%d error:%d", x->fullname, x->size, -errno);
         
             return -errno;
         }
@@ -1057,11 +1057,16 @@ xb_mmap(struct xb *x, bool readonly)
 
     x->u.header = os_mmap(x->size, prot, flag, x->fd, 0);
     if (NULL==x->u.header) {
-        os_println("mmap %s error:%d ...", x->fullname, -errno);
+        os_println("mmap %s error:%d", x->fullname, -errno);
         
         return -errno;
     }
-
+    
+    err = madvise(x->u.header, x->size, MADV_SEQUENTIAL);
+    if (err<0) {
+        os_println("madvise %s error:%d", x->fullname, -errno);
+    }
+    
     return 0;
 }
 
@@ -1071,6 +1076,8 @@ xb_munmap(struct xb *x)
     if (x->u.header) {
         int i, err = 0;
 
+        madvise(x->u.header, x->size, MADV_DONTNEED);
+        
         for (i=0; i<3; i++) {
             err = os_munmap(x->fullname, x->u.header, x->size);
             if (0==err) {
