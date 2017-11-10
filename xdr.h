@@ -751,9 +751,9 @@ xb_file_handle(struct xb *x, struct tlv *tlv, xdr_file_t *file)
     int err;
     
     if (is_option(OPT_SPLIT)) {
-        err = xb_file_handle_bypath(x, file, tlv);
+        err = xb_file_handle_bypath(x, tlv, file);
     } else {
-        err = xb_file_handle_bybuffer(x, file, tlv, x->u.header, x->size);
+        err = xb_file_handle_bybuffer(x, tlv, file, x->u.header, x->size);
     }
 
     if (err<0) {
