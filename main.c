@@ -218,6 +218,8 @@ ev_handle(int wid)
                 err = xdr_handle(wid, ev->name, len);
                 if (err<0) {
                     os_println("ev_handle error:%d", err);
+                } else {
+                    os_println("ev_handle ok");
                 }
             } else {
                 tlv_remove(wid, ev->name, len);
