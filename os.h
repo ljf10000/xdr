@@ -628,6 +628,48 @@ is_option_args(char *args)
         && args[2];
 }
 
+#define OS_VAR(_name)       __the_os_##_name##_sb_var
+#define OS_VAR_MAPPER(_)    \
+    _(int,      option)     \
+    _(int,      levle)      \
+    _(time_t,   time)       \
+    _(uint32,   seq)        \
+    /* end */
+
+#define __DECLARE_VARS(_type, _name)    _type OS_VAR(_name);
+#define __EXTERN_VARS(_type, _name)     extern __DECLARE_VARS(_type, _name)
+
+#define DECLARE_OS_VARS                 OS_VAR_MAPPER(__DECLARE_VARS)   os_fake_declare
+#define  EXTERN_OS_VARS                 OS_VAR_MAPPER(__EXTERN_VARS)    os_fake_declare
+
+EXTERN_OS_VARS;
+
+static inline void
+set_option(int flag)
+{
+    OS_VAR(option) |= flag;
+}
+
+static inline void
+clr_option(int flag)
+{
+    OS_VAR(option) &= ~flag;
+}
+
+static inline bool
+is_option(int flag)
+{
+    return flag==(flag & OS_VAR(option));
+}
+
+#define option_analysis(_opt, _cmd)         nameflag_analysis(_opt, _cmd)
+
+#define option_dump(_opt, _fmt, _args...)   do{ \
+    if (is_option(_opt)) {                      \
+        os_println(_fmt, ##_args);              \
+    }                                           \
+}while(0)
+
 #define os_fstat(_file, _st)    stat(_file, _st)
 
 static inline int
@@ -968,42 +1010,6 @@ inotify_ev_len(inotify_ev_t *ev)
 
     return p - ev->name + 1;
 }
-
-#define OS_VAR(_name)       __the_os_##_name##_sb_var
-#define OS_VAR_MAPPER(_)    \
-    _(int,      option)     \
-    _(int,      levle)      \
-    _(time_t,   time)       \
-    _(uint32,   seq)        \
-    /* end */
-
-#define __DECLARE_VARS(_type, _name)    _type OS_VAR(_name);
-#define __EXTERN_VARS(_type, _name)     extern __DECLARE_VARS(_type, _name)
-
-#define DECLARE_OS_VARS                 OS_VAR_MAPPER(__DECLARE_VARS)   os_fake_declare
-#define  EXTERN_OS_VARS                 OS_VAR_MAPPER(__EXTERN_VARS)    os_fake_declare
-
-EXTERN_OS_VARS;
-
-static inline void
-set_option(int flag)
-{
-    OS_VAR(option) |= flag;
-}
-
-static inline void
-clr_option(int flag)
-{
-    OS_VAR(option) &= ~flag;
-}
-
-static inline bool
-is_option(int flag)
-{
-    return flag==(flag & OS_VAR(option));
-}
-
-#define option_analysis(_opt, _args)    nameflag_analysis(_opt, _args)
 
 typedef struct {
     const char *name;

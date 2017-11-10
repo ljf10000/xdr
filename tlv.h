@@ -139,12 +139,17 @@ enum {
     OPT_DUMP_ST     = 0x0800,
     OPT_DUMP_EV     = 0x1000,
     OPT_DUMP_QUE    = 0x2000,
+    OPT_DUMP_ERR    = 0x4000,
+    OPT_DUMP_INIT   = 0x8000,
     
     OPT_TRACE_TLV   = 0x00010000,
     OPT_TRACE_XDR   = 0x00020000,
     
     OPT_SPLIT       = 0x01000000,
 };
+
+#define option_dump_error(_fmt, _args...)   option_dump(OPT_DUMP_ERR,   _fmt, ##_args)
+#define option_dump_init(_fmt, _args...)    option_dump(OPT_DUMP_INIT,  _fmt, ##_args)
 
 enum {
     TLV_F_MULTI             = 0x1000,
@@ -1045,7 +1050,7 @@ xb_mmap(struct xb *x, bool readonly)
     if (!readonly) {
         err = ftruncate(x->fd, x->size);
         if (err<0) {
-            os_println("ftruncate %s size:%d error:%d", x->fullname, x->size, -errno);
+            option_dump_error("ftruncate %s size:%d error:%d", x->fullname, x->size, -errno);
         
             return -errno;
         }
@@ -1053,14 +1058,14 @@ xb_mmap(struct xb *x, bool readonly)
 
     x->u.header = os_mmap(x->size, prot, flag, x->fd, 0);
     if (NULL==x->u.header) {
-        os_println("mmap %s error:%d", x->fullname, -errno);
+        option_dump_error("mmap %s error:%d", x->fullname, -errno);
         
         return -errno;
     }
     
     err = madvise(x->u.header, x->size, MADV_SEQUENTIAL);
     if (err<0) {
-        os_println("madvise %s error:%d", x->fullname, -errno);
+        option_dump_error("madvise %s error:%d", x->fullname, -errno);
     }
     
     return 0;
@@ -1102,7 +1107,7 @@ xb_open(struct xb *x, bool readonly, int size)
 
     x->fd = open(x->fullname, flag|O_CLOEXEC, 0664);
     if (x->fd<0) {
-        os_println("open %s error:%d ...", x->fullname, -errno);
+        option_dump_error("open %s error:%d ...", x->fullname, -errno);
         
         return -errno;
     }
@@ -1124,8 +1129,6 @@ typedef struct {
 #endif
 
 typedef struct {
-    int wid;
-    
     uint64 publisher;
     uint64 consumer;
     
@@ -1140,89 +1143,86 @@ typedef struct {
 #endif
 
 static inline void
-xw_lock(xque_t *w)
+xq_lock(xque_t *q)
 {
-    pthread_mutex_lock(&w->mutex);
+    pthread_mutex_lock(&q->mutex);
 }
 
 static inline void
-xw_unlock(xque_t *w)
+xq_unlock(xque_t *q)
 {
-    pthread_mutex_unlock(&w->mutex);
+    pthread_mutex_unlock(&q->mutex);
 }
 
 static inline xque_buffer_t *
-xw_qb(xque_t *w, uint64 id)
+xq_entry(xque_t *q, uint64 id)
 {
-    uint64 ID = id % w->qcount;
+    uint64 ID = id % q->qcount;
     
-    if (ID>=w->qcount) {
+    if (ID>=q->qcount) {
         os_assert(0);
-        os_println("invalid ID:%"PRIu64":%"PRIu64"", id, ID);
+        option_dump_error("invalid ID:%"PRIu64":%"PRIu64"", id, ID);
         
         return NULL;
     } else {
-        return w->qb + ID;
+        return q->qb + ID;
     }
 }
 
 static inline uint64
-xw_qcount(xque_t *w)
+xq_count(xque_t *q)
 {
-    if (w->publisher >= w->consumer) {
-        return w->publisher - w->consumer;
+    if (q->publisher >= q->consumer) {
+        return q->publisher - q->consumer;
     } else {
         return INVALID_WORKER_ID;
     }
 }
 
 static inline bool
-xw_is_full(xque_t *w)
+is_xq_full(xque_t *q)
 {
-    return xw_qcount(w)==w->qcount;
+    return xq_count(q)==q->qcount;
 }
 
 static inline bool
-xw_is_empty(xque_t *w)
+is_xq_empty(xque_t *q)
 {
-    return w->publisher==w->consumer;
+    return q->publisher==q->consumer;
 }
 
 #if 0
-#define xw_dprint(_w, _fmt, _args...) os_do_nothing()
+#define xq_dump(_w, _fmt, _args...) os_do_nothing()
 #else
-#define xw_dprint(_w, _fmt, _args...) \
-    os_println("[publisher:%"PRIu64" consumer:%"PRIu64" count:%"PRIu64"]" __tab _fmt, \
-        (_w)->publisher, (_w)->consumer, xw_qcount(_w), ##_args)
+#define xq_dump(_q, _fmt, _args...) do{ \
+    if (is_option(OPT_DUMP_QUE)) {      \
+        os_println("[publisher:%"PRIu64" consumer:%"PRIu64" count:%"PRIu64"]" __tab _fmt, \
+            (_q)->publisher, (_q)->consumer, xq_count(_q), ##_args); \
+    }                                   \
+}while(0)
 #endif
 
 static inline uint64
-xw_get_publisher(xque_t *w)
+xq_get_publisher(xque_t *q)
 {
     int err = 0;
     uint64 id = INVALID_WORKER_ID;
     
-    xw_lock(w);
-    if (xw_is_full(w)) {
+    xq_lock(q);
+    if (is_xq_full(q)) {
         err = -1; goto ERROR;
     }
 
-    id = w->publisher;
+    id = q->publisher;
 ERROR:
-    xw_unlock(w);
+    xq_unlock(q);
 
     switch (err) {
         case 0:
-            if (is_option(OPT_DUMP_QUE)) {
-                xw_dprint(w, "get publisher:%"PRIu64"", id);
-            }
-            
+            xq_dump(q, "get publisher:%"PRIu64"", id);
             break;
         case -1:
-            if (is_option(OPT_DUMP_QUE)) {
-                // xw_dprint(w, "get publisher failed(empty)");
-            }
-            
+            // xq_dump(q, "get publisher failed(empty)");            
             break;
     }
 
@@ -1230,40 +1230,31 @@ ERROR:
 }
 
 static inline int
-xw_put_publisher(xque_t *w, uint64 id)
+xq_put_publisher(xque_t *q, uint64 id)
 {
     int err = 0;
     
-    xw_lock(w);
-    if (xw_is_full(w)) {
+    xq_lock(q);
+    if (is_xq_full(q)) {
         err = -1; os_assert(0); goto ERROR;
     }
-    else if (w->publisher != id) {
+    else if (q->publisher != id) {
         err = -2; os_assert(0); goto ERROR;
     }
 
-    w->publisher++;
+    q->publisher++;
 ERROR:
-    xw_unlock(w);
+    xq_unlock(q);
 
     switch (err) {
         case 0:
-            if (is_option(OPT_DUMP_QUE)) {
-                xw_dprint(w, "put publisher:%"PRIu64"", id);
-            }
-            
+            xq_dump(q, "put publisher:%"PRIu64"", id);
             break;
         case -1:
-            if (is_option(OPT_DUMP_QUE)) {
-                // xw_dprint(w, "put publisher:%"PRIu64" failed(full)", id);
-            }
-            
+            // xq_dump(q, "put publisher:%"PRIu64" failed(full)", id);
             break;
         case -2:
-            if (is_option(OPT_DUMP_QUE)) {
-                xw_dprint(w, "put publisher:%"PRIu64" failed(not-match %"PRIu64")", id, w->publisher);
-            }
-            
+            xq_dump(q, "put publisher:%"PRIu64" failed(not-match %"PRIu64")", id, q->publisher);
             break;
     }
     
@@ -1271,32 +1262,26 @@ ERROR:
 }
 
 static inline uint64
-xw_get_consumer(xque_t *w, int wid)
+xq_get_consumer(xque_t *q, int wid)
 {
     int err = 0;
     uint64 id = INVALID_WORKER_ID;
    
-    xw_lock(w);
-    if (xw_is_empty(w)) {
+    xq_lock(q);
+    if (is_xq_empty(q)) {
         err = -1; goto ERROR;
     }
 
-    id = w->consumer++;
+    id = q->consumer++;
 ERROR:
-    xw_unlock(w);
+    xq_unlock(q);
 
     switch (err) {
         case 0:
-            if (is_option(OPT_DUMP_QUE)) {
-                xw_dprint(w, "get worker:%d consumer:%"PRIu64"", wid, id);
-            }
-            
+            xq_dump(q, "get worker:%d consumer:%"PRIu64"", wid, id);
             break;
         case -1:
-            if (is_option(OPT_DUMP_QUE)) {
-                // xw_dprint(w, "get worker:%d consumer failed(empty)", wid);
-            }
-            
+            // xq_dump(q, "get worker:%d consumer failed(empty)", wid);
             break;
     }
     
@@ -1398,7 +1383,7 @@ xp_open(struct xparse *parse)
     
     size = os_fsize(tlv->fullname);
     if (size<0) {
-        os_println("get size %s error:%d", tlv->fullname, size);
+        option_dump_error("get size %s error:%d", tlv->fullname, size);
         
         return size;
     }
@@ -1456,7 +1441,7 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         }
         
         if (NULL==parse->ferr) {
-            os_println("open %s error", path->fullname);
+            option_dump_error("open %s error", path->fullname);
         } else {
             // write to err
             va_start(args, fmt);

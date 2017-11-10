@@ -48,7 +48,7 @@ get_publisher(void)
     if (is_option(OPT_MULTI)) {
         uint64 id;
         
-        while(INVALID_WORKER_ID==(id = xw_get_publisher(&WorkerQue))) {
+        while(INVALID_WORKER_ID==(id = xq_get_publisher(&WorkerQue))) {
             usleep(WorkerSleep);
         }
 
@@ -62,7 +62,7 @@ static inline int
 put_publisher(uint64 id)
 {
     if (is_option(OPT_MULTI)) {
-        return xw_put_publisher(&WorkerQue, id);
+        return xq_put_publisher(&WorkerQue, id);
     } else {
         return 0;
     }
@@ -74,7 +74,7 @@ get_consumer(int wid)
     if (is_option(OPT_MULTI)) {
         uint64 id;
         
-        while(INVALID_WORKER_ID==(id = xw_get_consumer(&WorkerQue, wid))) {
+        while(INVALID_WORKER_ID==(id = xq_get_consumer(&WorkerQue, wid))) {
             usleep(WorkerSleep);
         }
 
@@ -87,7 +87,7 @@ get_consumer(int wid)
 static inline xque_buffer_t *
 get_qb(uint64 id)
 {
-    return xw_qb(&WorkerQue, id);
+    return xq_entry(&WorkerQue, id);
 }
 
 static nameflag_t opt[] = {
@@ -101,20 +101,22 @@ static nameflag_t opt[] = {
     { .flag = OPT_DUMP_ST,      .name = "--dump-st",    .help = "dump statistic"},
     { .flag = OPT_DUMP_EV,      .name = "--dump-ev",    .help = "dump inotify event"},
     { .flag = OPT_DUMP_QUE,     .name = "--dump-que",   .help = "dump queue"},
+    { .flag = OPT_DUMP_ERR,     .name = "--dump-error", .help = "dump error"},
+    { .flag = OPT_DUMP_INIT,    .name = "--dump-init",  .help = "dump init"},
     { .flag = OPT_TRACE_TLV,    .name = "--trace-tlv",  .help = "trace tlv parse"},
     { .flag = OPT_TRACE_XDR,    .name = "--trace-xdr",  .help = "trace xdr parse"},
     { .flag = OPT_SPLIT,        .name = "--file-split", .help = "dpi file split from xdr"},
 };
 
 static inline void
-ev_trace(inotify_ev_t *ev)
+ev_dump(inotify_ev_t *ev)
 {
     if (ev->mask & IN_CLOSE_WRITE) {
-        os_println("event close write file:%s", ev->name);
+        option_dump(OPT_DUMP_EV, "event close write file:%s", ev->name);
     }
 
     if (ev->mask & IN_MOVED_TO) {
-        os_println("event move to file:%s", ev->name);
+        option_dump(OPT_DUMP_EV, "event move to file:%s", ev->name);
     }
 }
 
@@ -129,28 +131,26 @@ usage(void)
 static void
 statistic(struct xparse *parse, int wid)
 {
-    if (is_option(OPT_DUMP_ST)) {
-        os_printf(
-            "worker:%d "
-            "tlv %"PRIu64":%"PRIu64", "
-            "xdr %"PRIu64":%"PRIu64", "
-            "raw %"PRIu64":%"PRIu64", "
-            "file %"PRIu64", "
-            "ssls %"PRIu64", "
-            "sslc %"PRIu64", "
-            "request %"PRIu64", "
-            "response %"PRIu64""
-            __crlf, 
-            wid,
-            parse->st_tlv->ok, parse->st_tlv->error,
-            parse->st_xdr->ok, parse->st_xdr->error,
-            parse->st_raw->ok, parse->st_raw->error,
-            parse->st_file_content->ok,
-            parse->st_ssl_server->ok,
-            parse->st_ssl_client->ok,
-            parse->st_http_request->ok,
-            parse->st_http_response->ok);
-    }
+    option_dump(OPT_DUMP_ST,
+        "worker:%d "
+        "tlv %"PRIu64":%"PRIu64", "
+        "xdr %"PRIu64":%"PRIu64", "
+        "raw %"PRIu64":%"PRIu64", "
+        "file %"PRIu64", "
+        "ssls %"PRIu64", "
+        "sslc %"PRIu64", "
+        "request %"PRIu64", "
+        "response %"PRIu64""
+        __crlf, 
+        wid,
+        parse->st_tlv->ok, parse->st_tlv->error,
+        parse->st_xdr->ok, parse->st_xdr->error,
+        parse->st_raw->ok, parse->st_raw->error,
+        parse->st_file_content->ok,
+        parse->st_ssl_server->ok,
+        parse->st_ssl_client->ok,
+        parse->st_http_request->ok,
+        parse->st_http_response->ok);
 }
 
 static int
@@ -194,7 +194,7 @@ tlv_remove(int wid, char *filename, int namelen)
     
     remove(fullname);
     
-    os_println("worker:%d remove %s", wid, fullname);
+    option_dump(OPT_DUMP_EV, "worker:%d remove %s", wid, fullname);
     
     return 0;
 }
@@ -210,9 +210,7 @@ ev_handle(int wid)
 
     for (; ev<end; ev=EVNEXT(ev)) {
         if (ev->mask & EVMASK) {
-            if (is_option(OPT_DUMP_EV)) {
-                ev_trace(ev);
-            }
+            ev_dump(ev);
 
             len = inotify_ev_len(ev);
             if (ISXDR(ev->name, len)) {
@@ -235,7 +233,7 @@ worker(void *args)
 {
     int wid = (int)(uint32)(uint64)args;
 
-    os_println("start worker:%d", wid);
+    option_dump_init("start worker:%d", wid);
 
     while(1) {
         ev_handle(wid);
@@ -253,11 +251,15 @@ monitor(const char *watch)
 
     fd = inotify_init1(IN_CLOEXEC);
     if (fd<0) {
+        option_dump_error("create inotify error:%d", -errno);
+        
         return -errno;
     }
 
     err = inotify_add_watch(fd, watch, EVMASK);
     if (err<0) {
+        option_dump_error("inotify watch %s error:%d", watch, -errno);
+        
         return -errno;
     }
 
@@ -267,7 +269,7 @@ monitor(const char *watch)
         
         qb->len = read(fd, qb->buf, EVBUFSIZE);
         if (qb->len == -1 && errno != EAGAIN) {
-            os_println("master read error:%d", -errno);
+            option_dump_error("inotify read error:%d", -errno);
             
             return -errno;
         }
@@ -289,7 +291,7 @@ cli(void)
 {
     char *filename = env_gets(ENV_XDR_FILE, NULL);
     if (NULL==filename) {
-        os_println("not found env TLV_FILE");
+        option_dump_error("not found env TLV_FILE");
 
         return -EBADENV;
     }
@@ -335,7 +337,7 @@ init_trace(int wid)
 
         Worker[wid].trace = fopen(filename, "w+");
         if (NULL==Worker[wid].trace) {
-            os_println("open trace file %s error", filename);
+            option_dump_error("open trace file %s error", filename);
             
             return -EBADF;
         }
@@ -413,9 +415,9 @@ init_env(void)
         WorkerCount     = xw_envi(ENV_XDR_WORKER, WORKER_COUNT);
         WrokerQueCount  = xw_envi(ENV_XDR_QUE,  QUE_COUNT);
 
-        os_println("worker sleep %d",       WorkerSleep);
-        os_println("worker count %d",       WorkerCount);
-        os_println("worker queue count %d", WrokerQueCount);
+        option_dump_init("worker sleep %d",       WorkerSleep);
+        option_dump_init("worker count %d",       WorkerCount);
+        option_dump_init("worker queue count %d", WrokerQueCount);
     }
 }
 
