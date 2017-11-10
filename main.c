@@ -208,7 +208,7 @@ ev_handle(int wid)
 
     for (; ev<end; ev=inotify_ev_next(ev), count++) {
         if (ev->mask & EVMASK) {
-            ev_dump(ev);
+            // ev_dump(ev);
 
             len = inotify_ev_len(ev);
             if (ISXDR(ev->name, len)) {
