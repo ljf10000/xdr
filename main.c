@@ -206,9 +206,9 @@ ev_handle(int wid)
     xque_buffer_t *qb = get_qb(id);
     inotify_ev_t *ev  = (inotify_ev_t *)(qb->buf);
     inotify_ev_t *end = (inotify_ev_t *)(qb->buf + qb->len);
-    int len, err;
+    int len, err, count = 0;
 
-    for (; ev<end; ev=EVNEXT(ev)) {
+    for (; ev<end; ev=EVNEXT(ev), count++) {
         if (ev->mask & EVMASK) {
             ev_dump(ev);
 
@@ -224,6 +224,8 @@ ev_handle(int wid)
         }
     }
 
+    option_dump(OPT_DUMP_EV, "event include file:%d", count);
+    
     return 0;
 }
 
