@@ -23,10 +23,6 @@
 #define ERR_SUFFIX      "err"
 #endif
 
-#ifndef OK_SUFFIX
-#define OK_SUFFIX       "ok\x00"
-#endif
-
 #ifndef XDR_VERSION
 #define XDR_VERSION     0
 #endif
@@ -37,10 +33,6 @@
 
 #ifndef XDR_USLEEP
 #define XDR_USLEEP      (100*1000)
-#endif
-
-#ifndef INOTIFY_BUFSIZE 
-#define INOTIFY_BUFSIZE (1*1024*1024)
 #endif
 
 #ifndef WORKER_COUNT
