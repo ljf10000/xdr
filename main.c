@@ -20,7 +20,6 @@ DECLARE_TLV_VARS;
 #endif
 
 #define EVMASK              (IN_CLOSE_WRITE|IN_MOVED_TO)
-#define EVNEXT(_ev)         inotify_ev_next(_ev)
 #define ISXDR(_file, _len)  os_str_has_suffix(_file, _len, "." XDR_SUFFIX, sizeof("." XDR_SUFFIX)-1)
 
 static char *self;
@@ -204,11 +203,11 @@ ev_handle(int wid)
 {
     uint64 id = get_consumer(wid);
     xque_buffer_t *qb = get_qb(id);
-    inotify_ev_t *ev  = (inotify_ev_t *)(qb->buf);
-    inotify_ev_t *end = (inotify_ev_t *)(qb->buf + qb->len);
+    inotify_ev_t *ev  = xq_ev_begin(qb);
+    inotify_ev_t *end = xq_ev_end(qb);
     int len, err, count = 0;
 
-    for (; ev<end; ev=EVNEXT(ev), count++) {
+    for (; ev<end; ev=inotify_ev_next(ev), count++) {
         if (ev->mask & EVMASK) {
             ev_dump(ev);
 

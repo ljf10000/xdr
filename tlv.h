@@ -1124,6 +1124,18 @@ typedef struct {
     int len;
 } xque_buffer_t; // 8704 + 4 = 8708
 
+static inline inotify_ev_t *
+xq_ev_begin(xque_buffer_t *qb) 
+{
+    return (inotify_ev_t *)qb->buf;
+}
+
+static inline inotify_ev_t *
+xq_ev_end(xque_buffer_t *qb) 
+{
+    return (inotify_ev_t *)(qb->buf + qb->len);
+}
+
 #ifndef XB_STCOUNT
 #define XB_STCOUNT  8
 #endif
