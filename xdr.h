@@ -411,7 +411,7 @@ struct xdr {
     xdr_offset_t offsetof_session_st;
     xdr_offset_t offsetof_service_st;
     xdr_offset_t offsetof_alert;
-    xdr_offset_t offsetof_file_content;
+    xdr_offset_t offsetof_file_content; // xdr_file_t
 
     xdr_offset_t offsetof_L4; // tcp
     xdr_offset_t offsetof_L5; // http/sip/rtsp/ftp/mail/dns
@@ -701,7 +701,7 @@ getshafilename(xpath_t *path, const char *dir, char *sha)
 }
 
 static inline int
-xb_pre_file_bybuffer(struct xb *x, xdr_file_t *file, struct tlv *tlv)
+xb_file_handle_bybuffer(struct xb *x, struct tlv *tlv, xdr_file_t *file)
 {
     const char *dir = getdirbyflag(tlv_ops_flag(tlv));
     if (NULL==dir) {
@@ -730,7 +730,7 @@ xb_pre_file_bybuffer(struct xb *x, xdr_file_t *file, struct tlv *tlv)
 }
 
 static inline int
-xb_pre_file_bypath(struct xb *x, xdr_file_t *file, struct tlv *tlv)
+xb_file_handle_bypath(struct xb *x, struct tlv *tlv, xdr_file_t *file)
 {
     char fullname[1+OS_FILENAME_LEN];
     
@@ -746,14 +746,14 @@ xb_pre_file_bypath(struct xb *x, xdr_file_t *file, struct tlv *tlv)
 }
 
 static inline int
-xb_pre_file(struct xb *x, xdr_file_t *file, struct tlv *tlv)
+xb_file_handle(struct xb *x, struct tlv *tlv, xdr_file_t *file)
 {
     int err;
     
     if (is_option(OPT_SPLIT)) {
-        err = xb_pre_file_bypath(x, file, tlv);
+        err = xb_file_handle_bypath(x, file, tlv);
     } else {
-        err = xb_pre_file_bybuffer(x, file, tlv);
+        err = xb_file_handle_bybuffer(x, file, tlv);
     }
 
     if (err<0) {
@@ -766,14 +766,14 @@ xb_pre_file(struct xb *x, xdr_file_t *file, struct tlv *tlv)
 }
 
 static inline xdr_file_t *
-xb_pre_file_ex(struct xb *x, struct tlv *tlv)
+xb_pre_file(struct xb *x, struct tlv *tlv)
 {
     xdr_file_t *file = (xdr_file_t *)xb_pre(x, sizeof(xdr_file_t));
     if (NULL==file) {
         return NULL;
     }
 
-    int err = xb_pre_file(x, file, tlv);
+    int err = xb_file_handle(x, tlv, file);
     if (err<0) {
         return NULL;
     }
@@ -1275,12 +1275,12 @@ to_xdr_dns_delay(struct xb *x, struct tlv *tlv)
 static inline int
 to_xdr_http_request(struct xb *x, struct tlv *tlv)
 {
-    xdr_file_t *file = xb_pre_file_ex(x, tlv);
+    xdr_file_t *file = xb_pre_file(x, tlv);
     if (NULL==file) {
         return -ENOMEM;
     }
-    
     xb_pre_http(x)->offsetof_request = xb_offset(x, file);
+    
     x->parse->st_http_request->ok++;
     
     return 0;
@@ -1289,12 +1289,12 @@ to_xdr_http_request(struct xb *x, struct tlv *tlv)
 static inline int
 to_xdr_http_response(struct xb *x, struct tlv *tlv)
 {
-    xdr_file_t *file = xb_pre_file_ex(x, tlv);
+    xdr_file_t *file = xb_pre_file(x, tlv);
     if (NULL==file) {
         return -ENOMEM;
     }
-    
     xb_pre_http(x)->offsetof_response = xb_offset(x, file);
+    
     x->parse->st_http_response->ok++;
     
     return 0;
@@ -1303,12 +1303,12 @@ to_xdr_http_response(struct xb *x, struct tlv *tlv)
 static inline int
 to_xdr_file_content(struct xb *x, struct tlv *tlv)
 {
-    xdr_file_t *file = xb_pre_file_ex(x, tlv);
+    xdr_file_t *file = xb_pre_file(x, tlv);
     if (NULL==file) {
         return -ENOMEM;
     }
-    
     x->u.xdr->offsetof_file_content = xb_offset(x, file);
+    
     x->parse->st_file_content->ok++;
     
     return 0;
@@ -1398,7 +1398,7 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_offset_t offset, int id)
     for (i=0; i<count; i++) {
         cert = (xdr_cert_t *)xdr_array_entry(array, i);
 
-        err = xb_pre_file(x, &cert->file, cache->multi[i]);
+        err = xb_file_handle(x, cache->multi[i], &cert->file);
         if (err<0) {
             return err;
         }
