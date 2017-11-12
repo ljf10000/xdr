@@ -177,6 +177,10 @@
 
 #define NO_ALIGN                __attribute__ ((aligned (1)))
 
+#ifndef OS_CACHELINE
+#define OS_CACHELINE            64
+#endif
+
 #ifndef OS_IFNAME_LEN
 #define OS_IFNAME_LEN           (16 - 1)
 #endif

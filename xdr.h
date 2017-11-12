@@ -52,7 +52,7 @@ typedef struct {
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 |                                             size                                              |
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-|                     count                     |                     type                      |
+|                     count                     |         type          |           _           |
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 |                                             body...
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
@@ -69,9 +69,9 @@ typedef struct {
 } xdr_array_t;
 
 static inline byte *
-xdr_array_entry(xdr_array_t *array, int idx)
+xdr_array_get(xdr_array_t *array, int idx)
 {
-    return array->entry + (array->size * idx);
+    return array->entry + idx * XDR_ALIGN(array->size);
 }
 
 #if 0
@@ -1405,7 +1405,7 @@ to_xdr_dns(tlv_record_t *r, struct xb *x, xdr_offset_t offset)
     for (i=0; i<count; i++) {
         struct tlv *tlv = cache->multi[i];
 
-        memcpy(xdr_array_entry(array, i), tlv_data(tlv), size);
+        memcpy(xdr_array_get(array, i), tlv_data(tlv), size);
     }
 
     return 0;
@@ -1427,7 +1427,7 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_offset_t offset, int id)
     }
     
     for (i=0; i<count; i++) {
-        xdr_cert_t *cert = (xdr_cert_t *)xdr_array_entry(array, i);
+        xdr_cert_t *cert = (xdr_cert_t *)xdr_array_get(array, i);
 
         err = xb_fexport(x, cache->multi[i], &cert->file);
         if (err<0) {
