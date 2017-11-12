@@ -289,7 +289,7 @@ extern tlv_ops_t __tlv_ops[];
 static inline tlv_ops_t *
 tlv_ops(struct tlv *tlv) 
 {
-    return is_good_tlv_id(tlv->id)?&__tlv_ops[tlv->id]:NULL;
+    return is_good_tlv_id(tlv->id) ? &__tlv_ops[tlv->id] : NULL;
 }
 
 #define tlv_ops_field(_tlv, _field, _deft)  ({  \
@@ -478,7 +478,7 @@ tlv_dump_session_st(FILE *stream, struct tlv *tlv)
     TLV_DUMP(stream, "id: %d, %s:", tlv->id, tlv_ops_name(tlv));
 
     for (i=0; i<2; i++) {
-        char c = (0==i)?'u':'d';
+        char c = (0==i) ? 'u' : 'd';
         
         TLV_DUMP2(stream, "[%c]flow            : %d", c, obj->flow[i]);
         TLV_DUMP2(stream, "[%c]ip_packet       : %d", c, obj->ip_packet[i]);
@@ -1068,7 +1068,7 @@ xb_mmap(struct xb *x, bool readonly)
     int prot = readonly?PROT_READ:(PROT_READ|PROT_WRITE);
     int flag = readonly?MAP_PRIVATE:MAP_SHARED;
     int err;
-    
+
     if (!readonly) {
         err = ftruncate(x->fd, x->size);
         if (err<0) {
@@ -1099,8 +1099,6 @@ xb_munmap(struct xb *x)
     if (x->buffer) {
         int i, err = 0;
 
-        madvise(x->buffer, x->size, MADV_DONTNEED);
-        
         for (i=0; i<3; i++) {
             err = os_munmap(x->fullname, x->buffer, x->size);
             if (0==err) {
@@ -1118,6 +1116,8 @@ static inline int
 xb_close(struct xb *x)
 {
     os_close(x->fd);
+
+    madvise(x->buffer, x->size, MADV_DONTNEED);;
     
     return xb_munmap(x);
 }

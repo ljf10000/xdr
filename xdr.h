@@ -62,8 +62,9 @@ typedef struct {
     xdr_size_t size;
 
     uint16 count;
-    uint16 type;    // XDR_ARRAY_END
-
+    uint8 type;    // XDR_ARRAY_END
+    uint8 _;
+    
     byte entry[0];
 } xdr_array_t;
 
@@ -615,7 +616,7 @@ xb_offset(struct xb *x, void *pointer)
 static inline xdr_size_t
 xb_left(struct xb *x)
 {
-    return (x->size > x->current)?(x->size - x->current):0;
+    return (x->size > x->current) ? (x->size - x->current) : 0;
 }
 
 static inline bool
@@ -643,9 +644,12 @@ xb_expand(struct xb *x, xdr_size_t size)
         int err;
         
         err = tlv_trace(xb_munmap(x), x->parse->wid, "xb_munmap");
-        
+        if (err<0) {
+            return err;
+        }
+
         x->size += XDR_EXPAND_ALIGN(size);
-        
+
         err = tlv_trace(xb_mmap(x, false), x->parse->wid, "xb_mmap");
         if (err<0) {
             return err;
@@ -658,20 +662,28 @@ xb_expand(struct xb *x, xdr_size_t size)
 static inline void *
 xb_pre(struct xb *x, xdr_size_t size)
 {
-    return (0==xb_expand(x, size))?xb_put(x, size):NULL;
+    return 0==xb_expand(x, size) ? xb_put(x, size) : NULL;
 }
 
-static inline void *
-xb_pre_obj(struct xb *x, xdr_size_t size, xdr_offset_t offset)
-{
-    if (offset) {
-        // is valid offset, just get the obj
-        return xb_obj_obj(x, offset);
-    } else {
-        // is invalid offset, alloc it
-        return xb_pre(x, size);
-    }
-}
+#define xb_pre_obj(_x, _type, _offset)  ({  \
+    (_type *)m_obj;                         \
+    typeof(_offset) m_offset = _offset;     \
+                                            \
+    if (m_offset) {                         \
+        m_obj = xb_obj_obj(_x, m_offset);   \
+    } else {                                \
+        m_obj = xb_pre(_x, sizeof(_type));  \
+        if (m_obj) {                        \
+            /* must _offset, not m_offset */\
+            _offset = xb_obj_offset(_x, m_obj); \
+        }                                   \
+    }                                       \
+                                            \
+    m_obj;                                  \
+})  /* end */
+
+#define xb_xdr_obj(_x, _type, _offsetof)    (_type *)xb_pre_obj(_x, _type, xb_xdr(_x)->_offsetof)
+#define XB_PRE(_x, _name)                   xb_xdr_obj(_x, xdr_##_name##_t, offsetof_##_name)
 
 static inline xdr_array_t *
 xb_pre_array(struct xb *x, xdr_offset_t offset, int type, xdr_size_t size, int count)
@@ -693,7 +705,7 @@ xb_pre_array(struct xb *x, xdr_offset_t offset, int type, xdr_size_t size, int c
 static inline xdr_string_t *
 xb_pre_string(struct xb *x, xdr_offset_t offset, void *buf, xdr_size_t size)
 {
-    void *p = xb_pre(x, XDR_ALIGN(1+size));
+    void *p = xb_pre(x, XDR_ALIGN(size));
     if (NULL==p) {
         return NULL;
     }
@@ -709,7 +721,7 @@ xb_pre_string(struct xb *x, xdr_offset_t offset, void *buf, xdr_size_t size)
 static inline int
 xb_pre_string_ex(struct xb *x, xdr_string_t *obj, struct tlv *tlv)
 {
-    return xb_pre_string(x, xb_obj_offset(x, obj), tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
+    return xb_pre_string(x, xb_obj_offset(x, obj), tlv_data(tlv), tlv_datalen(tlv)) ? 0 : -ENOMEM;
 }
 
 static inline xdr_binary_t *
@@ -813,16 +825,6 @@ xb_pre_file(struct xb *x, struct tlv *tlv)
 
     return file;
 }
-
-#define XB_PREBY(_x, _type, _offsetof)  ({  \
-    (_type *)m_obj = xb_pre_obj(_x, sizeof(_type), xb_xdr(_x)->_offsetof); \
-    if (m_obj) {                            \
-        xb_xdr(_x)->_offsetof = xb_obj_offset(_x, m_obj); \
-    }                                       \
-                                            \
-    m_obj;                                  \
-})
-#define XB_PRE(_x, _name)   XB_PREBY(_x, xdr_##_name##_t, offsetof_##_name)
 
 static inline xdr_session4_t *
 xb_pre_session4(struct xb *x)

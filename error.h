@@ -258,13 +258,13 @@ enum {
 static inline int
 shell_error(int err)
 {
-    return (err<0)?-err:err;
+    return (err<0) ? -err : err;
 }
 
 static inline int
 native_error(int err)
 {
-    return (err>0)?-err:err;
+    return (err>0) ? -err : err;
 }
 /******************************************************************************/
 #endif /* __ERRNO_H_6960dfed91a54253a91018ecc68f8048__ */
