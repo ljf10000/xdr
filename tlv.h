@@ -198,10 +198,6 @@ tlv_flag_to_dir(int flag)
     /* end */
 DECLARE_ENUM(TLV_T, tlv_type, TLV_T_MAPPER, TLV_T_END);
 
-static inline bool is_good_tlv_type(int id);
-static inline char *tlv_type_getnamebyid(int id);
-static inline int tlv_type_getidbyname(const char *name);
-
 #define TLV_T_u8        TLV_T_u8
 #define TLV_T_u16       TLV_T_u16
 #define TLV_T_string    TLV_T_string
@@ -1336,10 +1332,7 @@ ERROR:
     /* end */
 DECLARE_ENUM(XST, xst, XST_ENUM_MAPPER, XST_END);
 
-static inline enum_ops_t *xst_ops(void);
-static inline bool is_good_xst(int id);
 static inline char *xst_getnamebyid(int id);
-static inline int xst_getidbyname(const char *name);
 
 #define XST_tlv         XST_tlv
 #define XST_xdr         XST_xdr

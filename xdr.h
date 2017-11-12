@@ -12,10 +12,6 @@
     /* end */
 DECLARE_ENUM(XDR_ARRAY, xdr_array, XDR_ARRAY_MAPPER, XDR_ARRAY_END);
 
-static inline bool is_good_xdr_array(int id);
-static inline char *xdr_array_getnamebyid(int id);
-static inline int xdr_array_getidbyname(const char *name);
-
 #define XDR_ARRAY_string    XDR_ARRAY_string
 #define XDR_ARRAY_ip4       XDR_ARRAY_ip4
 #define XDR_ARRAY_ip6       XDR_ARRAY_ip6
@@ -754,7 +750,7 @@ xb_fexport_bybuffer(struct xb *x, struct tlv *tlv, xdr_file_t *file)
     file->size = len;
     
     char digest[1+2*XDR_DIGEST_SIZE] = {0};
-    os_bin2hex(digest, sizeof(digest)-1, file->digest, sizeof(file->digest));
+    os_bin2hex(digest, 2*XDR_DIGEST_SIZE, file->digest, sizeof(file->digest));
     
     xpath_t *path = xp_path(x->parse, PATH_SHA);
     char *filename = xpath_fill_sha(path, dir, digest);
@@ -762,7 +758,6 @@ xb_fexport_bybuffer(struct xb *x, struct tlv *tlv, xdr_file_t *file)
     if (os_fexist(filename)) {
         return 0;
     } else {
-        
         return os_mmap_w_async(filename, buf, len);
     }
 }

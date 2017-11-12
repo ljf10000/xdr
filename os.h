@@ -769,7 +769,8 @@ os_mmap_w(const char *file, void *buf, int len, bool sync)
     
     memcpy(mem, buf, len);
     msync(mem, len, sync?MS_SYNC:MS_ASYNC);
-
+    madvise(mem, len, MADV_DONTNEED);
+    
 ERROR:
     if (err<0) {
         os_println("%s %s error:%d", action, file, -errno);
