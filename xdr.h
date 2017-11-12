@@ -1316,7 +1316,7 @@ to_xdr_http_request(struct xb *x, struct tlv *tlv)
     }
     xb_pre_http(x)->offsetof_request = xb_obj_offset(x, file);
     
-    x->parse->st_http_request->ok++;
+    x->parse->st[XST_frequest].ok++;
     
     return 0;
 }
@@ -1330,7 +1330,7 @@ to_xdr_http_response(struct xb *x, struct tlv *tlv)
     }
     xb_pre_http(x)->offsetof_response = xb_obj_offset(x, file);
     
-    x->parse->st_http_response->ok++;
+    x->parse->st[XST_fresponse].ok++;
     
     return 0;
 }
@@ -1344,7 +1344,7 @@ to_xdr_file_content(struct xb *x, struct tlv *tlv)
     }
     xb_xdr(x)->offsetof_file_content = xb_obj_offset(x, file);
     
-    x->parse->st_file_content->ok++;
+    x->parse->st[XST_fcontent].ok++;
     
     return 0;
 }
@@ -1440,10 +1440,10 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_offset_t offset, int id)
 
     switch (id) {
         case tlv_id_ssl_server_cert:
-            x->parse->st_ssl_server->ok += count;
+            x->parse->st[XST_ssls].ok += count;
             break;
         case tlv_id_ssl_client_cert:
-            x->parse->st_ssl_client->ok += count;
+            x->parse->st[XST_sslc].ok += count;
             break;
     }
 
@@ -1596,18 +1596,18 @@ xp_parse(struct xparse *parse)
 
         err = xdr_trace(tlv_record_parse(&r), parse->wid, "tlv_record_parse:%d", parse->count);
         if (err<0) {
-            parse->st_xdr->error++;
+            parse->st[XST_xdr].error++;
             return err;
         }
 
         err = xdr_trace(to_xdr(&r, &parse->xdr), parse->wid, "to_xdr:%d", parse->count);
         if (err<0) {
-            parse->st_xdr->error++;
+            parse->st[XST_xdr].error++;
             return err;
         }
 
         parse->count++;
-        parse->st_xdr->ok++;
+        parse->st[XST_xdr].ok++;
 
         xdr_dprint(parse->wid, "xp_run_walk ok");
         

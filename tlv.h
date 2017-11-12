@@ -70,15 +70,18 @@ typedef uint64 tlv_u64_t;
 typedef uint64 xdr_duration_t,  tlv_duration_t;
 typedef uint64 xdr_time_t,      tlv_time_t;
 #define XDR_SECOND(_us)         ((time_t)((_us)/1000000))
-extern FILE *xw_stream(int wid);
+
+typedef FILE *xw_stream_t(int /* wid */);
+
+extern xw_stream_t *xw_stream;
 
 static inline void
 xw_trace(int wid, const char *fmt, ...)
 {
     va_list args;
-    FILE *f = xw_stream(wid);
+    FILE *f;
 
-    if (f) {
+    if (xw_stream && (f = (*xw_stream)(wid))) {
         va_start(args, fmt);
         vfprintf(f, fmt, args);
         va_end(args);
@@ -87,8 +90,8 @@ xw_trace(int wid, const char *fmt, ...)
     }
 }
 
-#define tlv_dprint(_wid, _fmt, _args...)      do{if (is_option(OPT_TRACE_TLV)) { xw_trace(_wid, _fmt __crlf, ##_args); }}while(0)
-#define xdr_dprint(_wid, _fmt, _args...)      do{if (is_option(OPT_TRACE_XDR)) { xw_trace(_wid, _fmt __crlf, ##_args); }}while(0)
+#define tlv_dprint(_wid, _fmt, _args...)    do{if (is_option(OPT_TRACE_TLV)) { xw_trace(_wid, _fmt __crlf, ##_args); }}while(0)
+#define xdr_dprint(_wid, _fmt, _args...)    do{if (is_option(OPT_TRACE_XDR)) { xw_trace(_wid, _fmt __crlf, ##_args); }}while(0)
 
 #ifndef xw_trace_by
 #define xw_trace_by(_call, _wid, _is_trace, _fmt, _args...) ({  \
@@ -109,8 +112,8 @@ xw_trace(int wid, const char *fmt, ...)
 })  /* end */
 #endif
 
-#define tlv_trace(_call, _wid, _fmt, _args...)    xw_trace_by(_call, _wid, is_option(OPT_TRACE_TLV), _fmt, ##_args)
-#define xdr_trace(_call, _wid, _fmt, _args...)    xw_trace_by(_call, _wid, is_option(OPT_TRACE_XDR), _fmt, ##_args)
+#define tlv_trace(_call, _wid, _fmt, _args...)  xw_trace_by(_call, _wid, is_option(OPT_TRACE_TLV), _fmt, ##_args)
+#define xdr_trace(_call, _wid, _fmt, _args...)  xw_trace_by(_call, _wid, is_option(OPT_TRACE_XDR), _fmt, ##_args)
 
 typedef uint32 xdr_ip4_t, tlv_ip4_t;
 typedef struct {
@@ -336,7 +339,7 @@ tlv_dump_u32(FILE *stream, struct tlv *tlv)
 static inline void
 tlv_dump_u64(FILE *stream, struct tlv *tlv)
 {
-    TLV_DUMP_BY(stream, tlv, "%"PRIu64"", u64); 
+    TLV_DUMP_BY(stream, tlv, "%"PRIu64, u64); 
 }
 
 static inline void
@@ -1156,10 +1159,6 @@ xq_ev_end(xque_buffer_t *qb)
     return (inotify_ev_t *)(qb->buf + qb->len);
 }
 
-#ifndef XB_STCOUNT
-#define XB_STCOUNT  8
-#endif
-
 typedef struct {
     uint64 publisher;
     uint64 consumer;
@@ -1193,7 +1192,7 @@ xq_entry(xque_t *q, uint64 id)
     
     if (ID>=q->qcount) {
         os_assert(0);
-        option_dump_error("invalid ID:%"PRIu64":%"PRIu64"", id, ID);
+        option_dump_error("invalid ID:%"PRIu64":%"PRIu64, id, ID);
         
         return NULL;
     } else {
@@ -1223,16 +1222,19 @@ is_xq_empty(xque_t *q)
     return q->publisher==q->consumer;
 }
 
-#if 0
-#define xq_dump(_w, _fmt, _args...) os_do_nothing()
-#else
 #define xq_dump(_q, _fmt, _args...) do{ \
     if (is_option(OPT_DUMP_QUE)) {      \
-        os_println("[publisher:%"PRIu64" consumer:%"PRIu64" count:%"PRIu64"]" __tab _fmt, \
-            (_q)->publisher, (_q)->consumer, xq_count(_q), ##_args); \
+        os_println("["                  \
+            "publisher:%"PRIu64         \
+            " consumer:%"PRIu64         \
+            " count:%"PRIu64            \
+            "]" __tab _fmt,             \
+            (_q)->publisher,            \
+            (_q)->consumer,             \
+            xq_count(_q),               \
+            ##_args);                   \
     }                                   \
 }while(0)
-#endif
 
 static inline uint64
 xq_get_publisher(xque_t *q)
@@ -1251,7 +1253,7 @@ ERROR:
 
     switch (err) {
         case 0:
-            xq_dump(q, "get publisher:%"PRIu64"", id);
+            xq_dump(q, "get publisher:%"PRIu64, id);
             break;
         case -1:
             // xq_dump(q, "get publisher failed(empty)");            
@@ -1280,7 +1282,7 @@ ERROR:
 
     switch (err) {
         case 0:
-            xq_dump(q, "put publisher:%"PRIu64"", id);
+            xq_dump(q, "put publisher:%"PRIu64, id);
             break;
         case -1:
             // xq_dump(q, "put publisher:%"PRIu64" failed(full)", id);
@@ -1310,7 +1312,7 @@ ERROR:
 
     switch (err) {
         case 0:
-            xq_dump(q, "get worker:%d consumer:%"PRIu64"", wid, id);
+            xq_dump(q, "get worker:%d consumer:%"PRIu64, wid, id);
             break;
         case -1:
             // xq_dump(q, "get worker:%d consumer failed(empty)", wid);
@@ -1320,21 +1322,43 @@ ERROR:
     return id;
 }
 
+#if 1
+#define XST_ENUM_MAPPER(_)  \
+    _(XST, tlv,         0) \
+    _(XST, xdr,         1) \
+    _(XST, raw,         2) \
+    _(XST, frequest,    3) \
+    _(XST, fresponse,   4) \
+    _(XST, fcontent,    5) \
+    _(XST, ssls,        6) \
+    _(XST, sslc,        7) \
+    /* end */
+DECLARE_ENUM(XST, xst, XST_ENUM_MAPPER, XST_END);
+
+static inline enum_ops_t *xst_ops(void);
+static inline bool is_good_xst(int id);
+static inline char *xst_getnamebyid(int id);
+static inline int xst_getidbyname(const char *name);
+
+#define XST_tlv         XST_tlv
+#define XST_xdr         XST_xdr
+#define XST_raw         XST_raw
+#define XST_frequest    XST_frequest
+#define XST_fresponse   XST_fresponse
+#define XST_fcontent    XST_fcontent
+#define XST_ssls        XST_ssls
+#define XST_sslc        XST_sslc
+#define XST_END         XST_END
+#endif
+
 struct xparse {
     FILE *ferr;     // bad file
     char *filename; // just filename, not include path
     int namelen;    // just filename, not include path
     int wid;
     
-    xpath_t *path;  // xpath_t path[PATH_END];
-    xst_t   *st_tlv;
-    xst_t   *st_xdr;
-    xst_t   *st_raw;
-    xst_t   *st_http_request;
-    xst_t   *st_http_response;
-    xst_t   *st_file_content;
-    xst_t   *st_ssl_server;
-    xst_t   *st_ssl_client;
+    xpath_t *path;  // xpath_t  path[PATH_END];
+    xst_t   *st;    // xst_t    st[XST_END];
     
     int count;      // tlv count
     struct xb tlv;
@@ -1346,14 +1370,7 @@ struct xparse {
     .filename       = _filename,    \
     .namelen        = _namelen,     \
     .path           = _path,        \
-    .st_tlv         = &(_st)[0],    \
-    .st_xdr         = &(_st)[1],    \
-    .st_raw         = &(_st)[2],    \
-    .st_http_request    = &(_st)[3],\
-    .st_http_response   = &(_st)[4],\
-    .st_file_content    = &(_st)[5],\
-    .st_ssl_server      = &(_st)[6],\
-    .st_ssl_client      = &(_st)[7],\
+    .st             = _st,          \
     .tlv            = XBUFFER_INITER((_path)[PATH_TLV].fullname),   \
     .xdr            = XBUFFER_INITER((_path)[PATH_XDR].fullname),   \
 }   /* end */

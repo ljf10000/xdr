@@ -445,7 +445,6 @@
 #if 0
 /*
 * ENUM: c enum macro
-*
 */
 #define XXX_ENUM_MAPPER(_)  \
     _(MOD, NAME_A, VALUE_A) \

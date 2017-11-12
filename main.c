@@ -31,14 +31,16 @@ static int      WrokerQueCount = 1;
 
 static struct {
     xpath_t path[PATH_END];
-    xst_t   st[XB_STCOUNT];
+    xst_t   st[XST_END];
     FILE    *trace;
 } Worker[WORKER_COUNT];
 
-FILE *xw_stream(int wid)
+FILE *WorkerStream(int wid)
 {
     return Worker[wid].trace;
 }
+
+xw_stream_t *xw_stream = WorkerStream;
 
 static inline uint64
 get_publisher(void)
@@ -129,26 +131,17 @@ usage(void)
 static void
 statistic(struct xparse *parse, int wid)
 {
-    option_dump(OPT_DUMP_ST,
-        "worker:%d "
-        "tlv %"PRIu64":%"PRIu64", "
-        "xdr %"PRIu64":%"PRIu64", "
-        "raw %"PRIu64":%"PRIu64", "
-        "file %"PRIu64", "
-        "ssls %"PRIu64", "
-        "sslc %"PRIu64", "
-        "request %"PRIu64", "
-        "response %"PRIu64""
-        __crlf, 
-        wid,
-        parse->st_tlv->ok, parse->st_tlv->error,
-        parse->st_xdr->ok, parse->st_xdr->error,
-        parse->st_raw->ok, parse->st_raw->error,
-        parse->st_file_content->ok,
-        parse->st_ssl_server->ok,
-        parse->st_ssl_client->ok,
-        parse->st_http_request->ok,
-        parse->st_http_response->ok);
+    if (is_option(OPT_DUMP_ST)) {
+        xpath_t *st = parse->st;
+        int i;
+        
+        os_printf("worker:%d", wid);
+        for (i=0; i<XST_END; i++) {
+            os_printf(" %s %"PRIu64":%"PRIu64, 
+                xst_getnamebyid(i), st[i].ok, st[i].error);
+        }
+        os_printf(__crlf __crlf);
+    }
 }
 
 static int
@@ -161,7 +154,7 @@ xdr_handle(int wid, char *filename, int namelen)
     
     xp_init(&parse);
 
-    err = xdr_trace(xp_open(&parse), wid, "xp_open");
+    err = tlv_trace(xp_open(&parse), wid, "xp_open");
     if (err<0) {
         goto ERROR;
     }
@@ -172,7 +165,7 @@ xdr_handle(int wid, char *filename, int namelen)
     }
 
 ERROR:
-    xdr_trace(xp_close(&parse), wid, "xp_close");
+    tlv_trace(xp_close(&parse), wid, "xp_close");
     if (err<0) {
         parse.st_raw->error++;
     } else {
