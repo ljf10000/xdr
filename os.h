@@ -175,8 +175,6 @@
 	    ((_type *)((char *)(_ptr) - offsetof(_type, _member)))
 #endif
 
-#define NO_ALIGN                __attribute__ ((aligned (1)))
-
 #ifndef OS_CACHELINE
 #define OS_CACHELINE            64
 #endif
@@ -343,6 +341,18 @@
 #define OS_ALIGN(_x, _align)        (((_x)+(_align)-1) & ~((_align)-1))
 #endif
 #define OS_FORMAT_SIZE(_fmt)        OS_ALIGN(sizeof(_fmt), 4)
+
+#ifndef OS_ALIGNED
+#define OS_ALIGNED(_align)          __attribute__ ((aligned (_align)))
+#endif
+
+#ifndef NO_ALIGN
+#define NO_ALIGN                    OS_ALIGNED(1)
+#endif
+
+#ifndef OS_CACHEALIGN
+#define OS_CACHEALIGN               OS_ALIGNED(OS_CACHEALIGN)
+#endif
 
 #ifndef os_objscpy
 #define os_objscpy(_dst, _src)      memcpy(_dst, _src, sizeof(*(_src)))

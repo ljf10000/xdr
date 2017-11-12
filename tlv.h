@@ -1140,8 +1140,8 @@ xb_open(struct xb *x, bool readonly, int size)
 }
 
 typedef struct {
-    byte    buf[EVBUFSIZE];
     int32   len;
+    byte    buf[EVBUFSIZE];
 } xque_buffer_t; // 4096
 
 static inline inotify_ev_t *
@@ -1157,10 +1157,9 @@ xq_ev_end(xque_buffer_t *qb)
 }
 
 typedef struct {
-    // todo: cache line align
-    pthread_mutex_t mutex;
-    uint64 publisher;
-    uint64 consumer;
+    pthread_mutex_t mutex   OS_CACHEALIGN;
+    uint64 publisher        OS_CACHEALIGN;
+    uint64 consumer         OS_CACHEALIGN;
 
     uint64 qcount;
     xque_buffer_t *qb;  // 8K * 4K = 32M
