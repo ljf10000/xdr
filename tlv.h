@@ -1157,13 +1157,13 @@ xq_ev_end(xque_buffer_t *qb)
 }
 
 typedef struct {
-    pthread_mutex_t mutex   OS_CACHEALIGN;
-    uint64 publisher        OS_CACHEALIGN;
-    uint64 consumer         OS_CACHEALIGN;
-
+    uint64 publisher;
+    uint64 consumer;
+    
+    pthread_mutex_t mutex;
     uint64 qcount;
     xque_buffer_t *qb;  // 8K * 4K = 32M
-} xque_t;
+} xque_t OS_CACHEALIGN;
 
 #ifndef INVALID_WORKER_ID
 #define INVALID_WORKER_ID   ((uint64)(-1))

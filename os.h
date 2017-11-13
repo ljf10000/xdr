@@ -175,8 +175,29 @@
 	    ((_type *)((char *)(_ptr) - offsetof(_type, _member)))
 #endif
 
+#ifndef os_count_of
+#define os_count_of(x)              (sizeof(x)/sizeof((x)[0]))
+#endif
+
+#ifndef OS_ALIGN
+#define OS_ALIGN(_x, _align)        (((_x)+(_align)-1) & ~((_align)-1))
+#endif
+#define OS_FORMAT_SIZE(_fmt)        OS_ALIGN(sizeof(_fmt), 4)
+
+#ifndef OS_ALIGNED
+#define OS_ALIGNED(_align)          __attribute__ ((aligned (_align)))
+#endif
+
+#ifndef NO_ALIGN
+#define NO_ALIGN                    OS_ALIGNED(1)
+#endif
+
 #ifndef OS_CACHELINE
-#define OS_CACHELINE            64
+#define OS_CACHELINE                64
+#endif
+
+#ifndef OS_CACHEALIGN
+#define OS_CACHEALIGN               OS_ALIGNED(OS_CACHELINE)
 #endif
 
 #ifndef OS_IFNAME_LEN
@@ -331,27 +352,6 @@
 
 #ifndef os_objzero
 #define os_objzero(_obj)            os_memzero(_obj, sizeof(*(_obj)))
-#endif
-
-#ifndef os_count_of
-#define os_count_of(x)              (sizeof(x)/sizeof((x)[0]))
-#endif
-
-#ifndef OS_ALIGN
-#define OS_ALIGN(_x, _align)        (((_x)+(_align)-1) & ~((_align)-1))
-#endif
-#define OS_FORMAT_SIZE(_fmt)        OS_ALIGN(sizeof(_fmt), 4)
-
-#ifndef OS_ALIGNED
-#define OS_ALIGNED(_align)          __attribute__ ((aligned (_align)))
-#endif
-
-#ifndef NO_ALIGN
-#define NO_ALIGN                    OS_ALIGNED(1)
-#endif
-
-#ifndef OS_CACHEALIGN
-#define OS_CACHEALIGN               OS_ALIGNED(OS_CACHEALIGN)
 #endif
 
 #ifndef os_objscpy
