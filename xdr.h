@@ -898,7 +898,7 @@ xb_pre_ssl(struct xb *x)
     return XB_PRE(x, ssl);
 }
 
-#define to_xdr_by(_x, _tlv, _field, _nt)    ({(_x)->xdr->_field = tlv_##_nt(_tlv); 0; })
+#define to_xdr_by(_x, _tlv, _field, _nt)    ({xb_xdr(_x)->_field = tlv_##_nt(_tlv); 0; })
 #define to_xdr_obj(_x, _tlv, _obj)          ({  \
     tlv_##_obj##_t *__src = tlv_##_obj(_tlv);   \
     xdr_##_obj##_t *__dst = xb_pre_##_obj(_x);  \
