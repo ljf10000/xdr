@@ -1518,7 +1518,7 @@ to_xdr_helper(tlv_cache_t *cache, struct xb *x)
     return 0;
 }
 
-static inline void
+static inline int
 to_xdr_next(struct xb *x)
 {
     xdr_size_t total = x->current - x->obj;
@@ -1529,7 +1529,7 @@ to_xdr_next(struct xb *x)
     x->obj = x->current;
 
     // x->current ==> the next xdr's body
-    xb_pre(x, sizeof(struct xdr));
+    return xb_pre(x, sizeof(struct xdr))?0:-ENOMEM;
 }
 
 static inline int
@@ -1561,9 +1561,7 @@ to_xdr(tlv_record_t *r, struct xb *x)
     }
 
     // must last
-    to_xdr_next(x);
-    
-    return 0;
+    return to_xdr_next(x);
 }
 
 static inline int
