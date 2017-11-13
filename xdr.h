@@ -502,7 +502,7 @@ xdr_walk(struct xdr *xdr, uint32 left, xdr_walk_t *walk)
             return -ETOOSMALL;
         }
 
-        err = (*walk)(tlv);
+        err = (*walk)(xdr);
         if (err<0) {
             return err;
         }
@@ -590,27 +590,9 @@ xdr_L7(struct xdr *xdr)
 }
 
 static inline void *
-xb_obj_obj(struct xb *x, xdr_offset_t offset)
-{
-    return xb_obj(x, x->obj + offset);
-}
-
-static inline xdr_offset_t
-xb_obj_offset(struct xb *x, void *pointer)
-{
-    return xb_offset(x, pointer) - x->obj;
-}
-
-static inline void *
 xb_current(struct xb *x)
 {
     return xb_obj(x, x->current);
-}
-
-static inline xdr_offset_t
-xb_offset(struct xb *x, void *pointer)
-{
-    return (xdr_offset_t)(pointer - x->buffer);
 }
 
 static inline xdr_size_t
@@ -623,6 +605,24 @@ static inline bool
 xb_enought(struct xb *x, xdr_size_t size)
 {
     return xb_left(x) >= XDR_ALIGN(size);
+}
+
+static inline xdr_offset_t
+xb_offset(struct xb *x, void *pointer)
+{
+    return (xdr_offset_t)(pointer - x->buffer);
+}
+
+static inline xdr_offset_t
+xb_obj_offset(struct xb *x, void *pointer)
+{
+    return xb_offset(x, pointer) - x->obj;
+}
+
+static inline void *
+xb_obj_obj(struct xb *x, xdr_offset_t offset)
+{
+    return xb_obj(x, x->obj + offset);
 }
 
 static inline void *
