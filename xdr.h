@@ -561,6 +561,12 @@ xdr_L7(struct xdr *xdr)
     return &xdr->L7;
 }
 
+static inline void
+xdr_dump_L7(struct xdr *xdr)
+{
+
+}
+
 static inline void *
 xb_current(struct xb *x)
 {
@@ -1590,5 +1596,6 @@ xp_parse(struct xparse *parse)
 
     return tlv_walk(parse, (struct tlv *)parse->tlv.buffer, parse->tlv.size, walk);
 }
+
 /******************************************************************************/
 #endif /* __XDR_H_049defbc41a4441e855ee0479dad96eb__ */

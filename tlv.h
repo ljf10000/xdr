@@ -424,12 +424,8 @@ typedef struct {
 enum { XDR_SESSION_HSIZE = sizeof(tlv_session_t) - 2*sizeof(xdr_ipaddr_t) };
 
 static inline void 
-tlv_dump_session(FILE *stream, struct tlv *tlv)
+dump_session(FILE *stream, tlv_session_t *obj)
 {
-    tlv_session_t *obj = tlv_session(tlv);
-
-    TLV_DUMP(stream, "id: %d, session:", tlv->id);
-    
     TLV_DUMP2(stream, "version: %d", obj->ver);
     TLV_DUMP2(stream, "dir    : %d", obj->dir);
     TLV_DUMP2(stream, "proto  : %d", obj->proto);
@@ -451,6 +447,14 @@ tlv_dump_session(FILE *stream, struct tlv *tlv)
     }
 }
 
+static inline void 
+tlv_dump_session(FILE *stream, struct tlv *tlv)
+{
+    TLV_DUMP(stream, "id: %d, session:", tlv->id);
+
+    dump_session(tlv_session(tlv));
+}
+
 #ifndef sizeof_session_st
 #define sizeof_session_st   44
 #endif
@@ -470,12 +474,9 @@ typedef struct {
 } tlv_session_st_t, tlv_service_st_t, xdr_session_st_t, xdr_service_st_t;
 
 static inline void 
-tlv_dump_session_st(FILE *stream, struct tlv *tlv)
+dump_session_st(FILE *stream, tlv_session_st_t *obj)
 {
-    tlv_session_st_t *obj = tlv_session_st(tlv);
     int i;
-    
-    TLV_DUMP(stream, "id: %d, %s:", tlv->id, tlv_ops_name(tlv));
 
     for (i=0; i<2; i++) {
         char c = (0==i) ? 'u' : 'd';
@@ -487,6 +488,14 @@ tlv_dump_session_st(FILE *stream, struct tlv *tlv)
         TLV_DUMP2(stream, "[%c]ip_frag         : %d", c, obj->ip_frag[i]);
         TLV_DUMP2(stream, "[%c]duration        : %d", c, obj->duration[i]);
     }
+}
+
+static inline void 
+tlv_dump_session_st(FILE *stream, struct tlv *tlv)
+{
+    TLV_DUMP(stream, "id: %d, %s:", tlv->id, tlv_ops_name(tlv));
+
+    dump_session_st(tlv_session_st(tlv));
 }
 #define tlv_dump_service_st    tlv_dump_session_st
 
@@ -501,19 +510,24 @@ typedef struct {
 } tlv_session_time_t, xdr_session_time_t;
 
 static inline void 
-tlv_dump_session_time(FILE *stream, struct tlv *tlv)
+dump_session_time(FILE *stream, tlv_session_time_t *obj)
 {
-    tlv_session_time_t *obj = tlv_session_time(tlv);
     time_string_t tstring;
     
-    TLV_DUMP(stream, "id: %d, session_time:", tlv->id);
-
     TLV_DUMP2(stream, "create: %s", 
         os_time_string(XDR_SECOND(obj->create), tstring));
     TLV_DUMP2(stream, "start : %s", 
         os_time_string(XDR_SECOND(obj->start), tstring));
     TLV_DUMP2(stream, "stop  : %s", 
         os_time_string(XDR_SECOND(obj->stop), tstring));
+}
+
+static inline void 
+tlv_dump_session_time(FILE *stream, struct tlv *tlv)
+{
+    TLV_DUMP(stream, "id: %d, session_time:", tlv->id);
+
+    dump_tcp(tlv_session_time(tlv));
 }
 
 #ifndef sizeof_tcp
@@ -546,12 +560,8 @@ tlv_tcp_t, xdr_tcp_t;
 enum { XDR_TCP_COMPLETE = 1 };
 
 static inline void 
-tlv_dump_tcp(FILE *stream, struct tlv *tlv)
-{
-    tlv_tcp_t *obj = tlv_tcp(tlv);
-    
-    TLV_DUMP(stream, "id: %d, tcp:", tlv->id);
-    
+dump_tcp(FILE *stream, tlv_tcp_t *obj)
+{  
     TLV_DUMP2(stream, "synack_to_syn_time  : %u us", obj->synack_to_syn_time);
     TLV_DUMP2(stream, "ack_to_syn_time     : %u us", obj->ack_to_syn_time);
     TLV_DUMP2(stream, "complete            : %s", bool_string(XDR_TCP_COMPLETE==obj->complete));
@@ -568,6 +578,14 @@ tlv_dump_tcp(FILE *stream, struct tlv *tlv)
     TLV_DUMP2(stream, "handshake23         : %s", success_string(0==obj->handshake23));
 }
 
+static inline void 
+tlv_dump_tcp(FILE *stream, struct tlv *tlv)
+{
+    TLV_DUMP(stream, "id: %d, tcp:", tlv->id);
+
+    dump_tcp(tlv_tcp(tlv));
+}
+
 #ifndef sizeof_L7
 #define sizeof_L7   4
 #endif
@@ -579,15 +597,19 @@ typedef struct {
 } tlv_L7_t, xdr_L7_t;
 
 static inline void 
-tlv_dump_L7(FILE *stream, struct tlv *tlv)
+dump_L7(FILE *stream, tlv_L7_t *obj)
 {
-    tlv_L7_t *obj = tlv_L7(tlv);
-    
-    TLV_DUMP(stream, "id: %d, L7:", tlv->id);
-    
     TLV_DUMP2(stream, "status  : %u", obj->status);
     TLV_DUMP2(stream, "class   : %u", obj->class);
     TLV_DUMP2(stream, "protocol: %u", obj->protocol);
+}
+
+static inline void 
+tlv_dump_L7(FILE *stream, struct tlv *tlv)
+{
+    TLV_DUMP(stream, "id: %d, L7:", tlv->id);
+    
+    dump_L7(tlv_L7(tlv));
 }
 
 #ifndef sizeof_http
@@ -648,12 +670,9 @@ tlv_http_head(tlv_http_t *obj)
 #endif
 
 static inline void 
-tlv_dump_http(FILE *stream, struct tlv *tlv)
+dump_http(FILE *stream, tlv_http_t *obj)
 {
-    tlv_http_t *obj = tlv_http(tlv);
     time_string_t tstring;
-    
-    TLV_DUMP(stream, "id: %d, http:", tlv->id);
 
     TLV_DUMP2(stream, "time_request        : %s", 
         os_time_string(XDR_SECOND(obj->time_request), tstring));
@@ -672,6 +691,14 @@ tlv_dump_http(FILE *stream, struct tlv *tlv)
     TLV_DUMP2(stream, "head                : %s", bool_string(obj->head));
     TLV_DUMP2(stream, "ie                  : %u", obj->ie);
     TLV_DUMP2(stream, "portal              : %u", obj->portal);
+}
+
+static inline void 
+tlv_dump_http(FILE *stream, struct tlv *tlv)
+{
+    TLV_DUMP(stream, "id: %d, http:", tlv->id);
+
+    dump_http(tlv_http(tlv));
 }
 
 enum { XDR_SIP_INVITE = 1 };
@@ -695,12 +722,8 @@ typedef struct {
 } tlv_sip_t;
 
 static inline void 
-tlv_dump_sip(FILE *stream, struct tlv *tlv)
+dump_sip(FILE *stream, tlv_sip_t *obj)
 {
-    tlv_sip_t *obj = tlv_sip(tlv);
-
-    TLV_DUMP(stream, "id: %d, http:", tlv->id);
-
     TLV_DUMP2(stream, "call_direction  : %u", obj->call_direction);
     TLV_DUMP2(stream, "call_type       : %u", obj->call_type);
     TLV_DUMP2(stream, "hangup_reason   : %u", obj->hangup_reason);
@@ -709,6 +732,14 @@ tlv_dump_sip(FILE *stream, struct tlv *tlv)
     TLV_DUMP2(stream, "invite          : %s", bool_string(XDR_SIP_INVITE==obj->invite));
     TLV_DUMP2(stream, "bye             : %s", bool_string(XDR_SIP_BYE==obj->bye));
     TLV_DUMP2(stream, "malloc          : %s", bool_string(obj->malloc));
+}
+
+static inline void 
+tlv_dump_sip(FILE *stream, struct tlv *tlv)
+{
+    TLV_DUMP(stream, "id: %d, http:", tlv->id);
+
+    dump_sip(tlv_sip(tlv));
 }
 
 #ifndef sizeof_rtsp
@@ -727,12 +758,8 @@ typedef struct {
 } tlv_rtsp_t;
 
 static inline void 
-tlv_dump_rtsp(FILE *stream, struct tlv *tlv)
+dump_rtsp(FILE *stream, tlv_rtsp_t *obj)
 {
-    tlv_rtsp_t *obj = tlv_rtsp(tlv);
-    
-    TLV_DUMP(stream, "id: %d, http:", tlv->id);
-    
     TLV_DUMP2(stream, "port_client_start   : %u", obj->port_client_start);
     TLV_DUMP2(stream, "port_client_end     : %u", obj->port_client_end);
     TLV_DUMP2(stream, "port_server_start   : %u", obj->port_server_start);
@@ -740,6 +767,14 @@ tlv_dump_rtsp(FILE *stream, struct tlv *tlv)
     TLV_DUMP2(stream, "count_video         : %u", obj->count_video);
     TLV_DUMP2(stream, "count_audio         : %u", obj->count_audio);
     TLV_DUMP2(stream, "describe_delay      : %u", obj->describe_delay);
+}
+
+static inline void 
+tlv_dump_rtsp(FILE *stream, struct tlv *tlv)
+{
+    TLV_DUMP(stream, "id: %d, http:", tlv->id);
+
+    dump_rtsp(tlv_rtsp(tlv));
 }
 
 static inline int
