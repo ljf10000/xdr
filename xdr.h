@@ -699,9 +699,9 @@ xb_pre_string(struct xb *x, xdr_string_t *xstr, void *buf, xdr_size_t size)
 }
 
 static inline int
-xb_pre_string_ex(struct xb *x, xdr_string_t *obj, struct tlv *tlv)
+xb_pre_string_ex(struct xb *x, xdr_string_t *xstr, struct tlv *tlv)
 {
-    return xb_pre_string(x, obj, tlv_data(tlv), tlv_datalen(tlv)) ? 0 : -ENOMEM;
+    return xb_pre_string(x, xstr, tlv_data(tlv), tlv_datalen(tlv)) ? 0 : -ENOMEM;
 }
 
 static inline xdr_binary_t *
@@ -725,9 +725,9 @@ xb_pre_binnary(struct xb *x, xdr_binary_t *xbin, void *buf, xdr_size_t size)
 }
 
 static inline int
-xb_pre_binary_ex(struct xb *x, xdr_binary_t *obj, struct tlv *tlv)
+xb_pre_binary_ex(struct xb *x, xdr_binary_t *xbin, struct tlv *tlv)
 {
-    return xb_pre_binnary(x, xb_obj_offset(x, obj), tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
+    return xb_pre_binnary(x, xbin, tlv_data(tlv), tlv_datalen(tlv))?0:-ENOMEM;
 }
 
 static inline int
