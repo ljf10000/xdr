@@ -666,7 +666,7 @@ xb_pre(struct xb *x, xdr_size_t size)
 }
 
 #define xb_pre_obj(_x, _type, _offset)  ({  \
-    (_type *)m_obj;                         \
+    (_type) *m_obj;                         \
     typeof(_offset) m_offset = _offset;     \
                                             \
     if (m_offset) {                         \
@@ -674,7 +674,7 @@ xb_pre(struct xb *x, xdr_size_t size)
     } else {                                \
         m_obj = xb_pre(_x, sizeof(_type));  \
         if (m_obj) {                        \
-            /* must _offset, not m_offset */\
+            /* must _offset, not m_offset */    \
             _offset = xb_obj_offset(_x, m_obj); \
         }                                   \
     }                                       \
