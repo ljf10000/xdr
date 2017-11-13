@@ -684,16 +684,16 @@ xb_pre_string(struct xb *x, xdr_string_t *xstr, void *buf, xdr_size_t size)
     // get offset first, xb_pre maybe re-mmap
     xdr_offset_t offset = xb_obj_offset(x, xstr);
     
-    void *p = xb_pre(x, XDR_ALIGN(1+size));
-    if (NULL==p) {
+    void *body = xb_pre(x, XDR_ALIGN(1+size));
+    if (NULL==body) {
         return NULL;
     }
-    os_strmcpy(p, buf, size);
+    os_strmcpy(body, buf, size);
 
     // reload string
     xdr_string_t *obj = (xdr_string_t *)xb_obj_obj(x, offset);
     obj->size = size;
-    obj->offset = xb_obj_offset(x, p);
+    obj->offset = xb_obj_offset(x, body);
 
     return obj;
 }
@@ -710,16 +710,16 @@ xb_pre_binnary(struct xb *x, xdr_binary_t *xbin, void *buf, xdr_size_t size)
     // get offset first, xb_pre maybe re-mmap
     xdr_offset_t offset = xb_obj_offset(x, xbin);
     
-    void *p = xb_pre(x, XDR_ALIGN(size));
-    if (NULL==p) {
+    void *body = xb_pre(x, XDR_ALIGN(size));
+    if (NULL==body) {
         return NULL;
     }
-    memcpy(p, buf, size);
+    memcpy(body, buf, size);
 
     // reload binary
     xdr_binary_t *obj = (xdr_binary_t *)xb_obj_obj(x, offset);
     obj->size = size;
-    obj->offset = xb_obj_offset(x, p);
+    obj->offset = xb_obj_offset(x, body);
 
     return obj;
 }
