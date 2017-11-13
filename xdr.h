@@ -658,19 +658,22 @@ xb_pre(struct xb *x, xdr_size_t size)
 #define XB_PRE(_x, _name)                   xb_xdr_obj(_x, xdr_##_name##_t, offsetof_##_name)
 
 static inline xdr_array_t *
-xb_pre_array(struct xb *x, xdr_offset_t offset, int type, xdr_size_t size, int count)
+xb_pre_array(struct xb *x, xdr_array_t *array, int type, xdr_size_t size, int count)
 {
-    xdr_size_t allsize = count * XDR_ALIGN(size);
-    void *p = xb_pre(x, allsize);
-    if (NULL==p) {
+    // get offset first, xb_pre maybe re-mmap
+    xdr_offset_t offset = xb_obj_offset(x, array);
+    
+    void *body = xb_pre(x, count * XDR_ALIGN(size));
+    if (NULL==body) {
         return NULL;
     }
 
+    // reload the array by offset
     xdr_array_t *obj = (xdr_array_t *)xb_obj_obj(x, offset);
     obj->type   = type;
     obj->size   = size;
     obj->count  = count;
-    obj->offset = xb_obj_offset(x, p);
+    obj->offset = xb_obj_offset(x, body);
     
     return obj;
 }
@@ -1370,25 +1373,22 @@ to_xdr_dns(tlv_record_t *r, struct xb *x, xdr_offset_t offset)
         return 0;
     }
     
-    xdr_array_t *array = xb_pre_array(x, xb_obj_offset(x, &dns->ip), type, size, count);
+    xdr_array_t *array = xb_pre_array(x, &dns->ip, type, size, count);
     if (NULL==array) {
         return -ENOMEM;
     }
 
-    struct xdr *xdr = xb_xdr(x);
-    struct tlv *tlv;
-    
     for (i=0; i<count; i++) {
-        tlv = cache->multi[i];
+        struct tlv *tlv = cache->multi[i];
 
-        memcpy(xdr_array_get(xdr, array, i), tlv_data(tlv), size);
+        memcpy(xdr_array_get(xb_xdr(x), array, i), tlv_data(tlv), size);
     }
 
     return 0;
 }
 
 static inline int
-to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_offset_t offset, int id)
+to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_array_t *certs, int id)
 {
     tlv_cache_t *cache = &r->cache[id];
     if (0==cache->count) {
@@ -1397,16 +1397,13 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_offset_t offset, int id)
     
     int i, err, count = cache->count;
     
-    xdr_array_t *array = xb_pre_array(x, offset, XDR_ARRAY_cert, sizeof(xdr_cert_t), count);
+    xdr_array_t *array = xb_pre_array(x, certs, XDR_ARRAY_cert, sizeof(xdr_cert_t), count);
     if (NULL==array) {
         return -ENOMEM;
     }
     
-    struct xdr *xdr = xb_xdr(x);
-    xdr_cert_t *cert;
-    
     for (i=0; i<count; i++) {
-        cert = (xdr_cert_t *)xdr_array_get(xdr, array, i);
+        xdr_cert_t *cert = (xdr_cert_t *)xdr_array_get(xb_xdr(x), array, i);
 
         err = xb_fexport(x, cache->multi[i], &cert->file);
         if (err<0) {
@@ -1433,13 +1430,13 @@ to_xdr_ssl(tlv_record_t *r, struct xb *x, xdr_offset_t offset)
     int err;
 
     ssl = (xdr_ssl_t *)xb_obj_obj(x, offset);
-    err = to_xdr_ssl_helper(r, x, xb_obj_offset(x, &ssl->cert_server), tlv_id_ssl_server_cert);
+    err = to_xdr_ssl_helper(r, x, &ssl->cert_server, tlv_id_ssl_server_cert);
     if (err<0) {
         return err;
     }
 
     ssl = (xdr_ssl_t *)xb_obj_obj(x, offset);
-    err = to_xdr_ssl_helper(r, x, xb_obj_offset(x, &ssl->cert_client), tlv_id_ssl_client_cert);
+    err = to_xdr_ssl_helper(r, x, &ssl->cert_client, tlv_id_ssl_client_cert);
     if (err<0) {
         return err;
     }
