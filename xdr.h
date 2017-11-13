@@ -705,7 +705,7 @@ xb_pre_array(struct xb *x, xdr_offset_t offset, int type, xdr_size_t size, int c
 static inline xdr_string_t *
 xb_pre_string(struct xb *x, xdr_offset_t offset, void *buf, xdr_size_t size)
 {
-    void *p = xb_pre(x, XDR_ALIGN(size));
+    void *p = xb_pre(x, XDR_ALIGN(1+size));
     if (NULL==p) {
         return NULL;
     }
