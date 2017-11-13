@@ -19,16 +19,6 @@ DECLARE_ENUM(XDR_ARRAY, xdr_array, XDR_ARRAY_MAPPER, XDR_ARRAY_END);
 #define XDR_ARRAY_END       XDR_ARRAY_END
 #endif
 
-static inline void *
-xdr_strcpy(void *dst, void *src, xdr_size_t size)
-{
-    byte *p = (byte *)memcpy(dst, src, size);
-    
-    p[size] = 0;
-    
-    return p;
-}
-
 #if 0
  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
@@ -709,7 +699,7 @@ xb_pre_string(struct xb *x, xdr_offset_t offset, void *buf, xdr_size_t size)
     if (NULL==p) {
         return NULL;
     }
-    xdr_strcpy(p, buf, size);
+    os_strmcpy(p, buf, size);
 
     xdr_string_t *obj = (xdr_string_t *)xb_obj_obj(x, offset);
     obj->size = size;

@@ -870,12 +870,12 @@ ERROR:
 #define U64EQ(_a, _b)           UXXEQ(uint64, _a, _b)
 
 static inline char *
-os_strmcpy(char *dst, char *src, int len)
+os_strmcpy(void *dst, void *src, int len)
 {
     memcpy(dst, src, len);
-    dst[len] = 0;
+    ((char *)dst)[len] = 0;
 
-    return dst;
+    return (char *)dst;
 }
 
 static inline bool
