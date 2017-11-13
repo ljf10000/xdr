@@ -44,24 +44,27 @@ typedef struct {
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 |                     count                     |         type          |           _           |
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-|                                             body...
-+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 #endif
 
 typedef struct {
     xdr_size_t size;
-
+    xdr_offset_t offset;
+    
     uint16 count;
     uint8 type;    // XDR_ARRAY_END
     uint8 _;
-    
-    byte entry[0];
 } xdr_array_t;
 
 static inline byte *
-xdr_array_get(xdr_array_t *array, int idx)
+xdr_abody(struct xdr *xdr, xdr_array_t *array)
 {
-    return array->entry + idx * XDR_ALIGN(array->size);
+    return (byte *)xdr_obj(xdr, array->offset);
+}
+
+static inline byte *
+xdr_aentry(struct xdr *xdr, xdr_array_t *array, int idx)
+{
+    return xdr_abody(xdr, array) + idx * XDR_ALIGN(array->size);
 }
 
 #if 0
@@ -99,14 +102,6 @@ typedef union {
     void *session;
 } xdr_session_t;
 
-enum {
-    XDR_FILE_HEADER_SIZE    = 60,
-    XDR_FILE_PAD_SIZE       = (XDR_FILE_HEADER_SIZE     //(60
-                                - sizeof(xdr_size_t)    // -4
-                                - sizeof(bkdr_t)        // -4
-                                - XDR_DIGEST_SIZE),     // -32) = 20
-};
-
 #if 0
  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
@@ -116,19 +111,12 @@ enum {
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 |                                            digest[32]
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-|                                              _[20]
-+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-|                                             body ...
-+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 #endif
 
 typedef struct {
     xdr_size_t  size;
     bkdr_t      bkdr;
     byte digest[XDR_DIGEST_SIZE];
-    byte _[XDR_FILE_PAD_SIZE];
-    
-    byte body[0];
 } xdr_file_t;
 
 #if 0
@@ -281,8 +269,6 @@ typedef struct {
     xdr_string_t hdr;
 } xdr_mail_t;
 
-enum { XDR_DNS_DOMAIN_SIZE = 63 };
-
 typedef struct {
     byte response_code;
     byte count_request;
@@ -318,7 +304,7 @@ typedef struct {
     xdr_time_t not_before;
     xdr_time_t not_after;
     
-    char domain[1+XDR_DNS_DOMAIN_SIZE];
+    xdr_string_t domain;
     xdr_string_t serial_number;
     xdr_string_t country_name;
     xdr_string_t organization_name;
@@ -685,10 +671,11 @@ xb_pre_array(struct xb *x, xdr_offset_t offset, int type, xdr_size_t size, int c
     }
 
     xdr_array_t *obj = (xdr_array_t *)xb_obj_obj(x, offset);
-    obj->type = type;
-    obj->size = size;
-    obj->count = count;
-
+    obj->type   = type;
+    obj->size   = size;
+    obj->count  = count;
+    obj->offset = xb_obj_offset(x, p);
+    
     return obj;
 }
 
@@ -1391,11 +1378,14 @@ to_xdr_dns(tlv_record_t *r, struct xb *x, xdr_offset_t offset)
     if (NULL==array) {
         return -ENOMEM;
     }
+
+    struct xdr *xdr = xb_xdr(x);
+    struct tlv *tlv;
     
     for (i=0; i<count; i++) {
-        struct tlv *tlv = cache->multi[i];
+        tlv = cache->multi[i];
 
-        memcpy(xdr_array_get(array, i), tlv_data(tlv), size);
+        memcpy(xdr_aentry(xdr, array, i), tlv_data(tlv), size);
     }
 
     return 0;
@@ -1416,8 +1406,11 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_offset_t offset, int id)
         return -ENOMEM;
     }
     
+    struct xdr *xdr = xb_xdr(x);
+    xdr_cert_t *cert;
+    
     for (i=0; i<count; i++) {
-        xdr_cert_t *cert = (xdr_cert_t *)xdr_array_get(array, i);
+        cert = (xdr_cert_t *)xdr_aentry(xdr, array, i);
 
         err = xb_fexport(x, cache->multi[i], &cert->file);
         if (err<0) {
