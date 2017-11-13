@@ -132,7 +132,7 @@ static void
 statistic(struct xparse *parse, int wid)
 {
     if (is_option(OPT_DUMP_ST)) {
-        xpath_t *st = parse->st;
+        xst_t *st = parse->st;
         int i;
         
         os_printf("worker:%d", wid);
@@ -167,9 +167,9 @@ xdr_handle(int wid, char *filename, int namelen)
 ERROR:
     tlv_trace(xp_close(&parse), wid, "xp_close");
     if (err<0) {
-        parse.st_raw->error++;
+        parse.st[XST_raw].error++;
     } else {
-        parse.st_raw->ok++;
+        parse.st[XST_raw].ok++;
     }
     statistic(&parse, wid);
 
