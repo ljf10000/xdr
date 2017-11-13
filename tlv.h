@@ -1722,7 +1722,7 @@ tlv_record_parse(tlv_record_t *r)
         }
 
         r->count++;
-        parse->st[XST_tlv].++;
+        parse->st[XST_tlv].ok++;
         
         return 0;
     }

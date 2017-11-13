@@ -432,6 +432,12 @@ struct xdr {
     byte body[0];
 };
 
+static inline void *
+xb_obj(struct xb *x, xdr_offset_t offset)
+{
+    return x->buffer + offset;
+}
+
 static inline struct xdr *
 xb_xdr(struct xb *x)
 {
@@ -581,12 +587,6 @@ static inline xdr_L7_t *
 xdr_L7(struct xdr *xdr)
 {
     return &xdr->L7;
-}
-
-static inline void *
-xb_obj(struct xb *x, xdr_offset_t offset)
-{
-    return x->buffer + offset;
 }
 
 static inline void *
