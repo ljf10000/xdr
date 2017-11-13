@@ -55,16 +55,12 @@ typedef struct {
     uint8 _;
 } xdr_array_t;
 
-static inline byte *
-xdr_abody(struct xdr *xdr, xdr_array_t *array)
-{
-    return (byte *)xdr_obj(xdr, array->offset);
-}
+static inline void *xdr_obj(struct xdr *xdr, xdr_offset_t offset);
 
 static inline byte *
-xdr_aentry(struct xdr *xdr, xdr_array_t *array, int idx)
+xdr_array_get(struct xdr *xdr, xdr_array_t *array, int idx)
 {
-    return xdr_abody(xdr, array) + idx * XDR_ALIGN(array->size);
+    return (byte *)xdr_obj(xdr, array->offset) + idx * XDR_ALIGN(array->size);
 }
 
 #if 0
@@ -1385,7 +1381,7 @@ to_xdr_dns(tlv_record_t *r, struct xb *x, xdr_offset_t offset)
     for (i=0; i<count; i++) {
         tlv = cache->multi[i];
 
-        memcpy(xdr_aentry(xdr, array, i), tlv_data(tlv), size);
+        memcpy(xdr_array_get(xdr, array, i), tlv_data(tlv), size);
     }
 
     return 0;
@@ -1410,7 +1406,7 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_offset_t offset, int id)
     xdr_cert_t *cert;
     
     for (i=0; i<count; i++) {
-        cert = (xdr_cert_t *)xdr_aentry(xdr, array, i);
+        cert = (xdr_cert_t *)xdr_array_get(xdr, array, i);
 
         err = xb_fexport(x, cache->multi[i], &cert->file);
         if (err<0) {
