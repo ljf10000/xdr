@@ -1470,7 +1470,7 @@ to_xdr_array(tlv_record_t *r, struct xb *x)
                 return -ENOMATCH;
             }
             
-            err = tlv_trace(to_xdr_dns(r, x, xdr->offsetof_dns), r->parse->wid, "to_xdr_ssl");
+            err = xdr_trace(to_xdr_dns(r, x, xdr->offsetof_dns), r->parse->wid, "to_xdr_ssl");
             if (err<0) {
                 return err;
             }
@@ -1481,7 +1481,7 @@ to_xdr_array(tlv_record_t *r, struct xb *x)
                 return -ENOMATCH;
             }
             
-            err = tlv_trace(to_xdr_ssl(r, x, xdr->offsetof_ssl), r->parse->wid, "to_xdr_ssl");
+            err = xdr_trace(to_xdr_ssl(r, x, xdr->offsetof_ssl), r->parse->wid, "to_xdr_ssl");
             if (err<0) {
                 return err;
             }
@@ -1504,7 +1504,7 @@ to_xdr_helper(tlv_cache_t *cache, struct xb *x)
         ops = tlv_ops(tlv);
 
         if (ops && ops->toxdr) {
-            err = (*ops->toxdr)(x, tlv);
+            err = xdr_trace((*ops->toxdr)(x, tlv), x->parse->wid, "to %s", ops->name);
             if (err<0) {
                 if (tlv->id>200) {
                     // xdr_dprint("toxdr %d:%d %s:%d.", i, tlv->id, ok_string(err), err);
@@ -1535,25 +1535,20 @@ to_xdr(tlv_record_t *r, struct xb *x)
 {
     tlv_cache_t *cache;
     int i, err;
+    int id, ids[][2] = {;
+        {[0] = tlv_id_header,       [1] = tlv_id_low_end},
+        {[0] = tlv_id_high_begin,   [1] = tlv_id_end},
+    };
 
-    for (i=tlv_id_header; i<tlv_id_low_end; i++) {
-        cache = &r->cache[i];
-        
-        if (cache->count>0) {
-            err = tlv_trace(to_xdr_helper(cache, x), r->parse->wid, "to_xdr_helper:%d", i);
-            if (err<0) {
-                return err;
-            }
-        }
-    }
-
-    for (i=tlv_id_high_begin; i<tlv_id_end; i++) {
-        cache = &r->cache[i];
-        
-        if (cache->count>0) {
-            err = tlv_trace(to_xdr_helper(cache, x), r->parse->wid, "to_xdr_helper:%d", i);
-            if (err<0) {
-                return err;
+    for (i=0; i<os_count_of(ids); i++) {
+        for (id=ids[i][0]; id<ids[i][1]; id++) {
+            cache = &r->cache[id];
+            
+            if (cache->count>0) {
+                err = xdr_trace(to_xdr_helper(cache, x), r->parse->wid, "to_xdr_helper:%d", id);
+                if (err<0) {
+                    return err;
+                }
             }
         }
     }
