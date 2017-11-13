@@ -1521,8 +1521,10 @@ to_xdr_helper(tlv_cache_t *cache, struct xb *x)
 static inline void
 to_xdr_next(struct xb *x)
 {
-    xb_xdr(x)->total = x->current - x->obj;
-
+    xdr_size_t total = x->current - x->obj;
+    xb_xdr(x)->total = total;
+    xdr_dprint(x->parse->wid, "xdr[%u] total=%u, next xdr:%u", x->obj, total, x->current);
+    
     // x->obj ==> the next xdr
     x->obj = x->current;
 
