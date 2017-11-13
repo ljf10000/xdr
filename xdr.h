@@ -1537,7 +1537,7 @@ to_xdr(tlv_record_t *r, struct xb *x)
 {
     tlv_cache_t *cache;
     int i, err;
-    int id, ids[][2] = {;
+    int id, ids[][2] = {
         {[0] = tlv_id_header,       [1] = tlv_id_low_end},
         {[0] = tlv_id_high_begin,   [1] = tlv_id_end},
     };
