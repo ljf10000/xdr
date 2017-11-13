@@ -1475,7 +1475,7 @@ to_xdr_array(tlv_record_t *r, struct xb *x)
     int err;
     
     switch(xdr->appid) {
-        case XDR_CLASS_DNS:
+        case XDR_CLASS_DNS: {
             xdr_dns_t *dns = xdr_dns(xdr);
             if (NULL==dns) {
                 return -ENOMATCH;
@@ -1486,8 +1486,8 @@ to_xdr_array(tlv_record_t *r, struct xb *x)
                 return err;
             }
 
-            break;
-        case XDR_CLASS_SSL:
+        }   break;
+        case XDR_CLASS_SSL: {
             xdr_ssl_t *ssl = xdr_ssl(xdr);
             if (NULL==ssl) {
                 return -ENOMATCH;
@@ -1498,7 +1498,7 @@ to_xdr_array(tlv_record_t *r, struct xb *x)
                 return err;
             }
             
-            break;
+        }   break;
     }
     
     return 0;
