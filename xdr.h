@@ -55,12 +55,12 @@ typedef struct {
     uint8 _;
 } xdr_array_t;
 
-static inline void *xdr_obj(struct xdr *xdr, xdr_offset_t offset);
+static inline void *xdr_member(struct xdr *xdr, xdr_offset_t offset);
 
 static inline byte *
 xdr_array_get(struct xdr *xdr, xdr_array_t *array, int idx)
 {
-    return (byte *)xdr_obj(xdr, array->offset) + idx * XDR_ALIGN(array->size);
+    return (byte *)xdr_member(xdr, array->offset) + idx * XDR_ALIGN(array->size);
 }
 
 #if 0
@@ -448,12 +448,11 @@ xdr_close(struct xb *x)
 }
 
 static inline void *
-xdr_obj(struct xdr *xdr, xdr_offset_t offset)
+xdr_member(struct xdr *xdr, xdr_offset_t offset)
 {
     return offset?((void *)xdr + offset):NULL;
 }
-#define XDR_OBJBY(_xdr, _type, _offsetof)   (_type *)xdr_obj(_xdr, (_xdr)->_offsetof)
-#define XDR_OBJ(_xdr, _name)                XDR_OBJBY(_xdr, xdr_##_name##_t, offsetof_##_name)
+#define XDR_MEMBER(_xdr, _name)             (xdr_##_name##_t *)xdr_member(_xdr, (_xdr)->offsetof_##_name)
 
 static inline struct xdr *
 xdr_next(struct xdr *xdr)
@@ -488,7 +487,7 @@ static inline xdr_session_t
 xdr_session(struct xdr *xdr)
 {
     xdr_session_t session = {
-        .session = xdr_obj(xdr, xdr->offsetof_session),
+        .session = xdr_member(xdr, xdr->offsetof_session),
     };
 
     return session;
@@ -497,61 +496,61 @@ xdr_session(struct xdr *xdr)
 static inline xdr_session_st_t *
 xdr_session_st(struct xdr *xdr)
 {
-    return XDR_OBJ(xdr, session_st);
+    return XDR_MEMBER(xdr, session_st);
 }
 
 static inline xdr_service_st_t *
 xdr_service_st(struct xdr *xdr)
 {
-    return XDR_OBJ(xdr, service_st);
+    return XDR_MEMBER(xdr, service_st);
 }
 
 static inline xdr_tcp_t *
 xdr_tcp(struct xdr *xdr)
 {
-    return XDR_OBJ(xdr, tcp);
+    return XDR_MEMBER(xdr, tcp);
 }
 
 static inline xdr_http_t *
 xdr_http(struct xdr *xdr)
 {
-    return XDR_OBJ(xdr, http);
+    return XDR_MEMBER(xdr, http);
 }
 
 static inline xdr_sip_t *
 xdr_sip(struct xdr *xdr)
 {
-    return XDR_OBJ(xdr, sip);
+    return XDR_MEMBER(xdr, sip);
 }
 
 static inline xdr_rtsp_t *
 xdr_rtsp(struct xdr *xdr)
 {
-    return XDR_OBJ(xdr, rtsp);
+    return XDR_MEMBER(xdr, rtsp);
 }
 
 static inline xdr_ftp_t *
 xdr_ftp(struct xdr *xdr)
 {
-    return XDR_OBJ(xdr, ftp);
+    return XDR_MEMBER(xdr, ftp);
 }
 
 static inline xdr_mail_t *
 xdr_mail(struct xdr *xdr)
 {
-    return XDR_OBJ(xdr, mail);
+    return XDR_MEMBER(xdr, mail);
 }
 
 static inline xdr_dns_t *
 xdr_dns(struct xdr *xdr)
 {
-    return XDR_OBJ(xdr, dns);
+    return XDR_MEMBER(xdr, dns);
 }
 
 static inline xdr_ssl_t *
 xdr_ssl(struct xdr *xdr)
 {
-    return XDR_OBJ(xdr, ssl);
+    return XDR_MEMBER(xdr, ssl);
 }
 
 static inline xdr_L7_t *
@@ -653,8 +652,8 @@ xb_pre(struct xb *x, xdr_size_t size)
     (_type *)m_obj;                         \
 })  /* end */
 
-#define xb_xdr_member(_x, _type, _offsetof) (_type *)xb_pre_obj(_x, _type, xb_xdr(_x)->_offsetof)
-#define XDR_MEMBER(_x, _name)               xb_xdr_member(_x, xdr_##_name##_t, offsetof_##_name)
+#define xb_pre_member(_x, _type, _offsetof) (_type *)xb_pre_obj(_x, _type, xb_xdr(_x)->_offsetof)
+#define PRE_MEMBER(_x, _name)               xb_pre_member(_x, xdr_##_name##_t, offsetof_##_name)
 
 static inline xdr_array_t *
 xb_pre_array(struct xb *x, xdr_array_t *array, int type, xdr_size_t size, int count)
@@ -812,73 +811,73 @@ xb_pre_file(struct xb *x, struct tlv *tlv)
 static inline xdr_session4_t *
 xb_pre_session4(struct xb *x)
 {
-    return XDR_MEMBER(x, session4);
+    return PRE_MEMBER(x, session4);
 }
 
 static inline xdr_session6_t *
 xb_pre_session6(struct xb *x)
 {
-    return XDR_MEMBER(x, session6);
+    return PRE_MEMBER(x, session6);
 }
 
 static inline xdr_session_st_t *
 xb_pre_session_st(struct xb *x)
 {
-    return XDR_MEMBER(x, session_st);
+    return PRE_MEMBER(x, session_st);
 }
 
 static inline xdr_service_st_t *
 xb_pre_service_st(struct xb *x)
 {
-    return XDR_MEMBER(x, service_st);
+    return PRE_MEMBER(x, service_st);
 }
 
 static inline xdr_tcp_t *
 xb_pre_tcp(struct xb *x)
 {
-    return XDR_MEMBER(x, tcp);
+    return PRE_MEMBER(x, tcp);
 }
 
 static inline xdr_http_t *
 xb_pre_http(struct xb *x)
 {
-    return XDR_MEMBER(x, http);
+    return PRE_MEMBER(x, http);
 }
 
 static inline xdr_sip_t *
 xb_pre_sip(struct xb *x)
 {
-    return XDR_MEMBER(x, sip);
+    return PRE_MEMBER(x, sip);
 }
 
 static inline xdr_rtsp_t *
 xb_pre_rtsp(struct xb *x)
 {
-    return XDR_MEMBER(x, rtsp);
+    return PRE_MEMBER(x, rtsp);
 }
 
 static inline xdr_ftp_t *
 xb_pre_ftp(struct xb *x)
 {
-    return XDR_MEMBER(x, ftp);
+    return PRE_MEMBER(x, ftp);
 }
 
 static inline xdr_mail_t *
 xb_pre_mail(struct xb *x)
 {
-    return XDR_MEMBER(x, mail);
+    return PRE_MEMBER(x, mail);
 }
 
 static inline xdr_dns_t *
 xb_pre_dns(struct xb *x)
 {
-    return XDR_MEMBER(x, dns);
+    return PRE_MEMBER(x, dns);
 }
 
 static inline xdr_ssl_t *
 xb_pre_ssl(struct xb *x)
 {
-    return XDR_MEMBER(x, ssl);
+    return PRE_MEMBER(x, ssl);
 }
 
 #define to_xdr_by(_x, _tlv, _field, _nt)    ({xb_xdr(_x)->_field = tlv_##_nt(_tlv); 0; })
