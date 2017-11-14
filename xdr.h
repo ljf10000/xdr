@@ -236,9 +236,10 @@ typedef struct {
 } xdr_rtsp_t;
 
 typedef struct {
+    byte V;
     byte trans_mode;
     byte trans_type;
-    byte _[2];
+    byte _;
     
     xdr_size_t filesize;
     xdr_duration_t response_delay;
@@ -251,12 +252,13 @@ typedef struct {
 } xdr_ftp_t;
 
 typedef struct {
+    byte V;
+    byte acs_type;
+    byte _[2];
+    
     uint16 msg_type;
      int16 status_code;
     xdr_size_t length;
-    
-    byte acs_type;
-    byte _[3];
     
     xdr_string_t user;
     xdr_string_t domain;
@@ -266,15 +268,15 @@ typedef struct {
 } xdr_mail_t;
 
 typedef struct {
+    byte V;
+    byte ip_version;    // 0: ipv4
+    byte ip_count;
     byte response_code;
+    
     byte count_request;
     byte count_response_record;
     byte count_response_auth;
-    
     byte count_response_extra;
-    byte ip_version;    // 0: ipv4
-    byte ip_count;
-    byte _;
 
     xdr_delay_t delay;
     /*
@@ -309,12 +311,9 @@ typedef struct {
 } xdr_cert_t;
 
 typedef struct {
+    byte V;
     byte reason;
-    byte verfy;
-    byte verfy_failed_idx;
-    byte _;
-
-    xdr_string_t verfy_failed_desc;
+    byte _[2];
     
     xdr_array_t cert_server; // xdr_cert_t
     xdr_array_t cert_client; // xdr_cert_t
@@ -559,12 +558,6 @@ static inline xdr_L7_t *
 xdr_L7(struct xdr *xdr)
 {
     return &xdr->L7;
-}
-
-static inline void
-xdr_dump_L7(struct xdr *xdr)
-{
-
 }
 
 static inline void *
@@ -960,10 +953,11 @@ static inline int
 to_xdr_session_time(struct xb *x, struct tlv *tlv)
 {
     tlv_session_time_t *tm = tlv_session_time(tlv);
+    struct xdr *xdr = xb_xdr(x);
     
-    xb_xdr(x)->session_time_create = tm->create;
-    xb_xdr(x)->session_time_start  = tm->start;
-    xb_xdr(x)->session_time_stop   = tm->stop;
+    xdr->session_time_create = tm->create;
+    xdr->session_time_start  = tm->start;
+    xdr->session_time_stop   = tm->stop;
 
     return 0;
 }
@@ -1595,6 +1589,21 @@ xp_parse(struct xparse *parse)
     }
 
     return tlv_walk(parse, (struct tlv *)parse->tlv.buffer, parse->tlv.size, walk);
+}
+
+static inline void
+xdr_dump_ssl(FILE *stream, struct xdr *xdr)
+{
+    xdr_ssl_t *obj = xdr_ssl(xdr);
+
+}
+
+static inline void
+xdr_dump_L7(FILE *stream, struct xdr *xdr)
+{
+    xdr_L7_t *obj = xdr_L7(xdr);
+
+    dump_L7(stream, (tlv_L7_t *)obj);
 }
 
 /******************************************************************************/
