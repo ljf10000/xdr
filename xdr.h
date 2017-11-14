@@ -40,19 +40,21 @@ typedef struct {
 #if 0
  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+|           V           |         type          |                     count                     |
++--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 |                                             size                                              |
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-|                     count                     |         type          |           _           |
+|                                            offset                                             |
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 #endif
 
 typedef struct {
-    xdr_size_t size;
-    xdr_offset_t offset;
+    uint8   V;
+    uint8   type;   // XDR_ARRAY_END
+    uint16  count;
     
-    uint16 count;
-    uint8 type;    // XDR_ARRAY_END
-    uint8 _;
+    xdr_size_t  size;
+    xdr_offset_t offset;
 } xdr_array_t;
 
 static inline void *xdr_member(struct xdr *xdr, xdr_offset_t offset);
@@ -162,6 +164,7 @@ typedef struct {
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 #endif
 
+// must align 8
 typedef struct {
     // begin, same as tlv_http_t
     xdr_time_t time_request;
@@ -184,6 +187,9 @@ typedef struct {
     byte _1;
     // end, same as tlv_http_t
 
+    byte V;
+    byte _2[3]; // http padding for aglign 8
+    
     xdr_offset_t offsetof_request;    // xdr_file_t
     xdr_offset_t offsetof_response;   // xdr_file_t
     
@@ -235,6 +241,7 @@ typedef struct {
     xdr_string_t server_ip;
 } xdr_rtsp_t;
 
+// must align 8
 typedef struct {
     byte V;
     byte trans_mode;
@@ -295,9 +302,10 @@ xdr_dns_t;
 typedef struct {
     xdr_file_t file;
     
+    byte V;
     byte version;
-    byte _;
     uint16 key_usage;
+    byte _[4];
     
     xdr_time_t not_before;
     xdr_time_t not_after;
@@ -357,7 +365,7 @@ enum {
 
 struct xdr {
     byte version;   // xdr version, must first
-    byte _[3];
+    byte _0[3];
     
     byte appid;
     byte ip_proto;
@@ -383,7 +391,8 @@ struct xdr {
     xdr_offset_t offsetof_service_st;
     xdr_offset_t offsetof_alert;
     xdr_offset_t offsetof_file_content; // xdr_file_t
-
+    xdr_offset_t _1;    // padding for align 8
+    
     xdr_offset_t        offsetof_L4; // tcp
 #define offsetof_tcp    offsetof_L4
 
@@ -467,20 +476,31 @@ xdr_walk(struct xdr *xdr, uint32 left, xdr_walk_t *walk)
 {
     int err;
     
-    while(left > 0) {
-        if (left < sizeof(struct xdr)) {
+    while(left) {
+        if (xdr->total < sizeof(struct xdr)) {
+            return -EPROTO;
+        }
+        else if (left < xdr->total) {
             return -ETOOSMALL;
         }
 
-        err = (*walk)(xdr);
-        if (err<0) {
-            return err;
+        if (walk) {
+            err = (*walk)(xdr);
+            if (err<0) {
+                return err;
+            }
         }
 
         left -= xdr->total; xdr = xdr_next(xdr);
     }
     
     return 0;
+}
+
+static inline int
+xdr_check(void *buf, uint32 size)
+{
+    return xdr_walk((struct xdr *)buf, size, NULL);
 }
 
 static inline xdr_session_t
