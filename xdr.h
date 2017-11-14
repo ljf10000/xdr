@@ -369,33 +369,23 @@ struct xdr {
     
     byte appid;
     byte ip_proto;
-    byte session_state;
     byte ip_version;
-
-    bkdr_t bkdr;        // session bkdr
-    time_t time;        // time of analysis xdr
-    uint32 seq;
-    uint32 flag;        // XDR_F_XXX
-    xdr_size_t  total;  // total size
-    xdr_delay_t first_response_delay;
+    byte session_state;
 
     xdr_time_t session_time_create;
     xdr_time_t session_time_start;
     xdr_time_t session_time_stop;
 
-    xdr_offset_t offsetof_session;
-#define offsetof_session4   offsetof_session
-#define offsetof_session6   offsetof_session
-    
-    xdr_offset_t offsetof_session_st;
-    xdr_offset_t offsetof_service_st;
-    xdr_offset_t offsetof_alert;
-    xdr_offset_t offsetof_file_content; // xdr_file_t
-    xdr_offset_t _1;    // padding for align 8
-    
+    xdr_L7_t    L7;
+    bkdr_t      bkdr;   // session bkdr
+    time_t      time;   // time of analysis xdr
+    uint32      seq;
+    uint32      flag;   // XDR_F_XXX
+    xdr_size_t  total;  // total size
+    xdr_delay_t first_response_delay;
+
     xdr_offset_t        offsetof_L4; // tcp
 #define offsetof_tcp    offsetof_L4
-
     xdr_offset_t        offsetof_L5; // http/sip/rtsp/ftp/mail/dns
 #define offsetof_http   offsetof_L5
 #define offsetof_sip    offsetof_L5
@@ -403,11 +393,17 @@ struct xdr {
 #define offsetof_ftp    offsetof_L5
 #define offsetof_mail   offsetof_L5
 #define offsetof_dns    offsetof_L5
-
     xdr_offset_t        offsetof_L6; // ssl
 #define offsetof_ssl    offsetof_L6
+    xdr_offset_t        offsetof_session;
+#define offsetof_session4   offsetof_session
+#define offsetof_session6   offsetof_session
+    xdr_offset_t        offsetof_session_st;
+    xdr_offset_t        offsetof_service_st;
+    xdr_offset_t        offsetof_file_content; // xdr_file_t
 
-    xdr_L7_t L7;
+    xdr_offset_t        offsetof_alert;
+    xdr_offset_t        _padding_for_align_8;
 
     byte body[0];
 };
