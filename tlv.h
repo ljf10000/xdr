@@ -1488,7 +1488,6 @@ xp_open(struct xparse *parse)
         
         return size;
     }
-    os_println("%s size=%d", tlv->fullname, size);
     
     err = tlv_trace(tlv_open(tlv, size), parse->wid, "tlv_open %s:%d", tlv->fullname, size);
     if (err<0) {
@@ -1577,7 +1576,7 @@ tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
     int err = 0;
 
     if (left > TLV_MAXDATA) {
-        return xp_error(parse, tlv, -ETOOBIG, "too big:%d", left);
+        return xp_error(parse, tlv, -ETOOBIG, "too big:%u", left);
     }
     
     while(left>0) {
@@ -1585,10 +1584,10 @@ tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
             return xp_error(parse, tlv, -ETOOMORE, "too more tlv:%d", parse->count);
         }
         else if (left < tlv_hdrlen(tlv)) {
-            return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv hdrlen:%d", left, tlv_hdrlen(tlv));
+            return xp_error(parse, tlv, -ETOOSMALL, "left:%u < tlv hdrlen:%u", left, tlv_hdrlen(tlv));
         }
         else if (left < tlv_len(tlv)) {
-            return xp_error(parse, tlv, -ETOOSMALL, "left:%d < tlv len:%d", left, tlv_len(tlv));
+            return xp_error(parse, tlv, -ETOOSMALL, "left:%u < tlv len:%u", left, tlv_len(tlv));
         }
         
         err = (*walk)(parse, tlv);
@@ -1638,12 +1637,12 @@ tlv_check_fixed(struct xparse *parse, struct tlv *tlv)
             if (is_option(OPT_STRICT)) {
                 if (dlen != fixed) {
                     return xp_error(parse, tlv, -EINVAL7, 
-                        "tlv check fixed[strict] datalen[%d] != fixed[%d]", dlen, fixed);
+                        "tlv check fixed[strict] datalen[%u] != fixed[%u]", dlen, fixed);
                 }
             } else {
                 if (dlen < ops->maxsize) {
                     return xp_error(parse, tlv, -EINVAL7, 
-                        "tlv check fixed[loose] datalen[%d] < fixed[%d]", dlen, fixed);
+                        "tlv check fixed[loose] datalen[%u] < fixed[%u]", dlen, fixed);
                 }
             }
             
@@ -1661,11 +1660,11 @@ tlv_check_dynamic(struct xparse *parse, struct tlv *tlv)
     
     if (ops->minsize && dlen < ops->minsize) {
         return xp_error(parse, tlv, -ETOOSMALL, 
-            "tlv check dynamic datalen[%d] < minsize[%d]", dlen, ops->minsize);
+            "tlv check dynamic datalen[%u] < minsize[%u]", dlen, ops->minsize);
     }
     else if (ops->maxsize && dlen > ops->maxsize) {
         return xp_error(parse, tlv, -ETOOBIG, 
-            "tlv check dynamic datalen[%d] > maxsize[%d]", dlen, ops->maxsize);
+            "tlv check dynamic datalen[%u] > maxsize[%u]", dlen, ops->maxsize);
     }
 #if 0
     else if (tlv_datalen(tlv) < tlv->pad) {
@@ -1684,13 +1683,13 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
         return xp_error(parse, tlv, -EBADIDX, "not support tlv id:%d", tlv->id);
     } else if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
         return xp_error(parse, tlv, -ETOOSMALL, 
-            "tlv alen[%d] < hdrlen[%d]", tlv_len(tlv), tlv_hdrlen(tlv));
+            "tlv alen[%u] < hdrlen[%u]", tlv_len(tlv), tlv_hdrlen(tlv));
     }
     
     if (tlv_extend(tlv)) {
         if (tlv_len(tlv) < 4096 && is_option(OPT_STRICT)) {
             return xp_error(parse, tlv, -EPROTOCOL, 
-                "tlv[extend] alen[%d] < LIMIT[%d]", tlv_len(tlv), 4096);
+                "tlv[extend] alen[%u] < LIMIT[%u]", tlv_len(tlv), 4096);
         }
     }
 
@@ -1699,7 +1698,7 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
         case TLV_T_binary:
             if (tlv_datalen(tlv) < tlv->pad) {
                 return xp_error(parse, tlv, -EPROTOCOL, 
-                    "tlv[extend] datalen:%d < pad:%d", tlv_datalen(tlv), tlv->pad);
+                    "tlv[extend] datalen:%u < pad:%u", tlv_datalen(tlv), tlv->pad);
             }
     }
 
@@ -1733,7 +1732,7 @@ tlv_cache_save(struct xparse *parse, tlv_cache_t *cache, struct tlv *tlv)
         }
     }
     else {
-        return xp_error(parse, tlv, -ENOSPACE, "too more[%d] cache multi", TLV_CACHE_MULTI);
+        return xp_error(parse, tlv, -ENOSPACE, "too more[%u] cache multi", TLV_CACHE_MULTI);
     }
     
     return 0;
