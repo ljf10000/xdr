@@ -655,11 +655,18 @@ typedef struct {
     byte method;
     byte version;
 
+#if 1
+    byte first:2;
+    byte flag:3;
+    byte head:1;
+    byte _0:2;
+#else
     byte _0:2;
     byte head:1;
     byte flag:3;
     byte first:2;
-    
+#endif
+
     byte ie;
     byte portal;
     byte _1;
@@ -743,12 +750,20 @@ typedef struct {
     byte signal_type;
     
     uint16 dataflow_count;
-    
+
+#if 1
+    uint16 invite:1;
+    uint16 bye:1;
+    uint16 malloc:1;
+    uint16 _:13;
+#else
     uint16 _:13;
     uint16 malloc:1;
     uint16 bye:1;
     uint16 invite:1;
-} tlv_sip_t;
+#endif
+} 
+tlv_sip_t;
 
 static inline void 
 dump_sip(FILE *stream, tlv_sip_t *obj)
@@ -1555,15 +1570,17 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
             xp_verror(parse->ferr, parse, tlv, err, fmt, args);
             va_end(args);
 
-            os_dump_buffer(parse->ferr, tlv, 128);
+            os_dump_buffer(parse->ferr, tlv, 32);
         }
         
         // write to stdout
-        va_start(args, fmt);
-        xp_verror(DUMP_STREAM, parse, tlv, err, fmt, args);
-        va_end(args);
+        if (DUMP_STREAM) {
+            va_start(args, fmt);
+            xp_verror(DUMP_STREAM, parse, tlv, err, fmt, args);
+            va_end(args);
 
-        os_dump_buffer(DUMP_STREAM, tlv, 128);
+            os_dump_buffer(DUMP_STREAM, tlv, 32);
+        }
     }
 
     // move tlvs/xxx.xdr ==> bad/xxx.err
@@ -1616,7 +1633,7 @@ tlv_dump(FILE *stream, struct tlv *tlv)
 {
     tlv_ops_t *ops = tlv_ops(tlv);
 
-    if (ops && ops->dump) {
+    if (stream && ops && ops->dump) {
         (*ops->dump)(stream, tlv);
     }
 }
