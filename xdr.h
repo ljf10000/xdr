@@ -1479,7 +1479,7 @@ to_xdr_array(tlv_record_t *r, struct xb *x)
                 return -ENOMATCH;
             }
             
-            err = xdr_trace(to_xdr_dns(r, x, xdr->offsetof_dns), r->parse->wid, "to_xdr_ssl");
+            err = xdr_trace(to_xdr_dns(r, x, xdr->offsetof_dns), r->parse->wid, "to_xdr_dns");
             if (err<0) {
                 return err;
             }
