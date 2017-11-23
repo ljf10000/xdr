@@ -629,6 +629,8 @@ xb_expand(struct xb *x, xdr_size_t size)
     if (false==xb_enought(x, size)) {
         int err;
         
+        xdr_dprint(x->parse->wid, "xdr expand %u:%u ...", x->size, size);
+        
         err = tlv_trace(xb_munmap(x), x->parse->wid, "xb_munmap");
         if (err<0) {
             return err;
@@ -640,6 +642,8 @@ xb_expand(struct xb *x, xdr_size_t size)
         if (err<0) {
             return err;
         }
+        
+        xdr_dprint(x->parse->wid, "xdr expand %u:%u ok.", x->size, size);
     }
 
     return 0;
@@ -668,13 +672,14 @@ xb_pre(struct xb *x, xdr_size_t size)
     (_type *)m_obj;                         \
 })  /* end */
 
-#define xb_pre_member(_x, _type, _offsetof) (_type *)xb_pre_obj(_x, _type, xb_xdr(_x)->_offsetof)
-#define PRE_MEMBER(_x, _name)               ({ \
-    xdr_##_name##_t *m_p = xb_pre_member(_x, xdr_##_name##_t, offsetof_##_name); \
+#define xb_pre_member(_x, _type, _offsetof) \
+    (_type *)xb_pre_obj(_x, _type, xb_xdr(_x)->_offsetof)
+#define PRE_MEMBER(_x, _name)           ({  \
+    xdr_##_name##_t *m_p =                  \
+            xb_pre_member(_x, xdr_##_name##_t, offsetof_##_name); \
     xdr_dprint((_x)->parse->wid, "pre xdr " #_name "=0x%p", m_p); \
     m_p; \
 })  /* end */
-    
 
 static inline xdr_array_t *
 xb_pre_array(struct xb *x, xdr_array_t *array, int type, xdr_size_t size, int count)

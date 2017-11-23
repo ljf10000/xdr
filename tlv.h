@@ -1749,9 +1749,13 @@ tlv_cache_save(struct xparse *parse, tlv_cache_t *cache, struct tlv *tlv)
 {
     if (cache->count < TLV_CACHE_MULTI) {
         if (0==cache->count) {
+            tlv_dprint(parse->wid, "save tlv %s", tlv_ops_name(tlv));
+            
             cache->multi[cache->count++] = tlv;
         }
         else if (TLV_F_MULTI & tlv_ops_flag(tlv)) {
+            tlv_dprint(parse->wid, "save multi tlv %s", tlv_ops_name(tlv));
+            
             cache->multi[cache->count++] = tlv;
         }
         else {
