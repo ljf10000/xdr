@@ -1576,7 +1576,7 @@ tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
     int err = 0;
 
     if (left > TLV_MAXDATA) {
-        return xp_error(parse, tlv, -ETOOBIG, "too big:%u", left);
+        return xp_error(parse, tlv, -ETOOBIG, "left too big:%u", left);
     }
     
     while(left>0) {
