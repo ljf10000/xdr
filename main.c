@@ -127,7 +127,7 @@ usage(void)
 {
     int err;
     
-    os_println("%s [OPTION] tlv-path xdr-path sha-path", self);
+    os_println("[ENV] %s [OPTION] tlv-path xdr-path sha-path", self);
     err = nameflag_usage(opt);
     
     os_println(__tab "ENV:");
