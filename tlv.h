@@ -384,9 +384,19 @@ tlv_dump_binary(FILE *stream, struct tlv *tlv)
     } else {
         TLV_DUMP(stream, "id: %d, %s:", tlv->id, tlv_ops_name(tlv));
 
-        int size = tlv_datalen(tlv); size = os_min(size, DUMP_SHORT);
+        os_dump_buffer(stream, tlv_binary(tlv), os_min(tlv_datalen(tlv), DUMP_SHORT));
+    }
+}
 
-        os_dump_buffer(stream, tlv_binary(tlv), size);
+static inline void 
+tlv_dump_tlv(FILE *stream, struct tlv *tlv)
+{
+    if (is_option(OPT_SPLIT)) {
+        TLV_DUMP(stream, "id: %d, %s: %s", tlv->id, tlv_ops_name(tlv), tlv_string(tlv));
+    } else {
+        TLV_DUMP(stream, "id: %d, %s:", tlv->id, tlv_ops_name(tlv));
+
+        os_dump_buffer(stream, tlv, os_min(tlv_len(tlv), DUMP_SHORT));
     }
 }
 
@@ -1545,7 +1555,7 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
             tlv_hdrlen(tlv),
             tlv_datalen(tlv));
 
-    tlv_dump_binary(stream, tlv);
+    tlv_dump_tlv(stream, tlv);
 }
 
 static inline int
