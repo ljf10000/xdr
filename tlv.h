@@ -458,7 +458,7 @@ tlv_dump_session(FILE *stream, struct tlv *tlv)
 {
     TLV_DUMP(stream, "id: %d, session:", tlv->id);
 
-    dump_session(tlv_session(tlv));
+    dump_session(stream, tlv_session(tlv));
 }
 
 #ifndef sizeof_session_st
@@ -501,7 +501,7 @@ tlv_dump_session_st(FILE *stream, struct tlv *tlv)
 {
     TLV_DUMP(stream, "id: %d, %s:", tlv->id, tlv_ops_name(tlv));
 
-    dump_session_st(tlv_session_st(tlv));
+    dump_session_st(stream, tlv_session_st(tlv));
 }
 #define tlv_dump_service_st    tlv_dump_session_st
 
@@ -533,7 +533,7 @@ tlv_dump_session_time(FILE *stream, struct tlv *tlv)
 {
     TLV_DUMP(stream, "id: %d, session_time:", tlv->id);
 
-    dump_tcp(tlv_session_time(tlv));
+    dump_session_time(stream, tlv_session_time(tlv));
 }
 
 #ifndef sizeof_tcp
@@ -589,7 +589,7 @@ tlv_dump_tcp(FILE *stream, struct tlv *tlv)
 {
     TLV_DUMP(stream, "id: %d, tcp:", tlv->id);
 
-    dump_tcp(tlv_tcp(tlv));
+    dump_tcp(stream, tlv_tcp(tlv));
 }
 
 #ifndef sizeof_L7
@@ -615,7 +615,7 @@ tlv_dump_L7(FILE *stream, struct tlv *tlv)
 {
     TLV_DUMP(stream, "id: %d, L7:", tlv->id);
     
-    dump_L7(tlv_L7(tlv));
+    dump_L7(stream, tlv_L7(tlv));
 }
 
 #ifndef sizeof_http
@@ -704,7 +704,7 @@ tlv_dump_http(FILE *stream, struct tlv *tlv)
 {
     TLV_DUMP(stream, "id: %d, http:", tlv->id);
 
-    dump_http(tlv_http(tlv));
+    dump_http(stream, tlv_http(tlv));
 }
 
 enum { XDR_SIP_INVITE = 1 };
@@ -745,7 +745,7 @@ tlv_dump_sip(FILE *stream, struct tlv *tlv)
 {
     TLV_DUMP(stream, "id: %d, http:", tlv->id);
 
-    dump_sip(tlv_sip(tlv));
+    dump_sip(stream, tlv_sip(tlv));
 }
 
 #ifndef sizeof_rtsp
@@ -780,7 +780,7 @@ tlv_dump_rtsp(FILE *stream, struct tlv *tlv)
 {
     TLV_DUMP(stream, "id: %d, http:", tlv->id);
 
-    dump_rtsp(tlv_rtsp(tlv));
+    dump_rtsp(stream, tlv_rtsp(tlv));
 }
 
 static inline int
