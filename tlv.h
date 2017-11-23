@@ -278,8 +278,8 @@ struct tlv {
 #define tlv_ip4(_tlv)       (*(tlv_ip4_t *)tlv_data(_tlv))
 #define tlv_ip6(_tlv)       ((tlv_ip6_t *)tlv_data(_tlv))
 
-#define tlv_binary(_tlv)    tlv_data(_tlv)
-#define tlv_string(_tlv)    ((char *)tlv_binary(_tlv))
+#define tlv_binary(_tlv)    ((byte *)tlv_data(_tlv))
+#define tlv_string(_tlv)    ((char *)tlv_data(_tlv))
 
 #define tlv_session(_tlv)       ((tlv_session_t *)tlv_data(_tlv))
 #define tlv_session_st(_tlv)    ((tlv_session_st_t *)tlv_data(_tlv))
