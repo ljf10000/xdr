@@ -454,7 +454,7 @@ int main(int argc, char *argv[])
 
     tlv_check_obj();
 
-    xdr_dprint(0, "main 0");
+    os_println("main 0");
     argc--; argv++;
     while(1) {
         char *args = argv[0];
@@ -472,28 +472,28 @@ int main(int argc, char *argv[])
         argc--; argv++;
     }
 
-    xdr_dprint(0, "main 1");
+    os_println("main 1");
 
     if (0!=check(argc, argv)) {
         return usage();
     }
 
-    xdr_dprint(0, "main 2");
+    os_println("main 2");
 
     pre();
     
-    xdr_dprint(0, "main 3");
+    os_println("main 3");
     err = init(argv);
     if (err<0) {
         return err;
     }
-    xdr_dprint(0, "main 4");
+    os_println("main 4");
     
     if (is_option(OPT_CLI)) {
-    xdr_dprint(0, "main 5");
+    os_println("main 5");
         return cli();
     } else {
-    xdr_dprint(0, "main 6");
+    os_println("main 6");
         return monitor(argv[PATH_TLV]);
     }
 }
