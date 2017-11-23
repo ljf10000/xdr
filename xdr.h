@@ -1348,13 +1348,17 @@ to_xdr_file_content(struct xb *x, struct tlv *tlv)
 static inline int
 to_xdr_ssl_server_cert(struct xb *x, struct tlv *tlv)
 {
-    return 0; // do nothing
+    (void)xb_pre_ssl(x);
+    
+    return 0;
 }
 
 static inline int
 to_xdr_ssl_client_cert(struct xb *x, struct tlv *tlv)
 {
-    return 0; // do nothing
+    (void)xb_pre_ssl(x);
+    
+    return 0;
 }
 
 static inline int
