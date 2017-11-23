@@ -1488,7 +1488,8 @@ xp_open(struct xparse *parse)
         
         return size;
     }
-
+    os_println("%s size=%d", tlv->fullname, size);
+    
     err = tlv_trace(tlv_open(tlv, size), parse->wid, "tlv_open %s:%d", tlv->fullname, size);
     if (err<0) {
         return err;
