@@ -37,3 +37,7 @@
 
 #dir
 xdrs/*
+tlvs/*
+file/*
+bad/*
+tmp/*
