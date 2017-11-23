@@ -1489,28 +1489,28 @@ to_xdr_array(tlv_record_t *r, struct xb *x)
     
     switch(xdr->appid) {
         case XDR_CLASS_DNS:
-            if (NULL==xdr_dns(xdr)) {
+            if (xdr_dns(xdr)) {
+                err = xdr_trace(to_xdr_dns(r, x, xdr->offsetof_dns), r->parse->wid, "to_xdr_dns");
+                if (err<0) {
+                    return err;
+                }
+            } else if (is_option(OPT_STRICT)) {
                 xdr_dprint(x->parse->wid, "no dns entry");
                 
                 return -ENOMATCH;
             }
             
-            err = xdr_trace(to_xdr_dns(r, x, xdr->offsetof_dns), r->parse->wid, "to_xdr_dns");
-            if (err<0) {
-                return err;
-            }
-
             break;
         case XDR_CLASS_SSL:
-            if (NULL==xdr_ssl(xdr)) {
+            if (xdr_ssl(xdr)) {
+                err = xdr_trace(to_xdr_ssl(r, x, xdr->offsetof_ssl), r->parse->wid, "to_xdr_ssl");
+                if (err<0) {
+                    return err;
+                }
+            } else if (is_option(OPT_STRICT)) {
                 xdr_dprint(x->parse->wid, "no ssl entry");
                 
                 return -ENOMATCH;
-            }
-            
-            err = xdr_trace(to_xdr_ssl(r, x, xdr->offsetof_ssl), r->parse->wid, "to_xdr_ssl");
-            if (err<0) {
-                return err;
             }
             
             break;
