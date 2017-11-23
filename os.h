@@ -1099,7 +1099,7 @@ __nameflag_analysis(nameflag_t opt[], int count, char *args)
 #define nameflag_analysis(_opt, _args)      __nameflag_analysis(_opt, os_count_of(_opt), _args)
 
 #ifndef D_env_println
-#define D_env_println   0
+#define D_env_println   1
 #endif
 
 #if D_env_println

@@ -653,6 +653,7 @@ typedef struct {
     byte head:1;
     byte flag:3;
     byte first:2;
+    
     byte ie;
     byte portal;
     byte _1;
@@ -736,6 +737,7 @@ typedef struct {
     byte signal_type;
     
     uint16 dataflow_count;
+    
     uint16 _:13;
     uint16 malloc:1;
     uint16 bye:1;
