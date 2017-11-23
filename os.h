@@ -755,8 +755,11 @@ os_fhandle(const char *file, int (*handle)(const char *file, int fd))
 #endif
 
 #ifndef os_mmap
-#define os_mmap(_size, _prot, _flag, _fd, _offset) \
-    mmap(NULL,  _size, _prot, _flag, _fd, _offset)
+#define os_mmap(_size, _prot, _flag, _fd, _offset)              ({  \
+    void *m_mm = mmap(NULL,  _size, _prot, _flag, _fd, _offset);    \
+                                                                    \
+    (MAP_FAILED==m_mm)?NULL:m_mm;                                   \
+})
 #endif
 
 static inline int

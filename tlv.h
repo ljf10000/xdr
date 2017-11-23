@@ -209,10 +209,16 @@ DECLARE_ENUM(TLV_T, tlv_type, TLV_T_MAPPER, TLV_T_END);
 struct tlv {
     byte id;
     byte pad;
-    
+
+#if 0
     uint16 e:1;
     uint16 _:3;
     uint16 len:12;
+#else
+    uint16 len:12;
+    uint16 _:3;
+    uint16 e:1;
+#endif
 
     byte body[0];
 };
@@ -1115,6 +1121,7 @@ xb_mmap(struct xb *x, bool readonly)
 
     x->buffer = os_mmap(x->size, prot, flag, x->fd, 0);
     if (NULL==x->buffer) {
+        x->buffer = NULL;
         option_dump_error("mmap %s error:%d", x->fullname, -errno);
         
         return -errno;

@@ -1515,10 +1515,6 @@ to_xdr_helper(tlv_cache_t *cache, struct xb *x)
         if (ops && ops->toxdr) {
             err = xdr_trace((*ops->toxdr)(x, tlv), x->parse->wid, "to %s", ops->name);
             if (err<0) {
-                if (tlv->id>200) {
-                    // xdr_dprint("toxdr %d:%d %s:%d.", i, tlv->id, ok_string(err), err);
-                }
-                
                 return err;
             }
         }
