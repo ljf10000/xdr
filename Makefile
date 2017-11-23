@@ -1,7 +1,7 @@
 CC=gcc -Wall -rdynamic
 OBJS=main.o
 TARGET=xdr
-CFLAGS+= -g -fpack-struct=4
+CFLAGS+= -g -fpack-struct=4 -lpthread
 
 $(TARGET):$(OBJS)
 	${CC} ${CFLAGS} -o $(TARGET) $(OBJS)
