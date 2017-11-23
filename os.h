@@ -179,6 +179,9 @@
 #define os_count_of(x)              (sizeof(x)/sizeof((x)[0]))
 #endif
 
+#define SYMBOL_TO_STRING_HELPER(x)  #x
+#define SYMBOL_TO_STRING(x)         SYMBOL_TO_STRING_HELPER(x)
+
 #ifndef OS_ALIGN
 #define OS_ALIGN(_x, _align)        (((_x)+(_align)-1) & ~((_align)-1))
 #endif

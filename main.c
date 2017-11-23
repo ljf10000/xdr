@@ -105,7 +105,9 @@ static nameflag_t opt[] = {
     { .flag = OPT_DUMP_INIT,    .name = "--dump-init",  .help = "dump init"},
     { .flag = OPT_TRACE_TLV,    .name = "--trace-tlv",  .help = "trace tlv parse"},
     { .flag = OPT_TRACE_XDR,    .name = "--trace-xdr",  .help = "trace xdr parse"},
+#if 0
     { .flag = OPT_SPLIT,        .name = "--file-split", .help = "dpi file split from xdr"},
+#endif
 };
 
 static inline void
@@ -123,6 +125,11 @@ ev_dump(inotify_ev_t *ev)
 static int
 usage(void)
 {
+    os_println("%s [ENV]", self);
+    os_println(__tab ENV_XDR_SLEEP  "=" SYMBOL_TO_STRING(XDR_USLEEP));
+    os_println(__tab ENV_XDR_QUE    "=" SYMBOL_TO_STRING(WORKER_COUNT));
+    os_println(__tab ENV_XDR_WORKER "=" SYMBOL_TO_STRING(QUE_COUNT));
+    
     os_println("%s [OPTION] tlv-path xdr-path sha-path", self);
 
     return nameflag_usage(opt);
