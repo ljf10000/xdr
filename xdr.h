@@ -1607,6 +1607,7 @@ xdr_dump_ssl(FILE *stream, struct xdr *xdr)
 {
     xdr_ssl_t *obj = xdr_ssl(xdr);
 
+    (void)obj;
 }
 
 static inline void
