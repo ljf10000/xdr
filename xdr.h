@@ -1480,6 +1480,8 @@ to_xdr_array(tlv_record_t *r, struct xb *x)
     switch(xdr->appid) {
         case XDR_CLASS_DNS:
             if (NULL==xdr_dns(xdr)) {
+                xdr_dprint(x->parse->wid, "no dns entry");
+                
                 return -ENOMATCH;
             }
             
@@ -1491,6 +1493,8 @@ to_xdr_array(tlv_record_t *r, struct xb *x)
             break;
         case XDR_CLASS_SSL:
             if (NULL==xdr_ssl(xdr)) {
+                xdr_dprint(x->parse->wid, "no ssl entry");
+                
                 return -ENOMATCH;
             }
             
