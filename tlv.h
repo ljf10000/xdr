@@ -235,15 +235,9 @@ struct tlv {
     byte id;
     byte pad;
 
-#if 1
     uint16 e:1;
     uint16 _:3;
     uint16 len:12;
-#else
-    uint16 len:12;
-    uint16 _:3;
-    uint16 e:1;
-#endif
 
     byte body[0];
 };
@@ -662,54 +656,16 @@ typedef struct {
     byte method;
     byte version;
 
-#if 1
     byte first:2;
     byte flag:3;
     byte head:1;
     byte _0:2;
-#else
-    byte _0:2;
-    byte head:1;
-    byte flag:3;
-    byte first:2;
-#endif
 
     byte ie;
     byte portal;
     byte _1;
 }
 tlv_http_t;
-
-#if 0 // little endian
- 00 01 02 03 04 05 06 07
-+--+--+--+--+--+--+--+--+
-|  R  |H |  flag  |first|
-+--+--+--+--+--+--+--+--+
-R: resv
-H: head
-
-#define TLV_MASK_HTTP_FIRST     0xc0
-#define TLV_MASK_HTTP_FLAG      0x38
-#define TLV_MASK_HTTP_HEAD      0x04
-
-static inline int
-tlv_http_first(tlv_http_t *obj)
-{
-    return (obj->v & TLV_MASK_HTTP_FIRST) >> 6;
-}
-
-static inline int
-tlv_http_flag(tlv_http_t *obj)
-{
-    return (obj->v & TLV_MASK_HTTP_FLAG) >> 3;
-}
-
-static inline int
-tlv_http_head(tlv_http_t *obj)
-{
-    return (obj->v & TLV_MASK_HTTP_HEAD) >> 2;
-}
-#endif
 
 static inline void 
 dump_http(FILE *stream, tlv_http_t *obj)
@@ -758,19 +714,11 @@ typedef struct {
     
     uint16 dataflow_count;
 
-#if 1
     uint16 invite:1;
     uint16 bye:1;
     uint16 malloc:1;
     uint16 _:13;
-#else
-    uint16 _:13;
-    uint16 malloc:1;
-    uint16 bye:1;
-    uint16 invite:1;
-#endif
-} 
-tlv_sip_t;
+} tlv_sip_t;
 
 static inline void 
 dump_sip(FILE *stream, tlv_sip_t *obj)
