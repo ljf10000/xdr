@@ -244,12 +244,12 @@ struct tlv {
 #define tlv_data_e(_tlv)        ((_tlv)->body + sizeof(uint32))
 #define tlv_data(_tlv)          (tlv_extend(_tlv)?tlv_data_e(_tlv):tlv_data_n(_tlv))
 
-#define tlv_len_n(_tlv)         (_tlv)->len
+#define tlv_len_n(_tlv)         ((uint32)(_tlv)->len)
 #define tlv_len_e(_tlv)         (*(uint32 *)(_tlv)->body)
 #define tlv_len(_tlv)           (tlv_extend(_tlv)?tlv_len_e(_tlv):tlv_len_n(_tlv))
 
-#define tlv_hdrlen_n            sizeof(struct tlv)
-#define tlv_hdrlen_e            (sizeof(struct tlv)+sizeof(uint32))
+#define tlv_hdrlen_n            ((uint32)(sizeof(struct tlv)))
+#define tlv_hdrlen_e            ((uint32)(sizeof(struct tlv)+sizeof(uint32)))
 #define tlv_hdrlen(_tlv)        (tlv_extend(_tlv)?tlv_hdrlen_e:tlv_hdrlen_n)
 
 #define tlv_datalen_n(_tlv)     (tlv_len_n(_tlv)-tlv_hdrlen_n)
@@ -1514,7 +1514,7 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
         (uint32)((byte *)tlv - (byte *)parse->tlv.buffer));
 
     fprintf(stream, __tab
-            "tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u"
+            "tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%lu dlen:%lu"
             __crlf, 
             tlv_ops_name(tlv), 
             tlv->id, 
