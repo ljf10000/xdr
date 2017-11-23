@@ -1197,7 +1197,9 @@ xb_close(struct xb *x)
 {
     os_close(x->fd);
 
-    madvise(x->buffer, x->size, MADV_DONTNEED);;
+    if (x->buffer) {
+        madvise(x->buffer, x->size, MADV_DONTNEED);
+    }
     
     return xb_munmap(x);
 }
