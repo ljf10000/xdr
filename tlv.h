@@ -1554,6 +1554,8 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         va_start(args, fmt);
         xp_verror(DUMP_STREAM, parse, tlv, err, fmt, args);
         va_end(args);
+
+        os_dump_buffer(DUMP_STREAM, tlv, 128);
     }
 
     // move tlvs/xxx.xdr ==> bad/xxx.err
