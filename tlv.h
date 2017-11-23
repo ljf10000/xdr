@@ -1595,7 +1595,7 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
     return err;
 }
 
-typedef int tlv_walk_t(struct xparse *parse, struct tlv *tlv);
+typedef int tlv_walk_t(struct xparse *parse, struct tlv *tlv, uint32 left);
 
 static inline int
 tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
@@ -1617,7 +1617,7 @@ tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
             return xp_error(parse, tlv, -ETOOSMALL, "left:%u < tlv len:%u", left, tlv_len(tlv));
         }
         
-        err = (*walk)(parse, tlv);
+        err = (*walk)(parse, tlv, left);
         if (err<0) {
             return err;
         }
@@ -1703,7 +1703,7 @@ tlv_check_dynamic(struct xparse *parse, struct tlv *tlv)
 }
 
 static inline int
-tlv_check(struct xparse *parse, struct tlv *tlv)
+tlv_check(struct xparse *parse, struct tlv *tlv, uint32 left)
 {
     tlv_ops_t *ops = tlv_ops(tlv);
     if (NULL==ops) {
@@ -1711,6 +1711,9 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
     } else if (tlv_len(tlv) < tlv_hdrlen(tlv)) {
         return xp_error(parse, tlv, -ETOOSMALL, 
             "tlv alen[%u] < hdrlen[%u]", tlv_len(tlv), tlv_hdrlen(tlv));
+    } else if (tlv_len(tlv) > left) {
+        return xp_error(parse, tlv, -ETOOBIG, 
+            "tlv alen[%u] > left[%u]", tlv_len(tlv), left);
     }
     
     if (tlv_extend(tlv)) {
@@ -1781,7 +1784,7 @@ tlv_record_save(tlv_record_t *r, struct tlv *tlv)
 static inline int
 tlv_record_parse(tlv_record_t *r)
 {
-    int walk(struct xparse *parse, struct tlv *tlv) 
+    int walk(struct xparse *parse, struct tlv *tlv, uint32 left) 
     {
         int err;
 
@@ -1791,7 +1794,7 @@ tlv_record_parse(tlv_record_t *r)
             tlv_dump(DUMP_STREAM, tlv);
         }
 
-        err = tlv_trace(tlv_check(parse, tlv), parse->wid, "tlv_check %d:%d", parse->count, r->count);
+        err = tlv_trace(tlv_check(parse, tlv, left), parse->wid, "tlv_check %d:%d", parse->count, r->count);
         if (err<0) {
             parse->st[XST_tlv].error++;
             

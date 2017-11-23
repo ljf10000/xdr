@@ -1572,7 +1572,7 @@ to_xdr(tlv_record_t *r, struct xb *x)
 static inline int
 xp_parse(struct xparse *parse)
 {
-    int walk(struct xparse *parse, struct tlv *header)
+    int walk(struct xparse *parse, struct tlv *header, uint32 left)
     {
         xdr_dprint(parse->wid, "xp_parse walk ...");
         
