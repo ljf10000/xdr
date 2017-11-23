@@ -1579,7 +1579,7 @@ xp_parse(struct xparse *parse)
         tlv_record_t r = TLV_RECORD_INITER(parse);
         int err;
 
-        err = xdr_trace(tlv_record_parse(&r), parse->wid, "tlv_record_parse:%d", parse->count);
+        err = xdr_trace(tlv_record_parse(&r, header, left), parse->wid, "tlv_record_parse:%d", parse->count);
         if (err<0) {
             parse->st[XST_xdr].error++;
             return err;
