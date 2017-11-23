@@ -15,8 +15,8 @@
 #define DUMP_STREAM     stdout
 #endif
 
-#ifndef DUMP_SIZE
-#define DUMP_SIZE       32
+#ifndef DUMP_SHORT
+#define DUMP_SHORT      32
 #endif
 
 #ifndef XDR_SUFFIX
@@ -376,10 +376,6 @@ tlv_dump_string(FILE *stream, struct tlv *tlv)
     TLV_DUMP_BY(stream, tlv, "%s", string); 
 }
 
-#ifndef XDR_DUMP_SHORT
-#define XDR_DUMP_SHORT     128
-#endif
-
 static inline void 
 tlv_dump_binary(FILE *stream, struct tlv *tlv)
 {
@@ -388,10 +384,7 @@ tlv_dump_binary(FILE *stream, struct tlv *tlv)
     } else {
         TLV_DUMP(stream, "id: %d, %s:", tlv->id, tlv_ops_name(tlv));
 
-        int size = tlv_datalen(tlv);
-        if (is_option(OPT_DUMP_SB)) {
-            size = os_min(size, XDR_DUMP_SHORT);
-        }
+        int size = tlv_datalen(tlv); size = os_min(size, DUMP_SHORT);
 
         os_dump_buffer(stream, tlv_binary(tlv), size);
     }
@@ -1573,8 +1566,6 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
             va_start(args, fmt);
             xp_verror(parse->ferr, parse, tlv, err, fmt, args);
             va_end(args);
-
-            os_dump_buffer(parse->ferr, tlv, DUMP_SIZE);
         } else {
             option_dump_error("open %s error", path->fullname);
         }
@@ -1584,8 +1575,6 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
             va_start(args, fmt);
             xp_verror(DUMP_STREAM, parse, tlv, err, fmt, args);
             va_end(args);
-
-            os_dump_buffer(DUMP_STREAM, tlv, DUMP_SIZE);
         }
     }
 

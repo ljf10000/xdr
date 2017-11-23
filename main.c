@@ -96,7 +96,6 @@ static nameflag_t opt[] = {
     { .flag = OPT_STRICT,       .name = "--strict",     .help = "strict check"},
     { .flag = OPT_MULTI,        .name = "--multi",      .help = "multi thread"},
     { .flag = OPT_DUMP,         .name = "--dump",       .help = "dump all"},
-    { .flag = OPT_DUMP_SB,      .name = "--dump-sb",    .help = "dump short binary"},
     { .flag = OPT_DUMP_PRE,     .name = "--dump-pre",   .help = "dump before check"},
     { .flag = OPT_DUMP_ST,      .name = "--dump-st",    .help = "dump statistic"},
     { .flag = OPT_DUMP_EV,      .name = "--dump-ev",    .help = "dump inotify event"},
@@ -106,6 +105,7 @@ static nameflag_t opt[] = {
     { .flag = OPT_TRACE_TLV,    .name = "--trace-tlv",  .help = "trace tlv parse"},
     { .flag = OPT_TRACE_XDR,    .name = "--trace-xdr",  .help = "trace xdr parse"},
 #if 0
+    { .flag = OPT_DUMP_SB,      .name = "--dump-sb",    .help = "dump short binary"},
     { .flag = OPT_SPLIT,        .name = "--file-split", .help = "dpi file split from xdr"},
 #endif
 };
