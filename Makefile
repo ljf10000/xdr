@@ -1,7 +1,7 @@
 CC=gcc -Wall -rdynamic
 OBJS=main.o
-TARGET=tlv2xdr
-CFLAGS+=
+TARGET=xdr
+CFLAGS+= -g --fpack-struct4
 
 $(TARGET):$(OBJS)
 	${CC} ${CFLAGS} -o $(TARGET) $(OBJS)
