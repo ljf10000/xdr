@@ -610,7 +610,8 @@ os_time_string(time_t t, time_string_t string)
 {
     struct tm *tm = gmtime(&t);
 
-    os_saprintf(string, "%04d-%02d-%02d#%02d:%02d:%02d",
+    os_snprintf(string, OS_FULLTIME_STRING_LEN,
+                "%04d-%02d-%02d#%02d:%02d:%02d",
                 1900 + tm->tm_year,
                 1 + tm->tm_mon,
                 tm->tm_mday,
