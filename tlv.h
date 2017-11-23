@@ -15,6 +15,10 @@
 #define DUMP_STREAM     stdout
 #endif
 
+#ifndef DUMP_SIZE
+#define DUMP_SIZE       32
+#endif
+
 #ifndef XDR_SUFFIX
 #define XDR_SUFFIX      "xdr"
 #endif
@@ -1563,16 +1567,16 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
         if (NULL==parse->ferr) {
             parse->ferr = fopen(path->fullname, "a+");
         }
-        
-        if (NULL==parse->ferr) {
-            option_dump_error("open %s error", path->fullname);
-        } else {
-            // write to err
+
+        // write to err
+        if (parse->ferr) {
             va_start(args, fmt);
             xp_verror(parse->ferr, parse, tlv, err, fmt, args);
             va_end(args);
 
-            os_dump_buffer(parse->ferr, tlv, 32);
+            os_dump_buffer(parse->ferr, tlv, DUMP_SIZE);
+        } else {
+            option_dump_error("open %s error", path->fullname);
         }
         
         // write to stdout
@@ -1581,7 +1585,7 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
             xp_verror(DUMP_STREAM, parse, tlv, err, fmt, args);
             va_end(args);
 
-            os_dump_buffer(DUMP_STREAM, tlv, 32);
+            os_dump_buffer(DUMP_STREAM, tlv, DUMP_SIZE);
         }
     }
 
@@ -1791,8 +1795,6 @@ tlv_record_parse(tlv_record_t *r, struct tlv *header)
     {
         int err;
 
-        xdr_dprint(parse->wid, "tlv_record_parse walk ...");
-        
         if (is_option(OPT_DUMP_PRE)) {
             tlv_dump(DUMP_STREAM, tlv);
         }
@@ -1818,8 +1820,6 @@ tlv_record_parse(tlv_record_t *r, struct tlv *header)
         r->count++;
         parse->st[XST_tlv].ok++;
 
-        xdr_dprint(parse->wid, "tlv_record_parse walk ok.");
-        
         return 0;
     }
 
