@@ -1757,6 +1757,8 @@ tlv_record_parse(tlv_record_t *r)
     int walk(struct xparse *parse, struct tlv *tlv) 
     {
         int err;
+
+        xdr_dprint(parse->wid, "tlv_record_parse walk ...");
         
         if (is_option(OPT_DUMP_PRE)) {
             tlv_dump(DUMP_STREAM, tlv);
@@ -1782,6 +1784,8 @@ tlv_record_parse(tlv_record_t *r)
 
         r->count++;
         parse->st[XST_tlv].ok++;
+
+        xdr_dprint(parse->wid, "tlv_record_parse walk ok.");
         
         return 0;
     }

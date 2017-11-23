@@ -1574,7 +1574,7 @@ xp_parse(struct xparse *parse)
 {
     int walk(struct xparse *parse, struct tlv *header)
     {
-        xdr_dprint(parse->wid, "xp_run_walk ...");
+        xdr_dprint(parse->wid, "xp_parse walk ...");
         
         tlv_record_t r = TLV_RECORD_INITER(parse);
         int err;
@@ -1594,7 +1594,7 @@ xp_parse(struct xparse *parse)
         parse->count++;
         parse->st[XST_xdr].ok++;
 
-        xdr_dprint(parse->wid, "xp_run_walk ok");
+        xdr_dprint(parse->wid, "xp_parse walk ok");
         
         return 0;
     }
