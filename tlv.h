@@ -1514,7 +1514,7 @@ xp_verror(FILE *stream, struct xparse *parse, struct tlv *tlv, int err, const ch
         (uint32)((byte *)tlv - (byte *)parse->tlv.buffer));
 
     fprintf(stream, __tab
-            "tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%lu dlen:%lu"
+            "tlv name:%s id:%d extend:%d fixed:%d pad:%d alen:%u hlen:%u dlen:%u"
             __crlf, 
             tlv_ops_name(tlv), 
             tlv->id, 
