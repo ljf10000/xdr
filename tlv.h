@@ -231,7 +231,7 @@ struct tlv {
     byte id;
     byte pad;
 
-#if 0
+#if 1
     uint16 e:1;
     uint16 _:3;
     uint16 len:12;
