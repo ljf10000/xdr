@@ -91,7 +91,7 @@ get_qb(uint64 id)
 }
 
 static nameflag_t opt[] = {
-    { .flag = OPT_CLI,          .name = "--cli",        .help = "cli mode"},
+    { .flag = OPT_CLI,          .name = "--cli",        .help = "cli mode, must supply env " ENV_XDR_FILE},
     { .flag = OPT_IP6,          .name = "--ip6",        .help = "ipv6[not support now]"},
     { .flag = OPT_STRICT,       .name = "--strict",     .help = "strict check"},
     { .flag = OPT_MULTI,        .name = "--multi",      .help = "multi thread"},
