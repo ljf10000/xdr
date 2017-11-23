@@ -1572,14 +1572,14 @@ to_xdr(tlv_record_t *r, struct xb *x)
 static inline int
 xp_parse(struct xparse *parse)
 {
-    int walk(struct xparse *parse, struct tlv *header, uint32 left)
+    int walk(struct xparse *parse, struct tlv *header)
     {
         xdr_dprint(parse->wid, "xp_parse walk ...");
         
         tlv_record_t r = TLV_RECORD_INITER(parse);
         int err;
 
-        err = xdr_trace(tlv_record_parse(&r, header, left), parse->wid, "tlv_record_parse:%d", parse->count);
+        err = xdr_trace(tlv_record_parse(&r, header), parse->wid, "tlv_record_parse:%d", parse->count);
         if (err<0) {
             parse->st[XST_xdr].error++;
             return err;
