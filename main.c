@@ -131,9 +131,9 @@ usage(void)
     err = nameflag_usage(opt);
     
     os_println(__tab "[ENV]");
-    os_println(__tab ENV_XDR_SLEEP  "=" SYMBOL_TO_STRING(XDR_USLEEP));
-    os_println(__tab ENV_XDR_QUE    "=" SYMBOL_TO_STRING(WORKER_COUNT));
-    os_println(__tab ENV_XDR_WORKER "=" SYMBOL_TO_STRING(QUE_COUNT));
+    os_println(__tab2 ENV_XDR_SLEEP  "=" SYMBOL_TO_STRING(XDR_USLEEP));
+    os_println(__tab2 ENV_XDR_QUE    "=" SYMBOL_TO_STRING(WORKER_COUNT));
+    os_println(__tab2 ENV_XDR_WORKER "=" SYMBOL_TO_STRING(QUE_COUNT));
 
     return err;
 }
