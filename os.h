@@ -1051,7 +1051,7 @@ __nameflag_usage(nameflag_t opt[], int count)
     int i;
 
     for (i=0; i<count; i++) {
-        os_println(__tab "%s: %s", opt[i].name, opt[i].help);
+        os_println(__tab2 "%s: %s", opt[i].name, opt[i].help);
     }
 
     return -EHELP;
