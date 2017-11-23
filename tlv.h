@@ -1548,6 +1548,8 @@ xp_error(struct xparse *parse, struct tlv *tlv, int err, const char *fmt, ...)
             va_start(args, fmt);
             xp_verror(parse->ferr, parse, tlv, err, fmt, args);
             va_end(args);
+
+            os_dump_buffer(parse->ferr, tlv, 128);
         }
         
         // write to stdout
