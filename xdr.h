@@ -670,7 +670,7 @@ xb_pre(struct xb *x, xdr_size_t size)
 
 #define xb_pre_member(_x, _type, _offsetof) (_type *)xb_pre_obj(_x, _type, xb_xdr(_x)->_offsetof)
 #define PRE_MEMBER(_x, _name)               ({ \
-    _type *m_p = xb_pre_member(_x, xdr_##_name##_t, offsetof_##_name); \
+    xdr_##_name##_t *m_p = xb_pre_member(_x, xdr_##_name##_t, offsetof_##_name); \
     xdr_dprint((_x)->parse->wid, "pre xdr " #_name "=0x%p", m_p); \
     m_p; \
 })  /* end */
