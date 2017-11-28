@@ -916,7 +916,6 @@ xb_pre_ssl(struct xb *x)
     0;                                          \
 })  /* end */
 
-
 static inline int
 to_xdr_session_state(struct xb *x, struct tlv *tlv)
 {

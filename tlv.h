@@ -241,6 +241,12 @@ struct tlv {
 
     byte body[0];
 };
+#define tlv_length(_tlv_header) (*(uint32 *)(_tlv_header)->body)
+#if 0
+#define tlv_first(_tlv_header)  (struct tlv *)tlv_data(_tlv_header)
+#else
+#define tlv_first(_tlv_header)  (struct tlv *)((byte *)(_tlv_header) + 8)
+#endif
 
 #define tlv_extend(_tlv)        (_tlv)->e
 
@@ -251,6 +257,7 @@ struct tlv {
 #define tlv_len_n(_tlv)         ((uint32)(_tlv)->len)
 #define tlv_len_e(_tlv)         (*(uint32 *)(_tlv)->body)
 #define tlv_len(_tlv)           (tlv_extend(_tlv)?tlv_len_e(_tlv):tlv_len_n(_tlv))
+#define tlv_next(_tlv)          (struct tlv *)((byte *)(_tlv) + tlv_len(_tlv))
 
 #define tlv_hdrlen_n            ((uint32)(sizeof(struct tlv)))
 #define tlv_hdrlen_e            ((uint32)(sizeof(struct tlv)+sizeof(uint32)))
@@ -263,8 +270,6 @@ struct tlv {
 #define tlv_binlen(_tlv)        (tlv_datalen(_tlv) - (_tlv)->pad)
 #define tlv_strlen(_tlv)        tlv_binlen(_tlv)
 
-#define tlv_first(_tlv_header)  (struct tlv *)tlv_data(_tlv_header)
-#define tlv_next(_tlv)          (struct tlv *)((byte *)(_tlv) + tlv_len(_tlv))
 
 #define tlv_u8(_tlv)        (_tlv)->pad
 #define tlv_u16(_tlv)       (*(uint16 *)tlv_data(_tlv))
@@ -428,6 +433,12 @@ static inline void
 tlv_dump_ip6(FILE *stream, struct tlv *tlv)
 {
     TLV_DUMP(stream, "id: %d, %s: ipv6 address", tlv->id, tlv_ops_name(tlv));
+}
+
+static inline void 
+tlv_dump_header(FILE *stream, struct tlv *tlv)
+{
+    TLV_DUMP(stream, "id: %d, %s: %u/%u", tlv->id, tlv_ops_name(tlv), tlv_len(tlv), tlv_length(tlv));
 }
 
 enum { XDR_IPV4 = 0, XDR_IPV6 = 1 };
@@ -799,6 +810,7 @@ tlv_check_session(struct xparse *parse, struct tlv *tlv)
     return 0;
 }
 
+static inline int to_xdr_header(struct xb *x, struct tlv *tlv) { return 0; }
 static inline int to_xdr_session_state(struct xb *x, struct tlv *tlv);
 static inline int to_xdr_appid(struct xb *x, struct tlv *tlv);
 static inline int to_xdr_session(struct xb *x, struct tlv *tlv);
@@ -868,8 +880,6 @@ static inline int to_xdr_ssl_fail_reason(struct xb *x, struct tlv *tlv);
 
 #define tlv_mapper_object(_mapper, _id, _name, _check, _flag) \
     _mapper(_name, _id, TLV_T_object, TLV_F_FIXED|_flag, 0, sizeof(tlv_##_name##_t), tlv_dump_##_name, _check, to_xdr_##_name)
-#define tlv_mapper_nothing(_mapper, _id, _name, _check, _flag) \
-    _mapper(_name, _id, TLV_T_string, _flag, 0, 0, NULL, _check, NULL)
 
 #define tlv_mapper_u8( _mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, u8, _check, _flag)
 #define tlv_mapper_u16(_mapper, _id, _name, _check, _flag)  tlv_mapper_fixed(_mapper, _id, _name, u16, _check, _flag)
@@ -883,7 +893,7 @@ static inline int to_xdr_ssl_fail_reason(struct xb *x, struct tlv *tlv);
 #define tlv_mapper_binary(_mapper, _id, _name, _check, _flag)   tlv_mapper_dynamic(_mapper, _id, _name, binary, _check, _flag)
 
 #define TLV_MAPPER(_) \
-    tlv_mapper_nothing(_,   0,  header,         NULL,   0) \
+    tlv_mapper_u32(_,   0,      header,         NULL,   0) \
     \
     tlv_mapper_u8(_,        1,  session_state,  NULL,   0) \
     tlv_mapper_u8(_,        2,  appid,          NULL,   0) \
@@ -1575,7 +1585,13 @@ tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
             return err;
         }
 
-        left -= tlv_len(tlv); tlv = tlv_next(tlv);
+        if (0==tlv->id) {
+            uint32 length = tlv_length(tlv);
+            
+            left -= length; tlv = (struct tlv *)((byte *)tlv + length);
+        } else {
+            left -= tlv_len(tlv); tlv = tlv_next(tlv);
+        }
     }
 
     return 0;
@@ -1770,7 +1786,7 @@ tlv_record_parse(tlv_record_t *r, struct tlv *header)
         return 0;
     }
 
-    return tlv_walk(r->parse, tlv_first(header), tlv_datalen(header), walk);
+    return tlv_walk(r->parse, tlv_first(header), tlv_length(header) - 8, walk);
 }
 
 #ifndef TLV_CHECK_OBJ

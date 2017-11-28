@@ -195,6 +195,10 @@
 #define NO_ALIGN                    OS_ALIGNED(1)
 #endif
 
+#ifndef OS_PAGESIZE
+#define OS_PAGESIZE                 (4*1024)
+#endif
+
 #ifndef OS_CACHELINE
 #define OS_CACHELINE                64
 #endif
@@ -851,6 +855,539 @@ ERROR:
     os_close(fd);
 
     return err;
+}
+
+enum {
+    MM_F_WRITE      = 0x0001,
+    MM_F_EXEC       = 0x0002,
+    MM_F_SHARED     = 0x0004,
+};
+
+typedef struct {
+    void        *addr;
+    uint32      offset;
+    uint32      size;
+    uint32      flag;
+    int         fd;
+} mmap_t;
+
+#define INVALID_MMAP_OFFSET         ((uint32)(-1))
+#define MMAP_OBJ(_mm, _offset)      ((byte *)(_mm)->addr + _offset)
+#define MMAP_OFFSET(_mm, _obj)      ((byte *)(_obj) - (byte *)(_mm)->addr)
+
+static inline byte *
+mmap_obj(mmap_t *mm, uint32 offset)
+{
+    return MMAP_OBJ(mm, offset);
+}
+
+static inline uint32
+mmap_offset(mmap_t *mm, void *obj)
+{
+    if (obj >= mm->addr) {
+        return MMAP_OFFSET(mm, obj);
+    } else {
+        return INVALID_MMAP_OFFSET;
+    }
+}
+
+static inline bool
+mmap_enough(mmap_t *mm, uint32 offset, uint32 size)
+{
+    return offset + size <= mm->size;
+}
+
+#ifndef use_blist_dprint
+#define use_blist_dprint    0
+#endif
+
+#if use_blist_dprint
+#define blist_dprint(_fmt, _args...)    os_println(_fmt, ##_args)
+#else
+#define blist_dprint(_fmt, _args...)    os_do_nothing()
+#endif
+
+#ifndef bpointer_t
+#define bpointer_t     uint32
+#endif
+
+#define INVALID_BPOINTER    0
+
+typedef struct {
+    bpointer_t next;
+    bpointer_t prev;
+} blist_head_t;
+
+#define BLIST_OBJ(_mm, _type, _ptr)     (_type *)mmap_obj(_mm, _ptr)
+#define blist_entry(obj, type, member)  container_of(obj, type, member)
+
+static inline blist_head_t *
+blist_obj(mmap_t *mm, bpointer_t ptr)
+{
+    return (blist_head_t *)MMAP_OBJ(mm, ptr);
+}
+
+static inline bpointer_t
+blist_ptr(mmap_t *mm, void *obj)
+{
+    return MMAP_OFFSET(mm, obj);
+}
+
+static inline blist_head_t *
+blist_objnext(mmap_t *mm, bpointer_t ptr)
+{
+    return blist_obj(mm, blist_obj(mm, ptr)->next);
+}
+
+static inline blist_head_t *
+blist_objprev(mmap_t *mm, bpointer_t ptr)
+{
+    return blist_obj(mm, blist_obj(mm, ptr)->prev);
+}
+
+#define BLIST_FIRST(mm, list)   blist_obj(mm, list)->next
+#define BLIST_TAIL(mm, list)    blist_obj(mm, list)->prev
+
+#if 0
+static inline void
+INIT_LIST_HEAD(struct list_head *list)
+{
+	list->next = list;
+	list->prev = list;
+}
+#else
+static inline void
+INIT_BLIST_HEAD(mmap_t *mm, bpointer_t list)
+{
+    blist_head_t *objlist = blist_obj(mm, list);
+    
+	objlist->next = list;
+	objlist->prev = list;
+}
+#endif
+
+#if 0
+/*
+ * Insert a new entry between two known consecutive entries.
+ *
+ * This is only for internal list manipulation where we know
+ * the prev/next entries already!
+ */
+static inline void __list_add(struct list_head *new,
+			      struct list_head *prev,
+			      struct list_head *next)
+{
+	next->prev = new;
+	new->next = next;
+	new->prev = prev;
+	prev->next = new;
+}
+#else
+static inline void
+__blist_add(mmap_t *mm, 
+        bpointer_t new, 
+        bpointer_t prev, 
+        bpointer_t next)
+{
+    blist_head_t *objnew    = blist_obj(mm, new);
+    blist_head_t *objprev   = blist_obj(mm, prev);
+    blist_head_t *objnext   = blist_obj(mm, next);
+
+	objnext->prev   = new;
+	objnew->next    = next;
+	objnew->prev    = prev;
+	objprev->next   = new;
+}
+#endif
+
+#if 0
+
+/**
+ * list_add - add a new entry
+ * @new: new entry to be added
+ * @head: list head to add it after
+ *
+ * Insert a new entry after the specified head.
+ * This is good for implementing stacks.
+ */
+static inline void list_add(struct list_head *new, struct list_head *head)
+{
+	__list_add(new, head, head->next);
+}
+#else
+static inline void
+blist_add(mmap_t *mm,
+        bpointer_t new, 
+        bpointer_t head)
+{
+	__blist_add(mm, new, head, blist_obj(mm, head)->next);
+
+	blist_dprint("blist, add %u to head", new);
+}
+#endif
+
+#if 0
+/**
+ * list_add_tail - add a new entry
+ * @new: new entry to be added
+ * @head: list head to add it before
+ *
+ * Insert a new entry before the specified head.
+ * This is useful for implementing queues.
+ */
+static inline void list_add_tail(struct list_head *new, struct list_head *head)
+{
+	__list_add(new, head->prev, head);
+}
+#else
+static inline void
+blist_add_tail(mmap_t *mm, 
+        bpointer_t new, 
+        bpointer_t head)
+{
+	__blist_add(mm, new, blist_obj(mm, head)->prev, head);
+
+	blist_dprint("blist, add %u to tail", new);
+
+}
+#endif
+
+#if 0
+
+/*
+ * Delete a list entry by making the prev/next entries
+ * point to each other.
+ *
+ * This is only for internal list manipulation where we know
+ * the prev/next entries already!
+ */
+static inline void __list_del(struct list_head * prev, struct list_head * next)
+{
+	next->prev = prev;
+	prev->next = next;
+}
+#else
+static inline void
+__blist_del(mmap_t *mm,
+        bpointer_t prev, 
+        bpointer_t next)
+{
+    blist_head_t *objprev = blist_obj(mm, prev);
+    blist_head_t *objnext = blist_obj(mm, next);
+    
+	objnext->prev = prev;
+	objprev->next = next;
+}
+#endif
+
+#if 0
+/**
+ * list_del - deletes entry from list.
+ * @entry: the element to delete from the list.
+ * Note: list_empty() on entry does not return true after this, the entry is
+ * in an undefined state.
+ */
+static inline void __list_del_entry(struct list_head *entry)
+{
+	__list_del(entry->prev, entry->next);
+}
+#else
+static inline void
+__blist_del_entry(mmap_t *mm, bpointer_t entry)
+{
+    blist_head_t *objentry = blist_obj(mm, entry);
+    
+	__blist_del(mm, objentry->prev, objentry->next);
+}
+#endif
+
+#if 0
+static inline void list_del(struct list_head *entry)
+{
+	__list_del(entry->prev, entry->next);
+	entry->next = NULL;
+	entry->prev = NULL;
+}
+#else
+static inline void
+blist_del(mmap_t *mm, bpointer_t entry)
+{
+    blist_head_t *objentry = blist_obj(mm, entry);
+    
+	__blist_del(mm, objentry->prev, objentry->next);
+	objentry->next = INVALID_BPOINTER;
+	objentry->prev = INVALID_BPOINTER;
+
+	blist_dprint("blist, del %u", entry);
+}
+#endif
+
+#if 0
+/**
+ * list_del_init - deletes entry from list and reinitialize it.
+ * @entry: the element to delete from the list.
+ */
+static inline void list_del_init(struct list_head *entry)
+{
+	__list_del_entry(entry);
+	INIT_LIST_HEAD(entry);
+}
+#else
+static inline void
+blist_del_init(mmap_t *mm, bpointer_t entry)
+{
+	__blist_del_entry(mm, entry);
+	INIT_BLIST_HEAD(mm, entry);
+
+	blist_dprint("blist, del&init %u", entry);
+}
+#endif
+
+#if 0
+/**
+ * list_is_last - tests whether @list is the last entry in list @head
+ * @list: the entry to test
+ * @head: the head of the list
+ */
+static inline int list_is_last(const struct list_head *list,
+				const struct list_head *head)
+{
+	return list->next == head;
+}
+#else
+static inline bool
+blist_is_last(mmap_t *mm, 
+        bpointer_t list, 
+        bpointer_t head)
+{
+    return blist_obj(mm, list)->next == head;
+}
+#endif
+
+#if 0
+/**
+ * list_empty - tests whether a list is empty
+ * @head: the list to test.
+ */
+static inline int list_empty(const struct list_head *head)
+{
+	return head->next == head;
+}
+#else
+static inline bool
+blist_empty(mmap_t *mm, bpointer_t head)
+{
+    return blist_obj(mm, head)->next == head;
+}
+#endif
+
+#if 0
+/**
+ * list_is_singular - tests whether a list has just one entry.
+ * @head: the list to test.
+ */
+static inline int list_is_singular(const struct list_head *head)
+{
+	return !list_empty(head) && (head->next == head->prev);
+}
+#else
+static inline int
+blist_is_singular(mmap_t *mm, bpointer_t head)
+{
+    blist_head_t *objhead = blist_obj(mm, head);
+
+	return !blist_empty(mm, head) && (objhead->next == objhead->prev);
+}
+
+#endif
+
+#if 0
+/**
+ * list_for_each	-	iterate over a list
+ * @pos:	the &struct list_head to use as a loop cursor.
+ * @head:	the head for your list.
+ */
+#define list_for_each(pos, head) \
+	for (pos = (head)->next; pos != (head); pos = pos->next)
+#else
+#define blist_for_each(mm, pos, head) \
+    for (pos = blist_obj(mm, head)->next; pos != (head); pos = blist_obj(mm, pos)->next)
+#endif
+
+#if 0
+/**
+ * list_for_each_safe - iterate over a list safe against removal of list entry
+ * @pos:	the &struct list_head to use as a loop cursor.
+ * @n:		another &struct list_head to use as temporary storage
+ * @head:	the head for your list.
+ */
+#define list_for_each_safe(pos, n, head) \
+	for (pos = (head)->next, n = pos->next; \
+	    pos != (head); \
+		pos = n, n = pos->next)
+#else
+#define blist_for_each_safe(mm, pos, n, head) \
+	for (pos = blist_obj(mm, head)->next, n = blist_obj(mm, pos)->next; \
+	    pos != (head); \
+		pos = n, n = blist_obj(mm, pos)->next)
+#endif
+
+#if 0
+static inline bool
+is_in_list(struct list_head *node)
+{
+    return (node->next && node->prev) && false==list_empty(node);
+}
+#else
+static inline bool
+is_in_list(mmap_t *mm, bpointer_t node)
+{
+    blist_head_t *objnode = blist_obj(mm, node);
+    
+    return (objnode->next && objnode->prev) && !blist_empty(mm, node);
+}
+#endif
+
+static inline bpointer_t
+blist_first(mmap_t *mm, bpointer_t list)
+{
+    return blist_empty(mm, list) ? INVALID_BPOINTER : BLIST_FIRST(mm, list);
+}
+
+static inline bpointer_t
+blist_tail(mmap_t *mm, bpointer_t list)
+{
+    return blist_empty(mm, list) ? INVALID_BPOINTER : BLIST_TAIL(mm, list);
+}
+
+#ifndef use_bhash_dprint
+#define use_bhash_dprint    0
+#endif
+
+#if use_bhash_dprint
+#define bhash_dprint(_fmt, _args...)    os_println(_fmt, ##_args)
+#else
+#define bhash_dprint(_fmt, _args...)    os_do_nothing()
+#endif
+
+typedef blist_head_t bhash_bucket_t;
+typedef blist_head_t bhash_node_t;
+
+typedef struct {
+    bhash_bucket_t bucket[0];
+} hash_t;
+
+typedef int bhash_nhandle_t(mmap_t *mm, bpointer_t hash, bpointer_t node);
+typedef int bhash_dhandle_t(mmap_t *mm, bpointer_t hash);
+
+typedef struct {
+    bhash_nhandle_t *cmp;
+    bhash_nhandle_t *change;
+    bhash_nhandle_t *handle;
+    bhash_nhandle_t *idxbyn;
+    bhash_dhandle_t *idxbyd;
+} bhash_op_t;
+
+static inline hash_t *
+bhash(mmap_t *mm, bpointer_t hash)
+{
+    return (hash_t *)MMAP_OBJ(mm, hash);
+}
+
+static inline bpointer_t
+bhash_bucket_helper(mmap_t *mm, hash_t *h, uint32 idx)
+{
+    return blist_ptr(mm, &h->bucket[idx]);
+}
+
+static inline bpointer_t
+bhash_bucket(mmap_t *mm, bpointer_t hash, uint32 idx)
+{
+    return bhash_bucket_helper(mm, bhash(mm, hash), idx);
+}
+
+static inline bhash_node_t *
+bhash_obj(mmap_t *mm, bpointer_t ptr)
+{
+    return (bhash_node_t *)MMAP_OBJ(mm, ptr);
+}
+
+static inline int
+bhash_init(mmap_t *mm, bpointer_t hash, uint32 size)
+{
+    hash_t *h = bhash(mm, hash);
+    uint32 i;
+    
+    for (i=0; i<size; i++) {
+        INIT_BLIST_HEAD(mm, bhash_bucket_helper(mm, h, i));
+    }
+
+    bhash_dprint("bhash[%u], init", hash);
+    
+    return 0;
+}
+
+static inline bpointer_t
+bhash_bucket_first(mmap_t *mm, bpointer_t hash, uint32 idx)
+{
+    bpointer_t bucket = bhash_bucket(mm, hash, idx);
+
+    return blist_first(mm, bucket);
+}
+
+static inline bpointer_t
+bhash_bucket_tail(mmap_t *mm, bpointer_t hash, uint32 idx)
+{
+    bpointer_t bucket = bhash_bucket(mm, hash, idx);
+
+    return blist_tail(mm, bucket);
+}
+
+static inline void
+bhash_del(mmap_t *mm, bpointer_t hash, bpointer_t node)
+{
+    blist_del(mm, node);
+
+    bhash_dprint("bhash[%u], del %u", hash, node);
+}
+
+static inline void
+bhash_add(mmap_t *mm, bpointer_t hash, bpointer_t node, bhash_op_t *op)
+{
+    bpointer_t bucket = bhash_bucket(mm, hash, (*op->idxbyn)(mm, hash, node));
+    
+    blist_add(mm, node, bucket);
+
+    bhash_dprint("bhash[%u], bucket[%u], add %u", hash, bucket, node);
+}
+
+static inline void
+bhash_change(mmap_t *mm, bpointer_t hash, bpointer_t node, bhash_op_t *op)
+{
+    bhash_del(mm, hash, node);
+    (*op->change)(mm, hash, node);
+    bhash_add(mm, hash, node, op);
+}
+
+#define bhash_bucket_foreach(mm, bucket, node) \
+    blist_for_each(mm, node, bucket)
+
+#define bhash_bucket_foreach_safe(mm, bucket, node, n) \
+    blist_for_each_safe(mm, node, n, bucket)
+
+static inline bpointer_t
+bhash_find(mmap_t *mm, bpointer_t hash, bhash_op_t *op)
+{
+    bpointer_t bucket = bhash_bucket(mm, hash, (*op->idxbyd)(mm, hash));
+    bpointer_t node;
+
+    bhash_bucket_foreach(mm, bucket, node) {
+        if (0==(*op->cmp)(mm, hash, node)) {
+            return node;
+        }
+    }
+    
+    return INVALID_BPOINTER;
 }
 
 #ifndef os_array_search
