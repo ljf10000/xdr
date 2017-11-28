@@ -3,9 +3,10 @@ CC=gcc -Wall -rdynamic
 #TARGET=xdr
 CFLAGS+= -g -fpack-struct=4 -lpthread
 
-$(TARGET):$(OBJS)
+xdr:xdr.o
 	${CC} ${CFLAGS} -o xdr xdr.o
-#	${CC} ${CFLAGS} -o ufs ufs.o
+ufs:ufs.o
+	${CC} ${CFLAGS} -o ufs ufs.o
 %.o:%.c
 	${CC} -c ${CFLAGS} $< -o $@
 clean:
