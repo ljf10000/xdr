@@ -438,7 +438,7 @@ tlv_dump_ip6(FILE *stream, struct tlv *tlv)
 static inline void 
 tlv_dump_header(FILE *stream, struct tlv *tlv)
 {
-    TLV_DUMP(stream, "id: %d, %s: %u/%u", tlv->id, tlv_ops_name(tlv), tlv_len(tlv), tlv_length(tlv));
+    TLV_DUMP(stream, "id: %d, %s: alen/length %u/%u", tlv->id, tlv_ops_name(tlv), tlv_len(tlv), tlv_length(tlv));
 }
 
 enum { XDR_IPV4 = 0, XDR_IPV6 = 1 };
