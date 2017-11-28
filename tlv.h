@@ -242,11 +242,7 @@ struct tlv {
     byte body[0];
 };
 #define tlv_length(_tlv_header) (*(uint32 *)(_tlv_header)->body)
-#if 0
-#define tlv_first(_tlv_header)  (struct tlv *)tlv_data(_tlv_header)
-#else
 #define tlv_first(_tlv_header)  (struct tlv *)((byte *)(_tlv_header) + 8)
-#endif
 
 #define tlv_extend(_tlv)        (_tlv)->e
 
@@ -269,7 +265,6 @@ struct tlv {
 
 #define tlv_binlen(_tlv)        (tlv_datalen(_tlv) - (_tlv)->pad)
 #define tlv_strlen(_tlv)        tlv_binlen(_tlv)
-
 
 #define tlv_u8(_tlv)        (_tlv)->pad
 #define tlv_u16(_tlv)       (*(uint16 *)tlv_data(_tlv))
@@ -893,8 +888,7 @@ static inline int to_xdr_ssl_fail_reason(struct xb *x, struct tlv *tlv);
 #define tlv_mapper_binary(_mapper, _id, _name, _check, _flag)   tlv_mapper_dynamic(_mapper, _id, _name, binary, _check, _flag)
 
 #define TLV_MAPPER(_) \
-    tlv_mapper_u32(_,   0,      header,         NULL,   0) \
-    \
+    tlv_mapper_u32(_,       0,  header,         NULL,   0) \
     tlv_mapper_u8(_,        1,  session_state,  NULL,   0) \
     tlv_mapper_u8(_,        2,  appid,          NULL,   0) \
     tlv_mapper_object(_,    3,  session,        tlv_check_session,  0) \

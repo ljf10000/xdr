@@ -1,6 +1,4 @@
 CC=gcc -Wall -rdynamic
-#OBJS=xdr.o
-#TARGET=xdr
 CFLAGS+= -g -fpack-struct=4 -lpthread
 
 xdr:xdr.o
