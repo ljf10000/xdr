@@ -1741,7 +1741,7 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
 static inline int
 tlv_cache_save(struct xparse *parse, tlv_cache_t *cache, struct tlv *tlv)
 {
-    if (cache->count <= TLV_CACHE_MULTI) {
+    if (cache->count < TLV_CACHE_MULTI) {
         if (0==cache->count) {
             tlv_dprint(parse->wid, "save tlv %s", tlv_ops_name(tlv));
             
