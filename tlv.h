@@ -315,6 +315,9 @@ tlv_ops(struct tlv *tlv)
     return is_good_tlv_id(tlv->id) ? &__tlv_ops[tlv->id] : NULL;
 }
 
+#define tlv_is_string(_tlv)     (tlv_ops(_tlv)->type==TLV_T_string)
+#define tlv_is_binary(_tlv)     (tlv_ops(_tlv)->type==TLV_T_binary)
+
 #define tlv_ops_field(_tlv, _field, _deft)  ({  \
     tlv_ops_t *m_ops = tlv_ops(_tlv);   \
                                         \
@@ -1701,7 +1704,16 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
 
     switch(ops->type) {
         case TLV_T_string:
-        case TLV_T_binary:
+            if (DumpTlvString==tlv->id) {
+                tlv_dump(DUMP_STREAM, tlv);
+            }
+            
+            /* no break */
+        case TLV_T_binary: /* down */
+            if (DumpTlvBinary==tlv->id) {
+                tlv_dump(DUMP_STREAM, tlv);                
+            }
+            
             if (tlv_len(tlv) < tlv->pad) {
                 return xp_error(parse, tlv, -EPROTOCOL, 
                     "string tlv alen:%u < pad:%u", tlv_len(tlv), tlv->pad);
@@ -1789,6 +1801,7 @@ tlv_record_parse(tlv_record_t *r, struct tlv *header)
         if (is_option(OPT_DUMP) && !is_option(OPT_DUMP_PRE)) {
             tlv_dump(DUMP_STREAM, tlv);
         }
+        
 
         r->count++;
         parse->st[XST_tlv].ok++;

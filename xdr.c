@@ -19,6 +19,14 @@ DECLARE_TLV_VARS;
 #define ENV_XDR_SLEEP       "XDR_SLEEP"
 #endif
 
+#ifndef ENV_DUMP_TLV_STRING
+#define ENV_DUMP_TLV_STRING "DUMP_TLV_STRING"
+#endif
+
+#ifndef ENV_DUMP_TLV_BINARY
+#define ENV_DUMP_TLV_BINARY "DUMP_TLV_BINARY"
+#endif
+
 #define EVMASK              (IN_CLOSE_WRITE|IN_MOVED_TO)
 #define ISXDR(_file, _len)  os_str_has_suffix(_file, _len, "." XDR_SUFFIX, sizeof("." XDR_SUFFIX)-1)
 
@@ -28,6 +36,8 @@ static xque_t   WorkerQue;
 static int      WorkerSleep;
 static int      WorkerCount = 1;
 static int      WrokerQueCount = 1;
+static int      DumpTlvString = -1;
+static int      DumpTlvBinary = -1;
 
 static struct {
     xpath_t path[PATH_END];
@@ -411,11 +421,14 @@ xw_envi(char *env, int max)
 static void
 init_env(void)
 {
+    DumpTlvString = xw_envi(ENV_DUMP_TLV_STRING, -1);
+    DumpTlvBinary = xw_envi(ENV_DUMP_TLV_BINARY, -1);
+    
     if (is_option(OPT_MULTI)) {
-        WorkerSleep     = xw_envi(ENV_XDR_SLEEP, XDR_USLEEP);
-        WorkerCount     = xw_envi(ENV_XDR_WORKER, WORKER_COUNT);
-        WrokerQueCount  = xw_envi(ENV_XDR_QUE,  QUE_COUNT);
-
+        WorkerSleep     = xw_envi(ENV_XDR_SLEEP,    XDR_USLEEP);
+        WorkerCount     = xw_envi(ENV_XDR_WORKER,   WORKER_COUNT);
+        WrokerQueCount  = xw_envi(ENV_XDR_QUE,      QUE_COUNT);
+        
         option_dump_init("worker sleep %d",       WorkerSleep);
         option_dump_init("worker count %d",       WorkerCount);
         option_dump_init("worker queue count %d", WrokerQueCount);
