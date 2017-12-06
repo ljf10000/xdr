@@ -36,8 +36,9 @@ static xque_t   WorkerQue;
 static int      WorkerSleep;
 static int      WorkerCount = 1;
 static int      WrokerQueCount = 1;
-static int      DumpTlvString = -1;
-static int      DumpTlvBinary = -1;
+
+int DumpTlvString = -1;
+int DumpTlvBinary = -1;
 
 static struct {
     xpath_t path[PATH_END];

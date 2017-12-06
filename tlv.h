@@ -79,6 +79,9 @@ typedef FILE *xw_stream_t(int /* wid */);
 
 extern xw_stream_t *xw_stream;
 
+extern int DumpTlvString;
+extern int DumpTlvBinary;
+
 static inline void
 xw_trace(int wid, const char *fmt, ...)
 {
