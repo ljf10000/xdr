@@ -1,10 +1,11 @@
 #!/bin/bash
 
-rm -f tlvs/*
-rm -f xdrs/* 
-rm -f bad/*
-rm -f file/file/*
-rm -f file/cert/*
-rm -f file/http/*
-rm -f /tmp/coredump/*
+dirs="tlvs xdrs bad file/file file/cert file/http /tmp/coredump"
+for dir in ${dirs}; do
+	[[ -d "${dir}" ]] && {
+		pushd ${dir}
+			ls | xargs rm -f
+		popd
+	}
+done
 
