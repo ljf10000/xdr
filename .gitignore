@@ -35,6 +35,10 @@
 *.tar.gz
 *.tar.bz2
 
+#file
+xdr
+ufs
+
 #dir
 xdrs/*
 tlvs/*

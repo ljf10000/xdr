@@ -9,3 +9,4 @@ ufs:ufs.o
 	${CC} -c ${CFLAGS} $< -o $@
 clean:
 	rm -f *.o xdr ufs
+
