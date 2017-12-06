@@ -241,8 +241,6 @@ struct tlv {
 
     byte body[0];
 };
-#define tlv_length(_tlv_header) (*(uint32 *)(_tlv_header)->body)
-#define tlv_first(_tlv_header)  (struct tlv *)((byte *)(_tlv_header) + 8)
 
 #define tlv_extend(_tlv)        (_tlv)->e
 
@@ -433,7 +431,13 @@ tlv_dump_ip6(FILE *stream, struct tlv *tlv)
 static inline void 
 tlv_dump_header(FILE *stream, struct tlv *tlv)
 {
-    TLV_DUMP(stream, "id: %d, %s: alen/length %u/%u", tlv->id, tlv_ops_name(tlv), tlv_len(tlv), tlv_length(tlv));
+    TLV_DUMP(stream, "id: %d, %s: alen %u", tlv->id, tlv_ops_name(tlv), tlv_len(tlv));
+}
+
+static inline int
+tlv_check_header(struct xparse *parse, struct tlv *tlv)
+{
+    return tlv_extend(tlv)?0:xp_error(parse, tlv, -EPROTOCOL, "tlv header not extend");
 }
 
 enum { XDR_IPV4 = 0, XDR_IPV6 = 1 };
@@ -888,7 +892,7 @@ static inline int to_xdr_ssl_fail_reason(struct xb *x, struct tlv *tlv);
 #define tlv_mapper_binary(_mapper, _id, _name, _check, _flag)   tlv_mapper_dynamic(_mapper, _id, _name, binary, _check, _flag)
 
 #define TLV_MAPPER(_) \
-    tlv_mapper_u32(_,       0,  header,         NULL,   0) \
+    tlv_mapper_u32(_,       0,  header,         tlv_check_header,   0) \
     tlv_mapper_u8(_,        1,  session_state,  NULL,   0) \
     tlv_mapper_u8(_,        2,  appid,          NULL,   0) \
     tlv_mapper_object(_,    3,  session,        tlv_check_session,  0) \
@@ -1579,13 +1583,7 @@ tlv_walk(struct xparse *parse, struct tlv *tlv, uint32 left, tlv_walk_t *walk)
             return err;
         }
 
-        if (0==tlv->id) {
-            uint32 length = tlv_length(tlv);
-            
-            left -= length; tlv = (struct tlv *)((byte *)tlv + length);
-        } else {
-            left -= tlv_len(tlv); tlv = tlv_next(tlv);
-        }
+        left -= tlv_len(tlv); tlv = tlv_next(tlv);
     }
 
     return 0;
@@ -1780,7 +1778,7 @@ tlv_record_parse(tlv_record_t *r, struct tlv *header)
         return 0;
     }
 
-    return tlv_walk(r->parse, tlv_first(header), tlv_length(header) - 8, walk);
+    return tlv_walk(r->parse, (struct tlv *)tlv_data(header), tlv_datalen(header), walk);
 }
 
 #ifndef TLV_CHECK_OBJ
