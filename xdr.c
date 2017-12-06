@@ -422,8 +422,8 @@ xw_envi(char *env, int max)
 static void
 init_env(void)
 {
-    DumpTlvString = xw_envi(ENV_DUMP_TLV_STRING, -1);
-    DumpTlvBinary = xw_envi(ENV_DUMP_TLV_BINARY, -1);
+    DumpTlvString = env_geti(ENV_DUMP_TLV_STRING, -1);
+    DumpTlvBinary = env_geti(ENV_DUMP_TLV_BINARY, -1);
     
     if (is_option(OPT_MULTI)) {
         WorkerSleep     = xw_envi(ENV_XDR_SLEEP,    XDR_USLEEP);
