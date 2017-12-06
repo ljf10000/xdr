@@ -261,7 +261,7 @@ struct tlv {
 #define tlv_datalen_e(_tlv)     (tlv_len_e(_tlv)-tlv_hdrlen_e)
 #define tlv_datalen(_tlv)       (tlv_extend(_tlv)?tlv_datalen_e(_tlv):tlv_datalen_n(_tlv))
 
-#define tlv_binlen(_tlv)        (tlv_datalen(_tlv) - (_tlv)->pad)
+#define tlv_binlen(_tlv)        (tlv_len(_tlv) - (_tlv)->pad)
 #define tlv_strlen(_tlv)        tlv_binlen(_tlv)
 
 #define tlv_u8(_tlv)        (_tlv)->pad
