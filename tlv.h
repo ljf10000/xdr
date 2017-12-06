@@ -434,12 +434,6 @@ tlv_dump_header(FILE *stream, struct tlv *tlv)
     TLV_DUMP(stream, "id: %d, %s: alen %u", tlv->id, tlv_ops_name(tlv), tlv_len(tlv));
 }
 
-static inline int
-tlv_check_header(struct xparse *parse, struct tlv *tlv)
-{
-    return tlv_extend(tlv)?0:xp_error(parse, tlv, -EPROTOCOL, "tlv header not extend");
-}
-
 enum { XDR_IPV4 = 0, XDR_IPV6 = 1 };
 
 #ifndef sizeof_session
@@ -787,6 +781,16 @@ tlv_dump_rtsp(FILE *stream, struct tlv *tlv)
 }
 
 static inline int
+tlv_check_header(struct xparse *parse, struct tlv *tlv)
+{
+    if (tlv_extend(tlv)) {
+        return 0;
+    }
+
+    return xp_error(parse, tlv, -EPROTOCOL, "tlv header not extend");
+}
+
+static inline int
 tlv_check_session(struct xparse *parse, struct tlv *tlv)
 {
     tlv_session_t *obj = tlv_session(tlv);
@@ -804,6 +808,20 @@ tlv_check_session(struct xparse *parse, struct tlv *tlv)
             if (is_option(OPT_STRICT)) {
                 return xp_error(parse, tlv, -ENOSUPPORT, "no support ip proto:%d", obj->proto);
             }
+    }
+
+    return 0;
+}
+
+#ifndef TLV_SSL_CERT_MINSIZE
+#define TLV_SSL_CERT_MINSIZE    128
+#endif
+
+static inline int
+tlv_check_ssl_cert(struct xparse *parse, struct tlv *tlv)
+{
+    if (tlv_datalen(tlv) < TLV_SSL_CERT_MINSIZE) {
+        return xp_error(parse, tlv, -ETOOSMALL, "ssl cert too short:%d", tlv_datalen(tlv));
     }
 
     return 0;
@@ -951,8 +969,8 @@ static inline int to_xdr_ssl_fail_reason(struct xb *x, struct tlv *tlv);
     tlv_mapper_binary(_,    201,http_request,   NULL,   TLV_F_HTTP_REQUEST) \
     tlv_mapper_binary(_,    202,http_response,  NULL,   TLV_F_HTTP_RESPONSE) \
     tlv_mapper_binary(_,    203,file_content,   NULL,   TLV_F_FILE_CONTENT) \
-    tlv_mapper_binary(_,    204,ssl_server_cert,NULL,   TLV_F_MULTI|TLV_F_SSL_SERVER_CERT) \
-    tlv_mapper_binary(_,    205,ssl_client_cert,NULL,   TLV_F_MULTI|TLV_F_SSL_CLIENT_CERT) \
+    tlv_mapper_binary(_,    204,ssl_server_cert, tlv_check_ssl_cert,    TLV_F_MULTI|TLV_F_SSL_SERVER_CERT) \
+    tlv_mapper_binary(_,    205,ssl_client_cert, tlv_check_ssl_cert,    TLV_F_MULTI|TLV_F_SSL_CLIENT_CERT) \
     tlv_mapper_u8(_,        206,ssl_fail_reason,NULL,   0) \
     /* end */
 
