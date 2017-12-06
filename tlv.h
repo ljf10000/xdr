@@ -1686,7 +1686,7 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
         case TLV_T_binary:
             if (tlv_len(tlv) < tlv->pad) {
                 return xp_error(parse, tlv, -EPROTOCOL, 
-                    "tlv[extend] alen:%u < pad:%u", tlv_len(tlv), tlv->pad);
+                    "string tlv alen:%u < pad:%u", tlv_len(tlv), tlv->pad);
             }
     }
 
