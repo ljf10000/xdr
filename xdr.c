@@ -187,11 +187,7 @@ xdr_handle(int wid, char *filename, int namelen)
 
 ERROR:
     tlv_trace(xp_close(&parse), wid, "xp_close");
-    if (err<0) {
-        parse.st[XST_raw].error++;
-    } else {
-        parse.st[XST_raw].ok++;
-    }
+    xp_st_byerr(err, &parse, XST_raw);
     statistic(&parse, wid);
 
     xdr_dprint(wid, "xdr_handle ok.");

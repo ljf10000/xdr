@@ -776,8 +776,7 @@ xb_fexport_bybuffer(struct xb *x, struct tlv *tlv, xdr_file_t *file)
     char *filename = xpath_fill_sha(path, dir, digest);
     
     if (os_fexist(filename)) {
-        xdr_dprint(x->parse->wid, "exist %s", filename);
-        return 0;
+        return 1;
     } else {
         return os_mmap_w_async(filename, buf, len);
     }
@@ -802,7 +801,7 @@ xb_fexport_bypath(struct xb *x, struct tlv *tlv, xdr_file_t *file)
 static inline int
 xb_fexport(struct xb *x, struct tlv *tlv, xdr_file_t *file)
 {
-    int err;
+    int err = 0;
     
     if (is_option(OPT_SPLIT)) {
         err = xb_fexport_bypath(x, tlv, file);
@@ -810,13 +809,9 @@ xb_fexport(struct xb *x, struct tlv *tlv, xdr_file_t *file)
         err = xb_fexport_bybuffer(x, tlv, file);
     }
 
-    if (err<0) {
-        return err;
-    }
-
     xb_xdr(x)->flag |= tlv_ops_flag(tlv) & TLV_F_FILE;
 
-    return 0;
+    return err;
 }
 
 static inline xdr_file_t *
@@ -1321,8 +1316,7 @@ to_xdr_http_request(struct xb *x, struct tlv *tlv)
         return -ENOMEM;
     }
     xb_pre_http(x)->offsetof_request = xb_obj_offset(x, file);
-    
-    x->parse->st[XST_frequest].ok++;
+    xp_st_ok(x->parse, XST_frequest);
     
     return 0;
 }
@@ -1335,8 +1329,7 @@ to_xdr_http_response(struct xb *x, struct tlv *tlv)
         return -ENOMEM;
     }
     xb_pre_http(x)->offsetof_response = xb_obj_offset(x, file);
-    
-    x->parse->st[XST_fresponse].ok++;
+    xp_st_ok(x->parse, XST_fresponse);
     
     return 0;
 }
@@ -1349,8 +1342,7 @@ to_xdr_file_content(struct xb *x, struct tlv *tlv)
         return -ENOMEM;
     }
     xb_xdr(x)->offsetof_file_content = xb_obj_offset(x, file);
-    
-    x->parse->st[XST_fcontent].ok++;
+    xp_st_ok(x->parse, XST_fcontent);
     
     return 0;
 }
@@ -1443,18 +1435,14 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_array_t *certs, int id)
         xdr_cert_t *cert = (xdr_cert_t *)xdr_array_get(xb_xdr(x), array, i);
 
         err = xb_fexport(x, cache->multi[i], &cert->file);
-        if (err<0) {
-            return err;
+        
+        switch (id) {
+            case tlv_id_ssl_server_cert: /* down */
+            case tlv_id_ssl_client_cert:
+                xp_st_byerr(err, x->parse, id);
+                
+                break;
         }
-    }
-
-    switch (id) {
-        case tlv_id_ssl_server_cert:
-            x->parse->st[XST_ssls].ok += count;
-            break;
-        case tlv_id_ssl_client_cert:
-            x->parse->st[XST_sslc].ok += count;
-            break;
     }
 
     return 0;
@@ -1599,18 +1587,18 @@ xp_parse(struct xparse *parse)
 
         err = xdr_trace(tlv_record_parse(&r, header), parse->wid, "tlv_record_parse:%d", parse->count);
         if (err<0) {
-            parse->st[XST_xdr].error++;
+            xp_st_error(parse, XST_xdr);
             return err;
         }
 
         err = xdr_trace(to_xdr(&r, &parse->xdr), parse->wid, "to_xdr:%d", parse->count);
         if (err<0) {
-            parse->st[XST_xdr].error++;
+            xp_st_error(parse, XST_xdr);
             return err;
         }
 
         parse->count++;
-        parse->st[XST_xdr].ok++;
+        xp_st_ok(parse, XST_xdr);
 
         xdr_dprint(parse->wid, "xp_parse walk ok");
         
