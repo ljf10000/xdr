@@ -1,5 +1,5 @@
 CC=gcc -Wall -rdynamic
-CFLAGS+= -g -fpack-struct=4 -lpthread -DTLV_CACHE_MULTI=31
+CFLAGS+= -g -fpack-struct=4 -lpthread
 
 xdr:xdr.o
 	${CC} ${CFLAGS} -o xdr xdr.o
