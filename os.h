@@ -191,6 +191,10 @@
 #define OS_ALIGNED(_align)          __attribute__ ((aligned (_align)))
 #endif
 
+#ifndef OS_ALIGNP
+#define OS_ALIGNP                   __attribute__ ((aligned (sizeof(void *)))
+#endif
+
 #ifndef NO_ALIGN
 #define NO_ALIGN                    OS_ALIGNED(1)
 #endif
