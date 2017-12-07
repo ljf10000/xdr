@@ -776,7 +776,7 @@ xb_fexport_bybuffer(struct xb *x, struct tlv *tlv, xdr_file_t *file)
     char *filename = xpath_fill_sha(path, dir, digest);
     
     if (os_fexist(filename)) {
-        return 1;
+        return 0;
     } else {
         return os_mmap_w_async(filename, buf, len);
     }
