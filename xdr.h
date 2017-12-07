@@ -1427,7 +1427,7 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_array_t *certs, int id)
         return 0;
     }
     
-    int i, stid, err, count = cache->count;
+    int i, err, count = cache->count;
     
     xdr_array_t *array = xb_pre_array(x, certs, XDR_ARRAY_cert, sizeof(xdr_cert_t), count);
     if (NULL==array) {
