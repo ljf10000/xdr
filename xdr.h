@@ -1313,6 +1313,7 @@ to_xdr_http_request(struct xb *x, struct tlv *tlv)
 {
     xdr_file_t *file = xb_pre_file(x, tlv);
     if (NULL==file) {
+        xp_st_error(x->parse, XST_frequest);
         return -ENOMEM;
     }
     xb_pre_http(x)->offsetof_request = xb_obj_offset(x, file);
@@ -1326,6 +1327,7 @@ to_xdr_http_response(struct xb *x, struct tlv *tlv)
 {
     xdr_file_t *file = xb_pre_file(x, tlv);
     if (NULL==file) {
+        xp_st_error(x->parse, XST_fresponse);
         return -ENOMEM;
     }
     xb_pre_http(x)->offsetof_response = xb_obj_offset(x, file);
@@ -1339,6 +1341,7 @@ to_xdr_file_content(struct xb *x, struct tlv *tlv)
 {
     xdr_file_t *file = xb_pre_file(x, tlv);
     if (NULL==file) {
+        xp_st_error(x->parse, XST_fcontent);
         return -ENOMEM;
     }
     xb_xdr(x)->offsetof_file_content = xb_obj_offset(x, file);
@@ -1424,7 +1427,7 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_array_t *certs, int id)
         return 0;
     }
     
-    int i, err, count = cache->count;
+    int i, stid, err, count = cache->count;
     
     xdr_array_t *array = xb_pre_array(x, certs, XDR_ARRAY_cert, sizeof(xdr_cert_t), count);
     if (NULL==array) {
@@ -1437,10 +1440,11 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_array_t *certs, int id)
         err = xb_fexport(x, cache->multi[i], &cert->file);
         
         switch (id) {
-            case tlv_id_ssl_server_cert: /* down */
+            case tlv_id_ssl_server_cert:
+                xp_st_by(err, x->parse, XST_ssls);
+                break;
             case tlv_id_ssl_client_cert:
-                xp_st_byerr(err, x->parse, id);
-                
+                xp_st_by(err, x->parse, XST_sslc);
                 break;
         }
     }
