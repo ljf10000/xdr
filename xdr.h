@@ -178,10 +178,11 @@ typedef struct {
     byte method;
     byte version;
     
-    byte _0:2;
-    byte head:1;
-    byte flag:3;
     byte first:2;
+    byte flag:3;
+    byte head:1;
+    byte _0:2;
+    
     byte ie;
     byte portal;
     byte _1;
@@ -212,10 +213,11 @@ typedef struct {
     byte signal_type;
     
     uint16 dataflow_count;
-    uint16 _:13;
-    uint16 malloc:1;
-    uint16 bye:1;
+
     uint16 invite:1;
+    uint16 bye:1;
+    uint16 malloc:1;
+    uint16 _:13;
     // end, same as tlv_sip_t
     
     xdr_string_t calling_number;
@@ -907,7 +909,7 @@ xb_pre_ssl(struct xb *x)
     tlv_##_obj##_t *__src = tlv_##_obj(_tlv);   \
     xdr_##_obj##_t *__dst = xb_pre_##_obj(_x);  \
                                                 \
-    os_objcpy(__dst, __src);                    \
+    os_objscpy(__dst, __src);                   \
                                                 \
     0;                                          \
 })  /* end */
