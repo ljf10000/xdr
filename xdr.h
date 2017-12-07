@@ -1395,11 +1395,11 @@ to_xdr_dns(tlv_record_t *r, struct xb *x, xdr_offset_t offset)
     }
     
     tlv_cache_t *cache = &r->cache[id];
-    if (0==cache->u.count) {
+    if (0==cache->count) {
         return 0;
     }
     
-    int i, count = cache->u.count;
+    int i, count = cache->count;
 
     if (1==count && XDR_IPV4==dns->ip_version) {
         dns->ip4 = tlv_u32(cache->multi[0]);
@@ -1425,11 +1425,11 @@ static inline int
 to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_array_t *certs, int id)
 {
     tlv_cache_t *cache = &r->cache[id];
-    if (0==cache->u.count) {
+    if (0==cache->count) {
         return 0;
     }
     
-    int i, err, count = cache->u.count;
+    int i, err, count = cache->count;
     
     xdr_array_t *array = xb_pre_array(x, certs, XDR_ARRAY_cert, sizeof(xdr_cert_t), count);
     if (NULL==array) {
@@ -1520,7 +1520,7 @@ to_xdr_helper(tlv_cache_t *cache, struct xb *x)
     struct tlv *tlv;
     int i, err;
 
-    for (i=0; i<cache->u.count; i++) {
+    for (i=0; i<cache->count; i++) {
         tlv = cache->multi[i];
         ops = tlv_ops(tlv);
 
@@ -1563,7 +1563,7 @@ to_xdr(tlv_record_t *r, struct xb *x)
         for (id=ids[i][0]; id<ids[i][1]; id++) {
             cache = &r->cache[id];
             
-            if (cache->u.count>0) {
+            if (cache->count>0) {
                 err = xdr_trace(to_xdr_helper(cache, x), r->parse->wid, "to_xdr_helper:%d", id);
                 if (err<0) {
                     return err;
