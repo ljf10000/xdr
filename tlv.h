@@ -1094,18 +1094,25 @@ xpath_change(xpath_t *path, char *suffix)
 }
 
 #ifndef TLV_CACHE_MULTI
-#define TLV_CACHE_MULTI    32
+#define TLV_CACHE_MULTI    63
 #endif
 
 typedef struct {
-    int count;
+    union {
+        uint32 count;
+        void *_;
+    } u;
 
     struct tlv *multi[TLV_CACHE_MULTI];
 } tlv_cache_t;
 
 typedef struct {
     struct xparse *parse;
-    int count;
+
+    union {
+        uint32 count;
+        void *_;
+    } u;
     
     tlv_cache_t cache[tlv_id_end];
 } tlv_record_t;
@@ -1752,16 +1759,16 @@ tlv_check(struct xparse *parse, struct tlv *tlv)
 static inline int
 tlv_cache_save(struct xparse *parse, tlv_cache_t *cache, struct tlv *tlv)
 {
-    if (cache->count < TLV_CACHE_MULTI) {
-        if (0==cache->count) {
+    if (cache->u.count < TLV_CACHE_MULTI) {
+        if (0==cache->u.count) {
             tlv_dprint(parse->wid, "save tlv %s", tlv_ops_name(tlv));
             
-            cache->multi[cache->count++] = tlv;
+            cache->multi[cache->u.count++] = tlv;
         }
         else if (TLV_F_MULTI & tlv_ops_flag(tlv)) {
             tlv_dprint(parse->wid, "save multi tlv %s", tlv_ops_name(tlv));
             
-            cache->multi[cache->count++] = tlv;
+            cache->multi[cache->u.count++] = tlv;
         }
         else {
             return xp_error(parse, tlv, -ENOSUPPORT, "not support cache multi");
@@ -1798,14 +1805,14 @@ tlv_record_parse(tlv_record_t *r, struct tlv *header)
             tlv_dump(DUMP_STREAM, tlv);
         }
 
-        err = tlv_trace(tlv_check(parse, tlv), parse->wid, "tlv_check %d:%d", parse->count, r->count);
+        err = tlv_trace(tlv_check(parse, tlv), parse->wid, "tlv_check %d:%d", parse->count, r->u.count);
         if (err<0) {
             parse->st[XST_tlv].error++;
             
             return err;
         }
 
-        err = tlv_trace(tlv_record_save(r, tlv), parse->wid, "tlv_record_save %d:%d", parse->count, r->count);
+        err = tlv_trace(tlv_record_save(r, tlv), parse->wid, "tlv_record_save %d:%d", parse->count, r->u.count);
         if (err<0) {
             parse->st[XST_tlv].error++;
             
@@ -1817,7 +1824,7 @@ tlv_record_parse(tlv_record_t *r, struct tlv *header)
         }
         
 
-        r->count++;
+        r->u.count++;
         parse->st[XST_tlv].ok++;
 
         return 0;
