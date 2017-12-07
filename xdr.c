@@ -187,7 +187,7 @@ xdr_handle(int wid, char *filename, int namelen)
 
 ERROR:
     tlv_trace(xp_close(&parse), wid, "xp_close");
-    xp_st_by(err, &parse, XST_raw);
+    xst_update_by(err, &parse, XST_raw);
     statistic(&parse, wid);
 
     xdr_dprint(wid, "xdr_handle ok.");

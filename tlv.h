@@ -1427,15 +1427,15 @@ struct xparse {
     struct xb xdr;
 };
 
-#define xp_st_add(_parse, _id, _field)  do{ (_parse)->st[_id]._field++; }while(0)
-#define xp_st_ok(_parse, _id)           xp_st_add(_parse, _id, ok)
-#define xp_st_error(_parse, _id)        xp_st_add(_parse, _id, error)
-#define xp_st_by(_err, _parse, _id)     do{ \
-    if (_err<0) {                           \
-        xp_st_error(_parse, _id);           \
-    } else {                                \
-        xp_st_ok(_parse, _id);              \
-    }                                       \
+#define xst_update(_parse, _id, _field)     do{ (_parse)->st[_id]._field++; }while(0)
+#define xst_update_ok(_parse, _id)          xst_update(_parse, _id, ok)
+#define xst_update_error(_parse, _id)       xst_update(_parse, _id, error)
+#define xst_update_by(_err, _parse, _id)    do{ \
+    if (_err<0) {                               \
+        xst_update_error(_parse, _id);          \
+    } else {                                    \
+        xst_update_ok(_parse, _id);             \
+    }                                           \
 }while(0)
 
 #define XPARSE_INITER(_wid, _path, _st, _filename, _namelen) { \

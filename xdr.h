@@ -1313,11 +1313,11 @@ to_xdr_http_request(struct xb *x, struct tlv *tlv)
 {
     xdr_file_t *file = xb_pre_file(x, tlv);
     if (NULL==file) {
-        xp_st_error(x->parse, XST_frequest);
+        xst_update_error(x->parse, XST_frequest);
         return -ENOMEM;
     }
     xb_pre_http(x)->offsetof_request = xb_obj_offset(x, file);
-    xp_st_ok(x->parse, XST_frequest);
+    xst_update_ok(x->parse, XST_frequest);
     
     return 0;
 }
@@ -1327,11 +1327,11 @@ to_xdr_http_response(struct xb *x, struct tlv *tlv)
 {
     xdr_file_t *file = xb_pre_file(x, tlv);
     if (NULL==file) {
-        xp_st_error(x->parse, XST_fresponse);
+        xst_update_error(x->parse, XST_fresponse);
         return -ENOMEM;
     }
     xb_pre_http(x)->offsetof_response = xb_obj_offset(x, file);
-    xp_st_ok(x->parse, XST_fresponse);
+    xst_update_ok(x->parse, XST_fresponse);
     
     return 0;
 }
@@ -1341,11 +1341,11 @@ to_xdr_file_content(struct xb *x, struct tlv *tlv)
 {
     xdr_file_t *file = xb_pre_file(x, tlv);
     if (NULL==file) {
-        xp_st_error(x->parse, XST_fcontent);
+        xst_update_error(x->parse, XST_fcontent);
         return -ENOMEM;
     }
     xb_xdr(x)->offsetof_file_content = xb_obj_offset(x, file);
-    xp_st_ok(x->parse, XST_fcontent);
+    xst_update_ok(x->parse, XST_fcontent);
     
     return 0;
 }
@@ -1441,10 +1441,10 @@ to_xdr_ssl_helper(tlv_record_t *r, struct xb *x, xdr_array_t *certs, int id)
         
         switch (id) {
             case tlv_id_ssl_server_cert:
-                xp_st_by(err, x->parse, XST_ssls);
+                xst_update_by(err, x->parse, XST_ssls);
                 break;
             case tlv_id_ssl_client_cert:
-                xp_st_by(err, x->parse, XST_sslc);
+                xst_update_by(err, x->parse, XST_sslc);
                 break;
         }
     }
@@ -1591,18 +1591,18 @@ xp_parse(struct xparse *parse)
 
         err = xdr_trace(tlv_record_parse(&r, header), parse->wid, "tlv_record_parse:%d", parse->count);
         if (err<0) {
-            xp_st_error(parse, XST_xdr);
+            xst_update_error(parse, XST_xdr);
             return err;
         }
 
         err = xdr_trace(to_xdr(&r, &parse->xdr), parse->wid, "to_xdr:%d", parse->count);
         if (err<0) {
-            xp_st_error(parse, XST_xdr);
+            xst_update_error(parse, XST_xdr);
             return err;
         }
 
         parse->count++;
-        xp_st_ok(parse, XST_xdr);
+        xst_update_ok(parse, XST_xdr);
 
         xdr_dprint(parse->wid, "xp_parse walk ok");
         
